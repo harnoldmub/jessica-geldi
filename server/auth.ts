@@ -14,7 +14,7 @@ declare global {
 
 export function setupAuth(app: Express) {
   app.use(session({
-    secret: process.env.SESSION_SECRET || "kecha-secret-2026",
+    secret: process.env.SESSION_SECRET || "mamisa-marylin-secret-2026",
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
@@ -99,10 +99,18 @@ function toSafeUser(user: SelectUser): SafeUser {
 
 export async function ensureAdminUser() {
   const username = process.env.ADMIN_USERNAME || "admin";
-  const password = process.env.ADMIN_PASSWORD || "kecha-admin-2026";
+  const password = process.env.ADMIN_PASSWORD || "Love2026";
 
   const existingUser = await storage.getUserByUsername(username);
   if (existingUser) {
+    if (!process.env.ADMIN_PASSWORD && !(await bcrypt.compare(password, existingUser.password))) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await storage.updateUserPassword(existingUser.id, hashedPassword);
+      return {
+        ...existingUser,
+        password: hashedPassword,
+      };
+    }
     return existingUser;
   }
 
@@ -111,7 +119,7 @@ export async function ensureAdminUser() {
   return storage.createUser({
     username,
     password: hashedPassword,
-    firstName: "Kecha",
+    firstName: "Mamisa",
     lastName: "Admin",
   });
 }

@@ -65,8 +65,18 @@ async function getCurrentUser() {
   }
 
   if (!res.ok) {
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      throw new Error("Serveur API indisponible. Vérifiez que le backend est lancé et configuré.");
+    }
+
     const error = await res.json();
     throw new Error(error.message || "Impossible de vérifier la session.");
+  }
+
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw new Error("Serveur API indisponible. Vérifiez que le backend est lancé et configuré.");
   }
 
   return (await res.json()) as SafeUser;
@@ -282,14 +292,14 @@ export default function Admin() {
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-[#f5efe8] px-6 py-10 md:px-10 md:py-16">
+      <main className="min-h-screen bg-[#F7F7F5] px-6 py-10 md:px-10 md:py-16">
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.85fr_1.15fr]">
-          <section className="overflow-hidden bg-[#1d1713] p-8 text-white md:p-12">
+          <section className="overflow-hidden bg-[#101011] p-8 text-white md:p-12">
             <p className="text-[11px] uppercase tracking-[0.45em] text-white/55">
               Espace admin
             </p>
             <h1 className="mt-6 font-serif text-4xl leading-tight md:text-6xl">
-              Gérer les invités de Ketsia & Chad avec précision.
+              Gérer les invités de Mamisa & Marylin avec précision.
             </h1>
             <p className="mt-6 max-w-lg text-sm leading-8 text-white/72">
               Créez les invités, générez leurs liens d'invitation individuels,
@@ -337,7 +347,7 @@ export default function Admin() {
 
               <div className="space-y-3">
                 <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">
-                  Mot de passe
+                  Code d'accès
                 </label>
                 <Input
                   type="password"
@@ -349,7 +359,7 @@ export default function Admin() {
                     }))
                   }
                   className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
-                  placeholder="Mot de passe"
+                  placeholder="Entrez le code d'accès"
                 />
               </div>
 
@@ -745,7 +755,7 @@ export default function Admin() {
                             className={`rounded-none border-0 px-3 py-1 text-[10px] uppercase tracking-[0.25em] ${
                               guest.invitationStatus === "sent"
                                 ? "bg-stone-100 text-stone-700"
-                                : "bg-[#f3e7d8] text-[#8e6b3a]"
+                                : "bg-[#ECEFF1] text-[#5F6870]"
                             }`}
                           >
                             {guest.invitationStatus === "sent" ? "Envoyée" : "Brouillon"}

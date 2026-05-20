@@ -1,21 +1,36 @@
 import { QueryClient, QueryCache } from "@tanstack/react-query";
 
+async function readErrorMessage(res: Response) {
+  const fallback =
+    res.status === 404
+      ? "Serveur API indisponible. Vérifiez que le backend est lancé et configuré."
+      : res.statusText || "Une erreur est survenue.";
+
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    return fallback;
+  }
+
+  try {
+    const error = await res.json();
+    return error.message || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 async function fetchJson(url: string) {
   const res = await fetch(url, {
     credentials: "include",
   });
 
   if (!res.ok) {
-    let message = res.statusText;
+    throw new Error(await readErrorMessage(res));
+  }
 
-    try {
-      const error = await res.json();
-      message = error.message || message;
-    } catch {
-      // Keep the HTTP status text when the response is not JSON.
-    }
-
-    throw new Error(message);
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw new Error("Serveur API indisponible. Vérifiez que le backend est lancé et configuré.");
   }
 
   return res.json();
@@ -63,8 +78,7 @@ export async function apiRequest(
   });
 
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || res.statusText);
+    throw new Error(await readErrorMessage(res));
   }
 
   return res;

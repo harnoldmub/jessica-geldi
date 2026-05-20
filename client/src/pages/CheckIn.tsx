@@ -44,7 +44,7 @@ export default function CheckIn() {
            <p className="text-[10px] font-sans tracking-[0.5em] uppercase">Private Reception</p>
          </div>
          <h1 className="text-4xl md:text-5xl font-serif text-foreground leading-tight italic">Bienvenue</h1>
-         <p className="font-script text-2xl text-primary/40 lowercase mt-2">kecha & bénédiction</p>
+         <p className="font-script text-2xl text-primary/40 lowercase mt-2">mamisa & marylin</p>
       </header>
 
       <div className="px-6 sticky top-0 z-20 pt-4">
@@ -113,7 +113,7 @@ export default function CheckIn() {
       
       {/* Footer Branding */}
       <footer className="mt-auto py-12 text-center opacity-20 pointer-events-none">
-          <p className="font-script text-4xl text-primary lowercase">K</p>
+          <p className="font-script text-4xl text-primary lowercase">m&m</p>
       </footer>
     </div>
   );

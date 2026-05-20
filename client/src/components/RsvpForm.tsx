@@ -96,10 +96,10 @@ export default function RsvpForm({
 
   const cardClassName =
     variant === "page"
-      ? "border border-primary/10 bg-white p-8 md:p-12 editorial-shadow"
+      ? "border border-border bg-background p-8 md:p-12 editorial-shadow"
       : variant === "invitation"
-        ? "border border-white/10 bg-white/95 p-8 md:p-10 editorial-shadow"
-        : "border border-primary/10 bg-white/90 p-8 md:p-12 backdrop-blur-sm editorial-shadow";
+        ? "border border-border bg-background p-8 md:p-10 editorial-shadow"
+        : "border border-border bg-background/90 p-8 md:p-12 backdrop-blur-sm editorial-shadow";
 
   if (submitted) {
     return (
@@ -280,7 +280,7 @@ export default function RsvpForm({
                     {...field}
                     value={field.value || ""}
                     className="min-h-[120px] rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
-                    placeholder="Une bénédiction, une pensée, un mot doux..."
+                    placeholder="Une pensée, un mot doux, un message..."
                   />
                 </FormControl>
                 <FormMessage />

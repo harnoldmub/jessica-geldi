@@ -179,7 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .status(200)
       .set({
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": 'attachment; filename="kecha-rsvp.csv"',
+        "Content-Disposition": 'attachment; filename="mamisa-marylin-rsvp.csv"',
       })
       .send([header.join(","), ...rows].join("\n"));
   });

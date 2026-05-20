@@ -50,7 +50,7 @@ export default function GalleryLightbox({ item, onClose }: GalleryLightboxProps)
             />
             <div className="border border-t-0 border-white/12 bg-white/8 p-6 text-white">
               <p className="text-[10px] uppercase tracking-[0.45em] text-white/60">
-                Kecha Gallery
+                Mamisa & Marylin
               </p>
               <p className="mt-3 font-serif text-2xl">{item.caption}</p>
             </div>

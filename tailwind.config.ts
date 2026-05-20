@@ -7,35 +7,35 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "#FAF9F6", // Luxury Off-white / Ivory
-        foreground: "#1A1A1A", // Near black for text
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
         card: {
-          DEFAULT: "#FFFFFF",
-          foreground: "#1A1A1A",
+          DEFAULT: "hsl(var(--background))",
+          foreground: "hsl(var(--foreground))",
         },
         popover: {
-          DEFAULT: "#FFFFFF",
-          foreground: "#1A1A1A",
+          DEFAULT: "hsl(var(--background))",
+          foreground: "hsl(var(--foreground))",
         },
         primary: {
-          DEFAULT: "#D4AF37", // Elegant Gold
-          foreground: "#FAF9F6",
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          DEFAULT: "#F5F5DC", // Soft Beige
-          foreground: "#1A1A1A",
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
         muted: {
-          DEFAULT: "#F8F8F8",
-          foreground: "#666666",
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "#E5D3B3", // Light Gold/Tan
-          foreground: "#1A1A1A",
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
         },
-        border: "#E2E2E2",
-        input: "#F2F2F2",
-        ring: "#D4AF37",
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
       },
       fontFamily: {
         serif: ["'Cormorant Garamond'", "'Playfair Display'", "serif"],
