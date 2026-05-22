@@ -99,11 +99,11 @@ export default function Admin() {
   const [editingGuestId, setEditingGuestId] = useState<number | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
-  const PAGE_SIZE = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchTerm, statusFilter, invitationFilter]);
+  }, [searchTerm, statusFilter, invitationFilter, pageSize]);
 
   const { data: user, isLoading: isCheckingSession } = useQuery<SafeUser | null>({
     queryKey: ["/api/user"],
@@ -279,10 +279,10 @@ export default function Admin() {
     });
   }, [guests, invitationFilter, searchTerm, statusFilter]);
 
-  const totalPages = Math.ceil(filteredGuests.length / PAGE_SIZE);
+  const totalPages = Math.ceil(filteredGuests.length / pageSize);
   const paginatedGuests = filteredGuests.slice(
-    currentPage * PAGE_SIZE,
-    (currentPage + 1) * PAGE_SIZE,
+    currentPage * pageSize,
+    (currentPage + 1) * pageSize,
   );
 
   async function copyInvitationLink(guest: GuestRecord) {
@@ -910,11 +910,22 @@ export default function Admin() {
           )}
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-between border-t border-primary/8 pt-5">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/40">
-                Page {currentPage + 1} / {totalPages} · {filteredGuests.length} invité{filteredGuests.length > 1 ? "s" : ""}
-              </p>
+          {(totalPages > 1 || filteredGuests.length > 10) && (
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-primary/8 pt-5">
+              <div className="flex items-center gap-3">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/40">
+                  Page {currentPage + 1} / {totalPages} · {filteredGuests.length} invité{filteredGuests.length > 1 ? "s" : ""}
+                </p>
+                <select
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  className="h-9 rounded-none border border-primary/15 bg-transparent px-2 text-[10px] uppercase tracking-[0.25em] text-primary outline-none focus:border-primary"
+                >
+                  <option value={10}>10 / page</option>
+                  <option value={20}>20 / page</option>
+                  <option value={50}>50 / page</option>
+                </select>
+              </div>
               <div className="flex gap-2">
                 <Button
                   type="button"
