@@ -2,10 +2,13 @@ import { Resend } from "resend";
 import { type RsvpResponse } from "@shared/schema";
 import { mamisaMarylin } from "@shared/mamisaMarylin";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function sendRsvpConfirmationEmail(rsvp: RsvpResponse) {
   if (!rsvp.email) return;
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("RESEND_API_KEY not set, skipping email send");
+    return;
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   const html = `
     <div style="font-family: 'Playfair Display', serif; background-color: #F7F7F5; padding: 40px; color: #181818; max-width: 600px; margin: auto; border: 1px solid #7E8990;">
