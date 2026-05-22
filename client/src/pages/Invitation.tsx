@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -6,13 +6,12 @@ import { CalendarDays, Clock, MapPin, ChevronDown } from "lucide-react";
 import { type RsvpResponse } from "@shared/schema";
 import { mamisaMarylin } from "@shared/mamisaMarylin";
 import { Skeleton } from "@/components/ui/skeleton";
-import RsvpForm from "@/components/RsvpForm";
 
 type InvitationGuest = RsvpResponse & { invitationUrl: string };
 
 const reveal = { duration: 1.0, ease: [0.22, 1, 0.36, 1] as const };
 
-/* ─── Ornamental horizontal rule ─────────────────────────── */
+/* ─── Ornamental rule ─────────────────────────────────────── */
 function OrnamentRule({ opacity = 0.5 }: { opacity?: number }) {
   return (
     <div className="flex items-center justify-center gap-5" style={{ opacity }}>
@@ -43,12 +42,9 @@ function InfoCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.5 }}
       transition={{ ...reveal, delay }}
-      className={`p-8 text-center editorial-shadow border ${dark ? 'dark bg-background border-border' : 'bg-background border-border'}`}
+      className={`p-8 text-center editorial-shadow border ${dark ? "dark bg-background border-border" : "bg-background border-border"}`}
     >
-      <Icon
-        className="mx-auto h-5 w-5 text-muted-foreground"
-        strokeWidth={1.4}
-      />
+      <Icon className="mx-auto h-5 w-5 text-muted-foreground" strokeWidth={1.4} />
       <p className="mt-5 text-[9px] uppercase tracking-[0.5em] text-muted-foreground/80">
         {label}
       </p>
@@ -59,24 +55,53 @@ function InfoCard({
   );
 }
 
-/* ─── Theme badge ─────────────────────────────────────────── */
-function ThemeBadge({ theme, note, dark = false }: { theme: string; note: string; dark?: boolean }) {
+/* ─── Theme badge + color swatches ───────────────────────── */
+function ThemeBadge({
+  theme,
+  note,
+  colors,
+  colorNames,
+  dark = false,
+}: {
+  theme: string;
+  note: string;
+  colors: string[];
+  colorNames: string[];
+  dark?: boolean;
+}) {
   return (
-    <div className="mt-7 space-y-2">
+    <div className="mt-7 space-y-5">
       <div
-        className={`inline-flex items-center gap-3 px-6 py-3 border ${dark ? 'border-border bg-background/50' : 'border-border bg-background'}`}
+        className={`inline-flex items-center gap-3 px-6 py-3 border ${
+          dark ? "border-border bg-background/50" : "border-border bg-background"
+        }`}
       >
         <span className="text-[9px] uppercase tracking-[0.52em] text-muted-foreground">
           Thème vestimentaire
         </span>
         <span className="h-4 w-px bg-border" />
-        <span className="font-serif text-sm italic text-foreground">
-          {theme}
-        </span>
+        <span className="font-serif text-sm italic text-foreground">{theme}</span>
       </div>
-      <p className="text-[10px] tracking-wide text-muted-foreground/80">
-        {note}
-      </p>
+
+      {/* Color swatches */}
+      <div className="flex flex-wrap items-start justify-center gap-5">
+        {colors.map((color, i) => {
+          const isGold = color === "#FFD700";
+          return (
+            <div key={i} className="flex flex-col items-center gap-2">
+              <div
+                className={`h-10 w-10 rounded-full shadow-md ring-1 ring-white/20 ${isGold ? "gold-shimmer-swatch" : ""}`}
+                style={isGold ? {} : { backgroundColor: color }}
+              />
+              <p className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground/70">
+                {colorNames[i]}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="text-[10px] tracking-wide text-muted-foreground/80">{note}</p>
     </div>
   );
 }
@@ -85,7 +110,6 @@ function ThemeBadge({ theme, note, dark = false }: { theme: string; note: string
 export default function Invitation() {
   const [, params] = useRoute("/invitation/:token");
   const token = params?.token;
-  const [guestPreview, setGuestPreview] = useState<InvitationGuest | null>(null);
   const heroRef = useRef<HTMLElement | null>(null);
 
   const { data: guest, isLoading, error } = useQuery<InvitationGuest>({
@@ -100,8 +124,6 @@ export default function Invitation() {
   const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "18%"]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.72], [1, 0]);
 
-  const currentGuest = guestPreview || guest;
-
   /* ── Loading ── */
   if (isLoading) {
     return (
@@ -113,7 +135,7 @@ export default function Invitation() {
   }
 
   /* ── Not found ── */
-  if (error || !currentGuest || !token) {
+  if (error || !guest || !token) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-7 p-6 text-center bg-background">
         <OrnamentRule opacity={0.2} />
@@ -137,7 +159,6 @@ export default function Invitation() {
         ref={heroRef}
         className="relative isolate overflow-hidden min-h-[100svh] bg-gradient-to-br from-background via-background to-secondary"
       >
-        {/* Ambient radial */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -145,8 +166,6 @@ export default function Invitation() {
               "radial-gradient(ellipse at 28% 20%, hsl(var(--primary)/0.05) 0%, transparent 48%), radial-gradient(ellipse at 78% 74%, hsl(var(--primary)/0.05) 0%, transparent 44%)",
           }}
         />
-
-        {/* Corner marks */}
         <span className="absolute top-8 left-8 text-xl select-none pointer-events-none text-muted-foreground/30">✦</span>
         <span className="absolute top-8 right-8 text-xl select-none pointer-events-none text-muted-foreground/30">✦</span>
         <span className="absolute bottom-16 left-8 text-xl select-none pointer-events-none text-muted-foreground/20">✦</span>
@@ -156,7 +175,6 @@ export default function Invitation() {
           style={{ y: heroY, opacity: heroOpacity }}
           className="relative mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-8 py-20 text-center"
         >
-          {/* Eyebrow */}
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -166,7 +184,6 @@ export default function Invitation() {
             {mamisaMarylin.hero.eyebrow}
           </motion.p>
 
-          {/* Guest salutation */}
           <motion.div
             initial={{ opacity: 0, y: 22 }}
             animate={{ opacity: 1, y: 0 }}
@@ -176,19 +193,24 @@ export default function Invitation() {
             <p className="font-serif text-base italic text-muted-foreground">
               À l'attention de
             </p>
-            <h1 className="mt-2 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem, 6vw, 3.75rem)" }}>
-              {currentGuest.firstName} {currentGuest.lastName}
+            <h1
+              className="mt-2 font-serif leading-tight text-foreground"
+              style={{ fontSize: "clamp(2rem, 6vw, 3.75rem)" }}
+            >
+              {guest.firstName} {guest.lastName}
             </h1>
           </motion.div>
 
-          {/* Brand + subtitle */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2, delay: 0.55, ease: [0.22, 1, 0.36, 1] }}
             className="mt-10"
           >
-            <p className="font-script leading-tight text-foreground/80" style={{ fontSize: "clamp(3.5rem, 10vw, 6rem)" }}>
+            <p
+              className="font-script leading-tight text-foreground/80"
+              style={{ fontSize: "clamp(3.5rem, 10vw, 6rem)" }}
+            >
               {mamisaMarylin.title}
             </p>
             <p className="mt-3 font-serif text-xl md:text-2xl text-foreground/70">
@@ -196,7 +218,6 @@ export default function Invitation() {
             </p>
           </motion.div>
 
-          {/* Scroll cue */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -212,14 +233,12 @@ export default function Invitation() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          MARIAGE CIVIL
+          MARIAGE CIVIL & BÉNÉDICTION
       ══════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden bg-background">
-        {/* Top fade line */}
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
         <div className="mx-auto max-w-5xl px-6 py-24 md:px-10 md:py-32">
-          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 22 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -230,16 +249,20 @@ export default function Invitation() {
             <p className="text-[9px] uppercase tracking-[0.68em] text-primary">
               ✦ &nbsp; Première partie &nbsp; ✦
             </p>
-            <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}>
+            <h2
+              className="mt-5 font-serif leading-tight text-foreground"
+              style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
+            >
               {mamisaMarylin.ceremony.blessing.label}
             </h2>
             <ThemeBadge
               theme={mamisaMarylin.ceremony.blessing.theme}
               note={mamisaMarylin.ceremony.blessing.themeNote}
+              colors={mamisaMarylin.dresscode.blessing.colors}
+              colorNames={mamisaMarylin.dresscode.blessing.colorNames}
             />
           </motion.div>
 
-          {/* Info cards */}
           <div className="mt-14 grid gap-5 md:grid-cols-3">
             <InfoCard icon={CalendarDays} label="Date" value={mamisaMarylin.date.display} delay={0} />
             <InfoCard icon={Clock} label="Heure" value={mamisaMarylin.ceremony.blessing.time} delay={0.08} />
@@ -251,7 +274,6 @@ export default function Invitation() {
             />
           </div>
 
-          {/* Venue note */}
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -261,15 +283,13 @@ export default function Invitation() {
           >
             {mamisaMarylin.venues[0].note}
           </motion.p>
-
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          CÉRÉMONIE RELIGIEUSE & SOIRÉE
+          SOIRÉE DANSANTE
       ══════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden dark bg-background">
-        {/* Warm ambient glow */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -279,7 +299,6 @@ export default function Invitation() {
         />
 
         <div className="relative mx-auto max-w-5xl px-6 py-24 md:px-10 md:py-32">
-          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 22 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -290,17 +309,21 @@ export default function Invitation() {
             <p className="text-[9px] uppercase tracking-[0.68em] text-primary">
               ✦ &nbsp; Deuxième partie &nbsp; ✦
             </p>
-            <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}>
+            <h2
+              className="mt-5 font-serif leading-tight text-foreground"
+              style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
+            >
               {mamisaMarylin.ceremony.evening.label}
             </h2>
             <ThemeBadge
               theme={mamisaMarylin.ceremony.evening.theme}
               note={mamisaMarylin.ceremony.evening.themeNote}
+              colors={mamisaMarylin.dresscode.evening.colors}
+              colorNames={mamisaMarylin.dresscode.evening.colorNames}
               dark
             />
           </motion.div>
 
-          {/* Info cards */}
           <div className="mt-14 grid gap-5 md:grid-cols-3">
             <InfoCard icon={CalendarDays} label="Date" value={mamisaMarylin.date.display} dark delay={0} />
             <InfoCard icon={Clock} label="Heure" value={mamisaMarylin.ceremony.evening.time} dark delay={0.08} />
@@ -313,7 +336,6 @@ export default function Invitation() {
             />
           </div>
 
-          {/* Venue note */}
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -323,33 +345,16 @@ export default function Invitation() {
           >
             {mamisaMarylin.venues[1].note}
           </motion.p>
-
-          {/* Dress code */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.7 }}
-            transition={{ ...reveal, delay: 0.36 }}
-            className="mt-12 border-t border-border pt-10 text-center"
-          >
-            <p className="text-[9px] uppercase tracking-[0.58em] text-muted-foreground/60">
-              Code vestimentaire
-            </p>
-            <p className="mt-3 font-serif text-2xl italic text-primary/80">
-              {mamisaMarylin.ceremony.evening.dress}
-            </p>
-          </motion.div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          RSVP — Confirmation de présence
+          INFOS INVITÉ — Places réservées
       ══════════════════════════════════════════════════════ */}
       <section className="relative bg-background">
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
-        <div className="mx-auto grid max-w-6xl gap-12 px-6 py-24 md:px-10 md:py-28 lg:grid-cols-[1fr_1.45fr]">
-          {/* Left column */}
+        <div className="mx-auto max-w-3xl px-6 py-24 md:px-10 md:py-28 text-center">
           <motion.div
             initial={{ opacity: 0, y: 22 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -357,81 +362,50 @@ export default function Invitation() {
             transition={reveal}
             className="space-y-8"
           >
+            <OrnamentRule opacity={0.35} />
+
             <div>
               <p className="text-[10px] uppercase tracking-[0.55em] text-primary">
-                Votre réponse
+                Votre place
               </p>
-              <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}>
-                Merci de confirmer votre présence.
+              <h2
+                className="mt-5 font-serif leading-tight text-foreground"
+                style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}
+              >
+                {guest.firstName} {guest.lastName}
               </h2>
-              <p className="mt-6 text-base leading-8 text-muted-foreground">
-                {mamisaMarylin.couple.narrative}
-              </p>
+
+              <div className="mt-6 inline-flex items-center gap-4 border border-border px-6 py-3">
+                <span className="text-[9px] uppercase tracking-[0.45em] text-muted-foreground">
+                  Places réservées
+                </span>
+                <span className="h-4 w-px bg-border" />
+                <span className="font-serif text-2xl text-foreground">
+                  {guest.guestCount || 1}
+                </span>
+              </div>
+
+              {guest.status === "confirmed" && (
+                <p className="mt-6 text-[10px] uppercase tracking-[0.45em] text-emerald-600">
+                  ✓ Présence confirmée
+                </p>
+              )}
             </div>
 
-            {/* Venue list */}
-            <div className="space-y-7">
-              {mamisaMarylin.venues.map((venue) => (
-                <article
-                  key={venue.label}
-                  className="border-l-2 border-border pl-5"
-                >
-                  <p className="text-[9px] uppercase tracking-[0.44em] text-muted-foreground">
-                    {venue.label}
-                  </p>
-                  <p className="mt-2 font-serif text-xl text-foreground">
-                    {venue.name}
-                  </p>
-                  <p className="mt-1 text-sm leading-7 text-muted-foreground/80">
-                    {venue.address}, {venue.city}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </motion.div>
+            <p className="mx-auto max-w-md font-serif text-base italic leading-8 text-muted-foreground">
+              {mamisaMarylin.couple.statement}
+            </p>
 
-          {/* RSVP form */}
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ ...reveal, delay: 0.1 }}
-          >
-            <RsvpForm
-              variant="page"
-              submitEndpoint={`/api/invitation/${token}/rsvp`}
-              initialValues={{
-                firstName: currentGuest.firstName,
-                lastName: currentGuest.lastName,
-                email: currentGuest.email || "",
-                phone: currentGuest.phone || "",
-                status: currentGuest.status as "pending" | "confirmed" | "declined",
-                guestCount: currentGuest.guestCount || 1,
-                message: currentGuest.message || "",
-              }}
-              title="Répondre à votre invitation"
-              description="Vos informations sont pré-remplies. Confirmez ou ajustez votre réponse."
-              submitLabel="Confirmer ma présence"
-              successTitle="Votre réponse est enregistrée"
-              successDescription="Merci. Votre réponse a bien été enregistrée pour le mariage de Mamisa & Marylin."
-              onSubmitted={(updatedGuest) =>
-                setGuestPreview({
-                  ...currentGuest,
-                  ...updatedGuest,
-                  invitationUrl: currentGuest.invitationUrl,
-                })
-              }
-            />
+            <OrnamentRule opacity={0.35} />
           </motion.div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          ÉPILOGUE — Clôture
+          ÉPILOGUE
       ══════════════════════════════════════════════════════ */}
       <footer className="px-6 py-16 text-center bg-secondary border-t border-border">
         <OrnamentRule opacity={0.5} />
-
         <div className="mt-10 mb-10">
           <p className="font-script text-6xl leading-none text-foreground">
             {mamisaMarylin.brand}
@@ -440,10 +414,9 @@ export default function Invitation() {
             {mamisaMarylin.title} · 25 Juillet 2026 · Kinshasa
           </p>
           <p className="mt-7 mx-auto max-w-sm font-serif text-sm italic leading-7 text-muted-foreground/80">
-            {mamisaMarylin.couple.statement}
+            Avec joie, nous vous attendons.
           </p>
         </div>
-
         <OrnamentRule opacity={0.5} />
       </footer>
     </main>
