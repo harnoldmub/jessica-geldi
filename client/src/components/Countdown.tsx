@@ -36,22 +36,22 @@ export default function Countdown({
   ];
 
   return (
-    <div className="flex items-center gap-1">
+    <div className={`flex items-center gap-1 ${dark ? "border border-white/25 bg-black/40 px-3 py-3 text-white shadow-xl backdrop-blur-sm" : ""}`}>
       {units.map((unit, i) => (
         <div key={unit.label} className="flex items-center">
-          <div className="text-center px-3">
+          <div className="px-2 text-center sm:px-3">
             <p
-              className="font-serif tabular-nums leading-none text-foreground"
+              className={`font-serif tabular-nums leading-none ${dark ? "text-white" : "text-foreground"}`}
               style={{ fontSize: "clamp(1.6rem, 4vw, 2.2rem)" }}
             >
               {pad(unit.value)}
             </p>
-            <p className="mt-1 text-[9px] uppercase tracking-[0.45em] text-muted-foreground">
+            <p className={`mt-1 text-[9px] uppercase tracking-[0.32em] ${dark ? "text-white/80" : "text-muted-foreground"}`}>
               {unit.label}
             </p>
           </div>
           {i < units.length - 1 && (
-            <span className="font-serif text-xl pb-4 select-none text-border">
+            <span className={`select-none pb-4 font-serif text-xl ${dark ? "text-white/55" : "text-border"}`}>
               :
             </span>
           )}

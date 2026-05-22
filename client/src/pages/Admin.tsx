@@ -568,7 +568,7 @@ export default function Admin() {
                   <Input
                     type="number"
                     min={1}
-                    max={10}
+                    max={2}
                     value={guestForm.guestCount}
                     onChange={(event) =>
                       setGuestForm((current) => ({

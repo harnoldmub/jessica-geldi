@@ -6,8 +6,12 @@ import RsvpForm from "@/components/RsvpForm";
 import Countdown from "@/components/Countdown";
 
 import heroImg from "../../images/hero.jpeg";
+import img1 from "../../images/img-1.jpeg";
+import img2 from "../../images/img-2.jpeg";
+import img3 from "../../images/img-3.jpeg";
+import img4 from "../../images/img-4.jpeg";
 
-const IMAGES = { hero: heroImg } as Record<string, string>;
+const IMAGES = { hero: heroImg, img1, img2, img3, img4 } as Record<string, string>;
 const rv = { duration: 1.05, ease: [0.22, 1, 0.36, 1] as const };
 
 /* ─── Ornamental rule ─────────────────────────────────────── */
@@ -83,8 +87,15 @@ export default function Home() {
 
         {/* ── MOBILE : image en fond plein écran ── */}
         <div className="absolute inset-0 pointer-events-none md:hidden overflow-hidden">
-          <img src={heroImg} alt={mamisaMarylin.title} className="absolute inset-0 h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/5 to-black/90" />
+          <motion.img
+            src={heroImg}
+            alt={mamisaMarylin.title}
+            className="absolute inset-0 h-full w-full object-cover"
+            initial={{ scale: 1.08, x: "-2%" }}
+            animate={{ scale: [1.08, 1.16, 1.08], x: ["-2%", "2%", "-2%"] }}
+            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/15 to-black/92" />
         </div>
 
         {/* ── DESKTOP : layout côte à côte ── */}
@@ -132,7 +143,7 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 1, delay: 0.6 }}
-              className="mt-2 text-[11px] uppercase tracking-[0.5em] text-foreground/50"
+              className="mt-3 inline-flex w-fit border border-foreground/15 bg-background/70 px-4 py-2 text-[11px] uppercase tracking-[0.38em] text-foreground/80"
             >
               {mamisaMarylin.date.display}
             </motion.p>
@@ -204,7 +215,7 @@ export default function Home() {
           <p className="mt-5 font-script text-white leading-none" style={{ fontSize: "clamp(3.5rem,14vw,5.5rem)" }}>
             {mamisaMarylin.title}
           </p>
-          <p className="mt-3 font-serif text-base text-white/80">
+          <p className="mt-4 border border-white/25 bg-black/35 px-4 py-2 font-serif text-base text-white shadow-xl backdrop-blur-sm">
             {mamisaMarylin.date.display}
           </p>
           <div className="mt-6">
@@ -259,12 +270,12 @@ export default function Home() {
 
                   {/* Image side */}
                   {chapter.image ? (
-                    <div className="overflow-hidden editorial-shadow">
+                    <div className="overflow-hidden editorial-shadow bg-secondary">
                       <motion.img
                         src={IMAGES[chapter.image]}
                         alt={chapter.title}
-                        className="w-full object-cover"
-                        style={{ height: "clamp(280px,40vw,440px)" }}
+                        className="h-full w-full object-contain md:object-cover"
+                        style={{ height: "clamp(360px,70vh,620px)" }}
                         initial={{ scale: 1.08 }}
                         whileInView={{ scale: 1 }}
                         viewport={{ once: true, amount: 0.35 }}
@@ -350,7 +361,7 @@ export default function Home() {
               <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,4.5vw,3rem)" }}>
                 Confirmez votre présence.
               </h2>
-              <p className="mt-5 text-base leading-8 text-muted-foreground">{mamisaMarylin.couple.narrative}</p>
+              <p className="mt-5 text-base leading-8 text-muted-foreground">Une réponse simple suffit : dites-nous si vous serez là, puis choisissez seul(e) ou en couple.</p>
             </div>
 
             <div className="space-y-5">
@@ -369,7 +380,8 @@ export default function Home() {
             <RsvpForm
               variant="invitation"
               title="Répondre à l'invitation"
-              description="Confirmer votre présence, indiquer le nombre de places et vos préférences alimentaires."
+              description="Dites-nous simplement si vous venez. Si oui, choisissez seul(e) ou en couple."
+              submitLabel="Envoyer ma réponse"
               successDescription="Merci. Votre réponse a bien été enregistrée. Nous avons hâte de vous accueillir."
             />
           </motion.div>

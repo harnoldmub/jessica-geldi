@@ -86,7 +86,7 @@ export const insertRsvpSchema = createInsertSchema(rsvpResponses, {
   firstName: (schema) => schema.min(1, "Prénom requis"),
   lastName: (schema) => schema.min(1, "Nom requis"),
   status: () => z.enum(["pending", "confirmed", "declined"]).default("confirmed"),
-  guestCount: (schema) => schema.min(1, "Au moins 1 personne").max(10),
+  guestCount: (schema) => schema.min(1, "Au moins 1 personne").max(2, "Maximum 2 personnes"),
 }).omit({
   token: true,
   invitationSentAt: true,

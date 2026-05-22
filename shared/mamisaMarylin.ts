@@ -6,7 +6,7 @@ export const mamisaMarylin = {
   date: {
     display: "Samedi 25 Juillet 2026",
     iso: "2026-07-25",
-    time: "Mariage civil le matin · Cérémonie religieuse le soir",
+    time: "Mariage civil 9h · Soirée dansante 18h30",
   },
   ceremony: {
     blessing: {
@@ -34,28 +34,34 @@ export const mamisaMarylin = {
       "Le 25 juillet, nous célébrerons notre union entourés des personnes qui comptent pour nous. Une journée simple, belle et colorée, à partager avec vous.",
   },
   hero: {
-    eyebrow: "Invitation officielle · Kinshasa",
+    eyebrow: "Invitation officielle",
     image: "/images/hero.jpeg",
     youtubeId: "",
   },
   story: [
     {
-      period: "Notre union",
-      title: "Une journée pensée pour rassembler",
-      body: "Mamisa et Marylin souhaitent vivre cette célébration dans la joie, la foi et la simplicité, entourés de leurs familles et de leurs proches.",
-      image: null as null | string,
+      period: "La rencontre",
+      title: "Deux personnes, un commencement",
+      body: "Nous nous sommes rencontrés, et cette rencontre est devenue le début de notre histoire, écrite avec douceur, sincérité et amour.",
+      image: "img4" as null | string,
     },
     {
-      period: "Le matin",
-      title: "Le mariage civil",
-      body: "La journée commencera par le mariage civil, un moment intime et officiel pour marquer le premier temps fort de cette union.",
-      image: "hero" as null | string,
+      period: "Le chemin",
+      title: "Une histoire jour après jour",
+      body: "Au fil du temps, notre lien s'est construit dans les gestes simples, les regards complices et la volonté de choisir l'amour chaque jour.",
+      image: "img2" as null | string,
     },
     {
-      period: "Le soir",
-      title: "La soirée dansante",
-      body: "Le soir, la fête réunira tous les invités dans une atmosphère chaleureuse, lumineuse et colorée.",
-      image: null as null | string,
+      period: "Les épreuves",
+      title: "Un amour qui demeure",
+      body: "Malgré les épreuves, même les plus difficiles, notre amour n'a pas péri. Il a tenu bon, porté par la patience, la confiance et la foi.",
+      image: "img3" as null | string,
+    },
+    {
+      period: "La décision",
+      title: "Construire selon Ses voies",
+      body: "La grâce du Seigneur a fortifié notre lien et nous a conduits jusqu'à cette belle décision : construire notre vie ensemble selon Ses voies.",
+      image: "img1" as null | string,
     },
   ],
   programme: [
@@ -76,17 +82,17 @@ export const mamisaMarylin = {
     blessing: {
       label: "Mariage civil",
       theme: "Color",
-      description: "Le thème de la journée est coloré : rose, orange, vert, etc.",
+      description: "Le thème de la journée civile est coloré : rose, orange, vert, etc.",
       colors: ["#E8B4B8", "#E2856E", "#7A8B76"],
-      colorNames: ["Rose poudré", "Terracotta", "Vert sauge"],
+      colorNames: ["Rose poudré", "Orange doux", "Vert"],
       forbidden: "",
     },
     evening: {
       label: "Soirée dansante",
       theme: "Glamour",
-      description: "Le thème de la soirée est glamour : noir, rouge et dorée.",
+      description: "Le thème de la soirée dansante est glamour : noir, rouge et dorée.",
       colors: ["#111111", "#8B0000", "#B89B72"],
-      colorNames: ["Noir profond", "Rouge intense", "Or Champagne"],
+      colorNames: ["Noir", "Rouge", "Dorée"],
       forbidden: "",
     },
   },
@@ -125,11 +131,11 @@ export const mamisaMarylin = {
     },
     {
       q: "Le dress code est-il strict ?",
-      a: "Non. Le thème de la soirée est coloré autour du bleu pâle, du jaune et du rose, mais chacun reste libre de porter ce qui lui semble bien.",
+      a: "Le mariage civil est sur le thème Color : rose, orange, vert, etc. La soirée dansante est sur le thème Glamour : noir, rouge et dorée.",
     },
     {
       q: "À quelle heure dois-je arriver ?",
-      a: "Le mariage civil aura lieu le matin et la cérémonie religieuse le soir. Les horaires détaillés seront communiqués avec votre invitation.",
+      a: "Le mariage civil aura lieu à 9h et la soirée dansante commencera à 18h30. Les horaires détaillés seront communiqués avec votre invitation.",
     },
     {
       q: "Comment accéder au lieu ?",
@@ -142,13 +148,6 @@ export const mamisaMarylin = {
     {
       q: "Que faire si je ne peux pas venir ?",
       a: "Votre présence nous tient profondément à cœur. Si vous ne pouvez malheureusement pas être parmi nous, merci de le signaler via le formulaire RSVP dans les meilleurs délais.",
-    },
-  ],
-  gallery: [
-    {
-      src: "hero",
-      alt: "Mamisa & Marylin",
-      caption: "Mamisa & Marylin.",
     },
   ],
 };
