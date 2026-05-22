@@ -9,13 +9,14 @@ import Home from "@/pages/Home";
 import RSVP from "@/pages/RSVP";
 import Invitation from "@/pages/Invitation";
 import Admin from "@/pages/Admin";
+import CheckIn from "@/pages/CheckIn";
 import NotFound from "@/pages/NotFound";
 
 const SITE_ACCESS_CODE = "LoveMM2026";
 const SITE_ACCESS_STORAGE_KEY = "mamisa-marylin-site-access";
 
 function SiteAccessGate({ children }: { children: React.ReactNode }) {
-  const isAdminRoute = window.location.pathname === "/admin" || window.location.pathname === "/accueil";
+  const isAdminRoute = window.location.pathname === "/admin" || window.location.pathname === "/accueil" || window.location.pathname === "/checkin";
   const [isUnlocked, setIsUnlocked] = useState(isAdminRoute);
   const [accessCode, setAccessCode] = useState("");
   const [error, setError] = useState("");
@@ -91,6 +92,7 @@ function Router() {
       <Route path="/invitation/:token" component={Invitation} />
       <Route path="/admin" component={Admin} />
       <Route path="/accueil" component={Admin} />
+      <Route path="/checkin" component={CheckIn} />
       <Route component={NotFound} />
     </Switch>
   );

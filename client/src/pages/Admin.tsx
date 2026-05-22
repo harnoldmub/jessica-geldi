@@ -8,13 +8,16 @@ import {
   Loader2,
   LockKeyhole,
   LogOut,
+  MessageCircle,
   Pencil,
   RefreshCw,
   Search,
   ShieldCheck,
   Trash2,
+  UserCheck,
   UserPlus,
   Users,
+  XCircle,
 } from "lucide-react";
 import { Link } from "wouter";
 import {
@@ -28,14 +31,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 type GuestRecord = RsvpResponse & {
   invitationUrl?: string;
@@ -215,6 +210,17 @@ export default function Admin() {
     },
   });
 
+  const declineMutation = useMutation({
+    mutationFn: async (guestId: number) => {
+      const response = await apiRequest("PATCH", `/api/admin/guests/${guestId}`, { status: "declined" });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
+      toast({ title: "Invité marqué comme indisponible" });
+    },
+  });
+
   const stats = {
     totalInvites: guests.length,
     pendingInvites: guests.filter((guest) => guest.status === "pending").length,
@@ -265,6 +271,20 @@ export default function Admin() {
     toast({
       title: "Lien copié",
       description: "Le lien d'invitation est prêt à être partagé et l'envoi a été enregistré.",
+    });
+  }
+
+  function shareViaWhatsApp(guest: GuestRecord) {
+    const url =
+      guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`;
+    const message =
+      `Bonjour ${guest.firstName} 👋\n\n` +
+      `Nous avons la joie de vous inviter au mariage de *Mamisa & Marylin*, le *25 juillet 2026* à Kinshasa.\n\n` +
+      `Voici votre invitation personnelle :\n${url}\n\n` +
+      `Avec joie de vous avoir parmi nous 💍`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
+    apiRequest("POST", `/api/admin/guests/${guest.id}/mark-sent`).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
     });
   }
 
@@ -410,6 +430,17 @@ export default function Admin() {
           </div>
 
           <div className="flex flex-wrap gap-3">
+            <Button
+              asChild
+              type="button"
+              variant="outline"
+              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
+            >
+              <a href="/checkin" target="_blank" rel="noreferrer">
+                <UserCheck className="mr-2 h-4 w-4" strokeWidth={1.6} />
+                Page check-in
+              </a>
+            </Button>
             <Button
               type="button"
               variant="outline"
@@ -683,170 +714,162 @@ export default function Admin() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" strokeWidth={1.5} />
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-primary/10">
-                      <TableHead className="text-[10px] uppercase tracking-[0.3em] text-primary/70">
-                        Invité
-                      </TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-[0.3em] text-primary/70">
-                        RSVP
-                      </TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-[0.3em] text-primary/70">
-                        Invitation
-                      </TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-[0.3em] text-primary/70">
-                        Lien
-                      </TableHead>
-                      <TableHead className="text-right text-[10px] uppercase tracking-[0.3em] text-primary/70">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredGuests.map((guest) => (
-                      <TableRow key={guest.id} className="border-primary/10 align-top">
-                        <TableCell className="min-w-[220px] py-6">
-                          <p className="font-serif text-xl text-foreground">
-                            {guest.firstName} {guest.lastName}
-                          </p>
-                          <p className="mt-2 text-sm leading-7 text-foreground/65">
-                            {guest.email || "Aucun email"} · {guest.phone || "Aucun téléphone"}
-                          </p>
-                          <p className="mt-2 text-[10px] uppercase tracking-[0.35em] text-foreground/40">
-                            Créé le{" "}
-                            {guest.createdAt
-                              ? format(new Date(guest.createdAt), "d MMM yyyy", { locale: fr })
-                              : "-"}
-                          </p>
-                        </TableCell>
-
-                        <TableCell className="min-w-[190px] py-6">
-                          <Badge
-                            variant="outline"
-                            className={`rounded-none border-0 px-3 py-1 text-[10px] uppercase tracking-[0.25em] ${
-                              guest.status === "confirmed"
-                                ? "bg-emerald-50 text-emerald-700"
-                                : guest.status === "declined"
-                                  ? "bg-rose-50 text-rose-700"
-                                  : "bg-amber-50 text-amber-700"
-                            }`}
-                          >
-                            {guest.status === "confirmed"
-                              ? "Confirmé"
+              <div className="flex flex-col gap-4">
+                {filteredGuests.map((guest) => (
+                  <article
+                    key={guest.id}
+                    className="border border-primary/10 bg-white p-4 md:p-5 editorial-shadow"
+                  >
+                    {/* Top row: name + status badge */}
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="space-y-1 min-w-0">
+                        <p className="font-serif text-xl text-foreground leading-tight">
+                          {guest.firstName} {guest.lastName}
+                        </p>
+                        <p className="text-sm text-foreground/55 truncate">
+                          {guest.email || "—"} · {guest.phone || "—"}
+                        </p>
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/35">
+                          {guest.guestCount} place{guest.guestCount > 1 ? "s" : ""} ·{" "}
+                          {guest.createdAt
+                            ? format(new Date(guest.createdAt), "d MMM yyyy", { locale: fr })
+                            : "—"}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <Badge
+                          variant="outline"
+                          className={`rounded-none border-0 px-3 py-1 text-[10px] uppercase tracking-[0.25em] ${
+                            guest.status === "confirmed"
+                              ? "bg-emerald-50 text-emerald-700"
                               : guest.status === "declined"
-                                ? "Décliné"
-                                : "En attente"}
-                          </Badge>
-                          <p className="mt-3 text-sm leading-7 text-foreground/65">
-                            {guest.guestCount} place{guest.guestCount > 1 ? "s" : ""}
-                          </p>
-                          {guest.checkedInAt ? (
-                            <p className="text-[10px] uppercase tracking-[0.35em] text-primary/60">
-                              Check-in effectué
-                            </p>
-                          ) : null}
-                        </TableCell>
-
-                        <TableCell className="min-w-[170px] py-6">
+                                ? "bg-rose-50 text-rose-700"
+                                : "bg-amber-50 text-amber-700"
+                          }`}
+                        >
+                          {guest.status === "confirmed"
+                            ? "Confirmé"
+                            : guest.status === "declined"
+                              ? "Décliné"
+                              : "En attente"}
+                        </Badge>
+                        {guest.checkedInAt && (
                           <Badge
                             variant="outline"
-                            className={`rounded-none border-0 px-3 py-1 text-[10px] uppercase tracking-[0.25em] ${
-                              guest.invitationStatus === "sent"
-                                ? "bg-stone-100 text-stone-700"
-                                : "bg-[#ECEFF1] text-[#5F6870]"
-                            }`}
+                            className="rounded-none border-0 px-3 py-0.5 text-[9px] uppercase tracking-[0.2em] bg-primary/5 text-primary"
                           >
-                            {guest.invitationStatus === "sent" ? "Envoyée" : "Brouillon"}
+                            Check-in ✓
                           </Badge>
-                          <p className="mt-3 text-sm leading-7 text-foreground/65">
-                            {guest.invitationSentAt
-                              ? format(new Date(guest.invitationSentAt), "d MMM yyyy, HH:mm", {
-                                  locale: fr,
-                                })
-                              : "Pas encore partagée"}
-                          </p>
-                        </TableCell>
+                        )}
+                      </div>
+                    </div>
 
-                        <TableCell className="min-w-[240px] py-6">
-                          <div className="space-y-3">
-                            <p className="line-clamp-3 break-all text-sm leading-7 text-foreground/65">
-                              {guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`}
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={() => copyInvitationLink(guest)}
-                                className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
-                              >
-                                <Copy className="mr-2 h-3.5 w-3.5" strokeWidth={1.6} />
-                                Copier
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={() => regenerateLinkMutation.mutate(guest.id)}
-                                className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
-                              >
-                                <RefreshCw className="mr-2 h-3.5 w-3.5" strokeWidth={1.6} />
-                                Régénérer
-                              </Button>
-                            </div>
-                          </div>
-                        </TableCell>
+                    {/* Invitation status row */}
+                    <div className="mt-3 pt-3 border-t border-primary/5 flex items-center gap-3 flex-wrap">
+                      <Badge
+                        variant="outline"
+                        className={`rounded-none border-0 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] ${
+                          guest.invitationStatus === "sent"
+                            ? "bg-stone-100 text-stone-700"
+                            : "bg-[#ECEFF1] text-[#5F6870]"
+                        }`}
+                      >
+                        {guest.invitationStatus === "sent" ? "Envoyée" : "Brouillon"}
+                      </Badge>
+                      {guest.invitationSentAt && (
+                        <span className="text-[10px] text-foreground/40">
+                          {format(new Date(guest.invitationSentAt), "d MMM, HH:mm", { locale: fr })}
+                        </span>
+                      )}
+                      <span className="ml-auto text-[10px] text-foreground/35 truncate max-w-[180px] hidden sm:block">
+                        {guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`}
+                      </span>
+                    </div>
 
-                        <TableCell className="py-6 text-right">
-                          <div className="flex flex-wrap justify-end gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => startEditingGuest(guest)}
-                              className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
-                            >
-                              <Pencil className="mr-2 h-3.5 w-3.5" strokeWidth={1.6} />
-                              Modifier
-                            </Button>
-                            {!guest.checkedInAt && guest.status === "confirmed" ? (
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => checkInMutation.mutate(guest.id)}
-                                className="rounded-none bg-primary text-[10px] uppercase tracking-[0.25em] text-primary-foreground hover:bg-foreground"
-                              >
-                                Check-in
-                              </Button>
-                            ) : null}
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => deleteGuestMutation.mutate(guest.id)}
-                              className="rounded-none border-rose-200 text-[10px] uppercase tracking-[0.25em] text-rose-700 hover:bg-rose-50"
-                            >
-                              <Trash2 className="mr-2 h-3.5 w-3.5" strokeWidth={1.6} />
-                              Supprimer
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {/* Actions */}
+                    <div className="mt-3 pt-3 border-t border-primary/5 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => shareViaWhatsApp(guest)}
+                        className="rounded-none border-green-200 text-[10px] uppercase tracking-[0.25em] text-green-700 hover:bg-green-50"
+                      >
+                        <MessageCircle className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => copyInvitationLink(guest)}
+                        className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
+                      >
+                        <Copy className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                        Copier
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => regenerateLinkMutation.mutate(guest.id)}
+                        className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
+                      >
+                        <RefreshCw className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                        Régénérer
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => startEditingGuest(guest)}
+                        className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
+                      >
+                        <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                        Modifier
+                      </Button>
+                      {!guest.checkedInAt && guest.status === "confirmed" && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => checkInMutation.mutate(guest.id)}
+                          className="rounded-none bg-primary text-[10px] uppercase tracking-[0.25em] text-primary-foreground hover:bg-foreground"
+                        >
+                          <UserCheck className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                          Check-in
+                        </Button>
+                      )}
+                      {guest.status !== "declined" && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => declineMutation.mutate(guest.id)}
+                          className="rounded-none border-orange-200 text-[10px] uppercase tracking-[0.25em] text-orange-700 hover:bg-orange-50"
+                        >
+                          <XCircle className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                          Indispo.
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => deleteGuestMutation.mutate(guest.id)}
+                        className="rounded-none border-rose-200 text-[10px] uppercase tracking-[0.25em] text-rose-700 hover:bg-rose-50"
+                      >
+                        <Trash2 className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                        Supprimer
+                      </Button>
+                    </div>
+                  </article>
+                ))}
 
-                    {filteredGuests.length === 0 ? (
-                      <TableRow className="border-primary/10">
-                        <TableCell colSpan={5} className="py-16 text-center">
-                          <p className="font-serif text-2xl text-foreground/55">
-                            Aucun invité ne correspond à cette recherche.
-                          </p>
-                        </TableCell>
-                      </TableRow>
-                    ) : null}
-                  </TableBody>
-                </Table>
+                {filteredGuests.length === 0 && (
+                  <p className="py-16 text-center font-serif text-2xl text-foreground/55">
+                    Aucun invité ne correspond à cette recherche.
+                  </p>
+                )}
               </div>
             )}
           </article>

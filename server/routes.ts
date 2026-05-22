@@ -246,8 +246,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendStatus(204);
   });
 
-  // Admin: Check-in
+  // Admin: Check-in (requires full admin auth)
   app.patch("/api/rsvp/:id/check-in", requireAuth, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const guest = await storage.checkInGuest(id);
+    res.json(guest);
+  });
+
+  // ── Check-in page endpoints (protected by a lighter code) ──────────────
+  const CHECKIN_CODE = "MMCheckin2026";
+
+  function requireCheckinCode(req: Request, res: Response, next: NextFunction) {
+    const code = req.headers["x-checkin-code"];
+    if (code !== CHECKIN_CODE) {
+      return res.status(401).json({ message: "Code d'accès check-in invalide" });
+    }
+    return next();
+  }
+
+  // Get confirmed guests only (for the check-in page)
+  app.get("/api/checkin/guests", requireCheckinCode, async (_req, res) => {
+    const guests = await storage.getAllRsvps();
+    res.json(guests.filter((g) => g.status === "confirmed"));
+  });
+
+  // Check-in a guest via the check-in page
+  app.patch("/api/checkin/:id/check-in", requireCheckinCode, async (req, res) => {
     const id = parseInt(req.params.id);
     const guest = await storage.checkInGuest(id);
     res.json(guest);
