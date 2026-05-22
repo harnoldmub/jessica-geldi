@@ -10,11 +10,11 @@ export const mamisaMarylin = {
   },
   ceremony: {
     blessing: {
-      label: "Mariage civil",
+      label: "Mariage civil & Bénédiction nuptiale",
       time: "09h00",
       theme: "Color",
-      themeNote: "Rose, orange, vert, etc.",
-      dress: "Rose, orange, vert, etc.",
+      themeNote: "Rose, orange, vert, jaune, etc.",
+      dress: "Rose, orange, vert, jaune, etc.",
     },
     evening: {
       label: "Soirée dansante",
@@ -67,7 +67,7 @@ export const mamisaMarylin = {
   programme: [
     {
       time: "09h00",
-      title: "Mariage civil",
+      title: "Mariage civil & Bénédiction nuptiale",
       body: "Union civile de Mamisa et Marylin, entourés de leurs proches.",
       theme: "blessing" as "blessing" | "evening",
     },
@@ -80,29 +80,29 @@ export const mamisaMarylin = {
   ],
   dresscode: {
     blessing: {
-      label: "Mariage civil",
+      label: "Mariage civil & Bénédiction nuptiale",
       theme: "Color",
-      description: "Le thème de la journée civile est coloré : rose, orange, vert, etc.",
-      colors: ["#E8B4B8", "#E2856E", "#7A8B76"],
-      colorNames: ["Rose poudré", "Orange doux", "Vert"],
+      description: "Le thème de la journée est coloré : rose, orange, vert, jaune, etc.",
+      colors: ["#E8B4B8", "#E2856E", "#7A8B76", "#F5C518"],
+      colorNames: ["Rose poudré", "Orange doux", "Vert", "Jaune"],
       forbidden: "",
     },
     evening: {
       label: "Soirée dansante",
       theme: "Glamour",
-      description: "Le thème de la soirée dansante est glamour : noir, rouge et dorée.",
-      colors: ["#111111", "#8B0000", "#B89B72"],
-      colorNames: ["Noir", "Rouge", "Dorée"],
+      description: "Le thème de la soirée dansante est glamour : noir, rouge, dorée et or brillant.",
+      colors: ["#111111", "#8B0000", "#B89B72", "#FFD700"],
+      colorNames: ["Noir", "Rouge", "Dorée", "Or brillant"],
       forbidden: "",
     },
   },
   venues: [
     {
-      label: "Mariage civil",
+      label: "Mariage civil & Bénédiction nuptiale",
       name: "GB Oua, Ex shoprite au jardin",
       address: "GB Oua",
       city: "Kinshasa",
-      note: "Le mariage civil aura lieu dans ce cadre magnifique.",
+      note: "Le mariage civil et la bénédiction nuptiale auront lieu dans ce cadre magnifique.",
       theme: "blessing" as "blessing" | "evening",
       mapsUrl: "https://maps.google.com/?q=Kinshasa+GB+Oua",
     },
@@ -131,7 +131,7 @@ export const mamisaMarylin = {
     },
     {
       q: "Le dress code est-il strict ?",
-      a: "Le mariage civil est sur le thème Color : rose, orange, vert, etc. La soirée dansante est sur le thème Glamour : noir, rouge et dorée.",
+      a: "Le mariage civil & bénédiction nuptiale est sur le thème Color : rose, orange, vert, jaune, etc. La soirée dansante est sur le thème Glamour : noir, rouge, dorée et or brillant.",
     },
     {
       q: "À quelle heure dois-je arriver ?",

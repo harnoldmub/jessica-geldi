@@ -485,11 +485,18 @@ export default function Home() {
                 <div className="mt-6 flex gap-2 flex-wrap">
                   {dc.colors.map((color, i) => (
                     <div key={color} className="group relative">
-                      <div
-                        className="h-9 w-9 border border-foreground/20"
-                        style={{ background: color }}
-                        title={dc.colorNames[i]}
-                      />
+                      {color === '#FFD700' ? (
+                        <div
+                          className="h-9 w-9 border border-yellow-400/60 gold-shimmer-swatch"
+                          title={dc.colorNames[i]}
+                        />
+                      ) : (
+                        <div
+                          className="h-9 w-9 border border-foreground/20"
+                          style={{ background: color }}
+                          title={dc.colorNames[i]}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>

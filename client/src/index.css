@@ -93,6 +93,18 @@
   animation: floatUp 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* ─── Gold shimmer swatch ────────────────────────────────── */
+@keyframes goldShimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.gold-shimmer-swatch {
+  background: linear-gradient(135deg, #C9A227, #FFD700, #FFF8DC, #F0C040, #D4AF37, #FFD700);
+  background-size: 300% 300%;
+  animation: goldShimmer 2s ease-in-out infinite;
+}
+
 /* ─── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 4px;
