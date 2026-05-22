@@ -100,6 +100,8 @@ export default function Admin() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  const [msgPage, setMsgPage] = useState(0);
+  const MSG_PAGE_SIZE = 9;
 
   useEffect(() => {
     setCurrentPage(0);
@@ -509,59 +511,6 @@ export default function Admin() {
           ))}
         </section>
 
-        {guests.some((g) => g.message) && (
-          <section className="border border-primary/10 bg-white p-6 editorial-shadow md:p-8">
-            <div className="mb-6">
-              <p className="text-[11px] uppercase tracking-[0.45em] text-primary/60">
-                Mots pour les mariés
-              </p>
-              <h2 className="mt-3 font-serif text-3xl text-foreground md:text-4xl">
-                Messages des invités
-              </h2>
-              <p className="mt-2 text-sm text-foreground/55">
-                {guests.filter((g) => g.message).length} message
-                {guests.filter((g) => g.message).length > 1 ? "s" : ""} reçu
-                {guests.filter((g) => g.message).length > 1 ? "s" : ""}
-              </p>
-            </div>
-            <div className="columns-1 gap-4 sm:columns-2 xl:columns-3">
-              {guests
-                .filter((g) => g.message)
-                .map((guest) => (
-                  <blockquote
-                    key={guest.id}
-                    className="mb-4 break-inside-avoid border border-primary/8 bg-[#FAFAF8] p-5 space-y-3"
-                  >
-                    <p className="font-serif text-base leading-7 text-foreground/80 italic">
-                      "{guest.message}"
-                    </p>
-                    <footer className="flex items-center justify-between gap-2 pt-2 border-t border-primary/8">
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/45">
-                        {guest.firstName} {guest.lastName}
-                      </p>
-                      <Badge
-                        variant="outline"
-                        className={`rounded-none border-0 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] ${
-                          guest.status === "confirmed"
-                            ? "bg-emerald-50 text-emerald-700"
-                            : guest.status === "declined"
-                              ? "bg-rose-50 text-rose-700"
-                              : "bg-amber-50 text-amber-700"
-                        }`}
-                      >
-                        {guest.status === "confirmed"
-                          ? "Confirmé"
-                          : guest.status === "declined"
-                            ? "Décliné"
-                            : "En attente"}
-                      </Badge>
-                    </footer>
-                  </blockquote>
-                ))}
-            </div>
-          </section>
-        )}
-
         {/* ── Modale ajout / modification ────────────────────────────────── */}
         <Dialog
           open={isFormOpen}
@@ -967,6 +916,107 @@ export default function Admin() {
             </div>
           )}
         </section>
+
+        {/* ── Messages des invités (en bas, paginés) ─────────────────────── */}
+        {guests.some((g) => g.message) && (() => {
+          const allMessages = guests.filter((g) => g.message);
+          const totalMsgPages = Math.ceil(allMessages.length / MSG_PAGE_SIZE);
+          const pagedMessages = allMessages.slice(
+            msgPage * MSG_PAGE_SIZE,
+            (msgPage + 1) * MSG_PAGE_SIZE,
+          );
+          return (
+            <section className="border border-primary/10 bg-white p-6 editorial-shadow md:p-8">
+              <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.45em] text-primary/60">
+                    Mots pour les mariés
+                  </p>
+                  <h2 className="mt-3 font-serif text-3xl text-foreground md:text-4xl">
+                    Messages des invités
+                  </h2>
+                  <p className="mt-2 text-sm text-foreground/55">
+                    {allMessages.length} message{allMessages.length > 1 ? "s" : ""} reçu{allMessages.length > 1 ? "s" : ""}
+                  </p>
+                </div>
+                {totalMsgPages > 1 && (
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/40 shrink-0">
+                    Page {msgPage + 1} / {totalMsgPages}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {pagedMessages.map((guest) => (
+                  <blockquote
+                    key={guest.id}
+                    className="border border-primary/8 bg-[#FAFAF8] p-5 space-y-3 flex flex-col"
+                  >
+                    <p className="font-serif text-base leading-7 text-foreground/80 italic flex-1">
+                      "{guest.message}"
+                    </p>
+                    <footer className="flex items-center justify-between gap-2 pt-3 border-t border-primary/8">
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/45">
+                        {guest.firstName} {guest.lastName}
+                      </p>
+                      <Badge
+                        variant="outline"
+                        className={`rounded-none border-0 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] ${
+                          guest.status === "confirmed"
+                            ? "bg-emerald-50 text-emerald-700"
+                            : guest.status === "declined"
+                              ? "bg-rose-50 text-rose-700"
+                              : "bg-amber-50 text-amber-700"
+                        }`}
+                      >
+                        {guest.status === "confirmed"
+                          ? "Confirmé"
+                          : guest.status === "declined"
+                            ? "Décliné"
+                            : "En attente"}
+                      </Badge>
+                    </footer>
+                  </blockquote>
+                ))}
+              </div>
+
+              {totalMsgPages > 1 && (
+                <div className="mt-6 flex items-center justify-end gap-2 border-t border-primary/8 pt-5">
+                  <Button
+                    type="button" variant="outline" size="sm"
+                    onClick={() => setMsgPage((p) => p - 1)}
+                    disabled={msgPage === 0}
+                    className="rounded-none border-primary/15 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
+                  >
+                    <ChevronLeft className="h-4 w-4" strokeWidth={1.6} />
+                  </Button>
+                  {Array.from({ length: totalMsgPages }, (_, i) => (
+                    <Button
+                      key={i} type="button" size="sm"
+                      variant={i === msgPage ? "default" : "outline"}
+                      onClick={() => setMsgPage(i)}
+                      className={`rounded-none px-4 py-5 text-[10px] uppercase tracking-[0.25em] ${
+                        i === msgPage
+                          ? "bg-primary text-primary-foreground hover:bg-foreground"
+                          : "border-primary/15 text-primary hover:bg-primary/5"
+                      }`}
+                    >
+                      {i + 1}
+                    </Button>
+                  ))}
+                  <Button
+                    type="button" variant="outline" size="sm"
+                    onClick={() => setMsgPage((p) => p + 1)}
+                    disabled={msgPage >= totalMsgPages - 1}
+                    className="rounded-none border-primary/15 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
+                  >
+                    <ChevronRight className="h-4 w-4" strokeWidth={1.6} />
+                  </Button>
+                </div>
+              )}
+            </section>
+          );
+        })()}
       </div>
     </main>
   );
