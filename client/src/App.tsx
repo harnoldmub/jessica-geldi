@@ -16,7 +16,7 @@ const SITE_ACCESS_CODE = "LoveMM2026";
 const SITE_ACCESS_STORAGE_KEY = "mamisa-marylin-site-access";
 
 function SiteAccessGate({ children }: { children: React.ReactNode }) {
-  const isAdminRoute = window.location.pathname === "/admin" || window.location.pathname === "/accueil" || window.location.pathname === "/checkin";
+  const isAdminRoute = window.location.pathname === "/admin" || window.location.pathname === "/accueil" || window.location.pathname === "/checkin" || window.location.pathname.startsWith("/invitation/");
   const [isUnlocked, setIsUnlocked] = useState(isAdminRoute);
   const [accessCode, setAccessCode] = useState("");
   const [error, setError] = useState("");
