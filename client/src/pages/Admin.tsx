@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Download,
   Loader2,
@@ -31,6 +33,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type GuestRecord = RsvpResponse & {
   invitationUrl?: string;
@@ -88,6 +97,13 @@ export default function Admin() {
   });
   const [guestForm, setGuestForm] = useState<GuestFormState>(emptyGuestForm);
   const [editingGuestId, setEditingGuestId] = useState<number | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const PAGE_SIZE = 10;
+
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchTerm, statusFilter, invitationFilter]);
 
   const { data: user, isLoading: isCheckingSession } = useQuery<SafeUser | null>({
     queryKey: ["/api/user"],
@@ -155,6 +171,7 @@ export default function Admin() {
       });
       setGuestForm(emptyGuestForm);
       setEditingGuestId(null);
+      setIsFormOpen(false);
     },
     onError: (error: Error) => {
       toast({
@@ -262,6 +279,12 @@ export default function Admin() {
     });
   }, [guests, invitationFilter, searchTerm, statusFilter]);
 
+  const totalPages = Math.ceil(filteredGuests.length / PAGE_SIZE);
+  const paginatedGuests = filteredGuests.slice(
+    currentPage * PAGE_SIZE,
+    (currentPage + 1) * PAGE_SIZE,
+  );
+
   async function copyInvitationLink(guest: GuestRecord) {
     const invitationUrl =
       guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`;
@@ -300,6 +323,7 @@ export default function Admin() {
       mealChoice: guest.mealChoice || "",
       message: guest.message || "",
     });
+    setIsFormOpen(true);
   }
 
   if (isCheckingSession) {
@@ -538,150 +562,111 @@ export default function Admin() {
           </section>
         )}
 
-        <section className="grid gap-8 xl:grid-cols-[0.92fr_1.08fr]">
-          <article className="border border-primary/10 bg-white p-6 editorial-shadow md:p-8">
-            <div className="mb-8">
-              <p className="text-[11px] uppercase tracking-[0.45em] text-primary/60">
+        {/* ── Modale ajout / modification ────────────────────────────────── */}
+        <Dialog
+          open={isFormOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setGuestForm(emptyGuestForm);
+              setEditingGuestId(null);
+            }
+            setIsFormOpen(open);
+          }}
+        >
+          <DialogContent className="max-w-xl p-0 flex flex-col max-h-[92vh]">
+            <DialogHeader className="shrink-0">
+              <p className="text-[10px] uppercase tracking-[0.4em] text-primary/55">
                 {editingGuestId ? "Modifier l'invité" : "Ajouter un invité"}
               </p>
-              <h2 className="mt-3 font-serif text-3xl text-foreground md:text-4xl">
-                {editingGuestId
-                  ? "Mettez à jour les informations et le RSVP"
-                  : "Créer une invitation personnalisée"}
-              </h2>
-            </div>
+              <DialogTitle>
+                {editingGuestId ? "Mettre à jour" : "Créer une invitation"}
+              </DialogTitle>
+            </DialogHeader>
 
             <form
-              className="space-y-5"
+              className="flex flex-col flex-1 overflow-y-auto"
               onSubmit={(event) => {
                 event.preventDefault();
                 saveGuestMutation.mutate();
               }}
             >
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">
-                    Prénom
-                  </label>
-                  <Input
-                    value={guestForm.firstName}
-                    onChange={(event) =>
-                      setGuestForm((current) => ({
-                        ...current,
-                        firstName: event.target.value,
-                      }))
-                    }
-                    className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
-                  />
+              <div className="px-6 py-5 space-y-5">
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Prénom</label>
+                    <Input
+                      value={guestForm.firstName}
+                      onChange={(e) => setGuestForm((c) => ({ ...c, firstName: e.target.value }))}
+                      className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Nom</label>
+                    <Input
+                      value={guestForm.lastName}
+                      onChange={(e) => setGuestForm((c) => ({ ...c, lastName: e.target.value }))}
+                      className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                    />
+                  </div>
                 </div>
+
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Email</label>
+                    <Input
+                      type="email"
+                      value={guestForm.email || ""}
+                      onChange={(e) => setGuestForm((c) => ({ ...c, email: e.target.value }))}
+                      className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Téléphone</label>
+                    <Input
+                      value={guestForm.phone || ""}
+                      onChange={(e) => setGuestForm((c) => ({ ...c, phone: e.target.value }))}
+                      className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Statut</label>
+                    <select
+                      value={guestForm.status}
+                      onChange={(e) => setGuestForm((c) => ({ ...c, status: e.target.value as GuestFormState["status"] }))}
+                      className="h-12 w-full rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
+                    >
+                      <option value="pending">En attente</option>
+                      <option value="confirmed">Confirmé</option>
+                      <option value="declined">Décliné</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Nombre de places</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={2}
+                      value={guestForm.guestCount}
+                      onChange={(e) => setGuestForm((c) => ({ ...c, guestCount: Number.parseInt(e.target.value || "1", 10) }))}
+                      className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">
-                    Nom
-                  </label>
-                  <Input
-                    value={guestForm.lastName}
-                    onChange={(event) =>
-                      setGuestForm((current) => ({
-                        ...current,
-                        lastName: event.target.value,
-                      }))
-                    }
-                    className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Note</label>
+                  <Textarea
+                    value={guestForm.message || ""}
+                    onChange={(e) => setGuestForm((c) => ({ ...c, message: e.target.value }))}
+                    className="min-h-[110px] rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
                   />
                 </div>
               </div>
 
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">
-                    Email
-                  </label>
-                  <Input
-                    type="email"
-                    value={guestForm.email || ""}
-                    onChange={(event) =>
-                      setGuestForm((current) => ({
-                        ...current,
-                        email: event.target.value,
-                      }))
-                    }
-                    className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">
-                    Téléphone
-                  </label>
-                  <Input
-                    value={guestForm.phone || ""}
-                    onChange={(event) =>
-                      setGuestForm((current) => ({
-                        ...current,
-                        phone: event.target.value,
-                      }))
-                    }
-                    className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">
-                    Statut
-                  </label>
-                  <select
-                    value={guestForm.status}
-                    onChange={(event) =>
-                      setGuestForm((current) => ({
-                        ...current,
-                        status: event.target.value as GuestFormState["status"],
-                      }))
-                    }
-                    className="h-12 w-full rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
-                  >
-                    <option value="pending">En attente</option>
-                    <option value="confirmed">Confirmé</option>
-                    <option value="declined">Décliné</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">
-                    Nombre de places
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={2}
-                    value={guestForm.guestCount}
-                    onChange={(event) =>
-                      setGuestForm((current) => ({
-                        ...current,
-                        guestCount: Number.parseInt(event.target.value || "1", 10),
-                      }))
-                    }
-                    className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">
-                  Note
-                </label>
-                <Textarea
-                  value={guestForm.message || ""}
-                  onChange={(event) =>
-                    setGuestForm((current) => ({
-                      ...current,
-                      message: event.target.value,
-                    }))
-                  }
-                  className="min-h-[140px] rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
-                />
-              </div>
-
-              <div className="flex flex-wrap gap-3 pt-3">
+              <DialogFooter className="shrink-0">
                 <Button
                   type="submit"
                   disabled={saveGuestMutation.isPending}
@@ -693,239 +678,283 @@ export default function Admin() {
                       ? "Mettre à jour"
                       : "Créer l'invité"}
                 </Button>
-                {(editingGuestId || guestForm.firstName || guestForm.lastName) && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setGuestForm(emptyGuestForm);
-                      setEditingGuestId(null);
-                    }}
-                    className="rounded-none border-primary/15 px-7 py-6 text-[10px] uppercase tracking-[0.35em] text-primary"
-                  >
-                    Réinitialiser
-                  </Button>
-                )}
-              </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsFormOpen(false)}
+                  className="rounded-none border-primary/15 px-7 py-6 text-[10px] uppercase tracking-[0.35em] text-primary"
+                >
+                  Annuler
+                </Button>
+              </DialogFooter>
             </form>
-          </article>
+          </DialogContent>
+        </Dialog>
 
-          <article className="border border-primary/10 bg-white p-6 editorial-shadow md:p-8">
-            <div className="mb-6 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.45em] text-primary/60">
-                  Liste invités
-                </p>
-                <p className="mt-2 text-sm leading-7 text-foreground/70">
-                  Recherchez, éditez, copiez le lien d'invitation ou régénérez-le
-                  à tout moment.
-                </p>
-              </div>
+        {/* ── Liste des invités (pleine largeur) ─────────────────────────── */}
+        <section className="border border-primary/10 bg-white p-6 editorial-shadow md:p-8">
+          {/* Header: titre + bouton + recherche */}
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.45em] text-primary/60">
+                Liste invités
+              </p>
+              <p className="mt-1 text-sm text-foreground/55">
+                {filteredGuests.length} résultat{filteredGuests.length > 1 ? "s" : ""}
+                {filteredGuests.length !== guests.length && ` sur ${guests.length}`}
+              </p>
+            </div>
 
-              <div className="relative w-full md:max-w-sm">
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                onClick={() => {
+                  setGuestForm(emptyGuestForm);
+                  setEditingGuestId(null);
+                  setIsFormOpen(true);
+                }}
+                className="rounded-none bg-primary px-5 py-5 text-[10px] uppercase tracking-[0.35em] text-primary-foreground hover:bg-foreground"
+              >
+                <UserPlus className="mr-2 h-4 w-4" strokeWidth={1.6} />
+                Ajouter un invité
+              </Button>
+              <div className="relative">
                 <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/35" />
                 <Input
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                   placeholder="Nom, email, statut..."
-                  className="h-12 rounded-none border-primary/15 bg-transparent pl-11 focus-visible:ring-primary/20"
+                  className="h-12 w-full min-w-[200px] rounded-none border-primary/15 bg-transparent pl-11 focus-visible:ring-primary/20"
                 />
               </div>
             </div>
+          </div>
 
-            <div className="mb-6 grid gap-4 md:grid-cols-2">
-              <select
-                value={statusFilter}
-                onChange={(event) =>
-                  setStatusFilter(
-                    event.target.value as "all" | "pending" | "confirmed" | "declined",
-                  )
-                }
-                className="h-12 rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
-              >
-                <option value="all">Tous les RSVP</option>
-                <option value="pending">En attente</option>
-                <option value="confirmed">Confirmés</option>
-                <option value="declined">Déclinés</option>
-              </select>
+          {/* Filtres */}
+          <div className="mb-6 grid gap-3 sm:grid-cols-2">
+            <select
+              value={statusFilter}
+              onChange={(event) =>
+                setStatusFilter(event.target.value as "all" | "pending" | "confirmed" | "declined")
+              }
+              className="h-11 rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
+            >
+              <option value="all">Tous les RSVP</option>
+              <option value="pending">En attente</option>
+              <option value="confirmed">Confirmés</option>
+              <option value="declined">Déclinés</option>
+            </select>
+            <select
+              value={invitationFilter}
+              onChange={(event) =>
+                setInvitationFilter(event.target.value as "all" | "draft" | "sent")
+              }
+              className="h-11 rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
+            >
+              <option value="all">Toutes les invitations</option>
+              <option value="draft">Brouillons</option>
+              <option value="sent">Envoyées</option>
+            </select>
+          </div>
 
-              <select
-                value={invitationFilter}
-                onChange={(event) =>
-                  setInvitationFilter(event.target.value as "all" | "draft" | "sent")
-                }
-                className="h-12 rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
-              >
-                <option value="all">Toutes les invitations</option>
-                <option value="draft">Brouillons</option>
-                <option value="sent">Envoyées</option>
-              </select>
+          {/* Cartes */}
+          {isLoadingGuests ? (
+            <div className="flex min-h-[280px] items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" strokeWidth={1.5} />
             </div>
-
-            {isLoadingGuests ? (
-              <div className="flex min-h-[280px] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" strokeWidth={1.5} />
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                {filteredGuests.map((guest) => (
-                  <article
-                    key={guest.id}
-                    className="border border-primary/10 bg-white p-4 md:p-5 editorial-shadow"
-                  >
-                    {/* Top row: name + status badge */}
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div className="space-y-1 min-w-0">
-                        <p className="font-serif text-xl text-foreground leading-tight">
-                          {guest.firstName} {guest.lastName}
-                        </p>
-                        <p className="text-sm text-foreground/55 truncate">
-                          {guest.email || "—"} · {guest.phone || "—"}
-                        </p>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/35">
-                          {guest.guestCount} place{guest.guestCount > 1 ? "s" : ""} ·{" "}
-                          {guest.createdAt
-                            ? format(new Date(guest.createdAt), "d MMM yyyy", { locale: fr })
-                            : "—"}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1.5 shrink-0">
-                        <Badge
-                          variant="outline"
-                          className={`rounded-none border-0 px-3 py-1 text-[10px] uppercase tracking-[0.25em] ${
-                            guest.status === "confirmed"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : guest.status === "declined"
-                                ? "bg-rose-50 text-rose-700"
-                                : "bg-amber-50 text-amber-700"
-                          }`}
-                        >
-                          {guest.status === "confirmed"
-                            ? "Confirmé"
-                            : guest.status === "declined"
-                              ? "Décliné"
-                              : "En attente"}
-                        </Badge>
-                        {guest.checkedInAt && (
-                          <Badge
-                            variant="outline"
-                            className="rounded-none border-0 px-3 py-0.5 text-[9px] uppercase tracking-[0.2em] bg-primary/5 text-primary"
-                          >
-                            Check-in ✓
-                          </Badge>
-                        )}
-                      </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {paginatedGuests.map((guest) => (
+                <article
+                  key={guest.id}
+                  className="border border-primary/10 bg-[#FAFAF8] p-4 md:p-5"
+                >
+                  {/* Nom + statut */}
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="space-y-1 min-w-0">
+                      <p className="font-serif text-xl text-foreground leading-tight">
+                        {guest.firstName} {guest.lastName}
+                      </p>
+                      <p className="text-sm text-foreground/55 truncate">
+                        {guest.email || "—"} · {guest.phone || "—"}
+                      </p>
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/35">
+                        {guest.guestCount} place{guest.guestCount > 1 ? "s" : ""} ·{" "}
+                        {guest.createdAt
+                          ? format(new Date(guest.createdAt), "d MMM yyyy", { locale: fr })
+                          : "—"}
+                      </p>
                     </div>
-
-                    {/* Invitation status row */}
-                    <div className="mt-3 pt-3 border-t border-primary/5 flex items-center gap-3 flex-wrap">
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
                       <Badge
                         variant="outline"
-                        className={`rounded-none border-0 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] ${
-                          guest.invitationStatus === "sent"
-                            ? "bg-stone-100 text-stone-700"
-                            : "bg-[#ECEFF1] text-[#5F6870]"
+                        className={`rounded-none border-0 px-3 py-1 text-[10px] uppercase tracking-[0.25em] ${
+                          guest.status === "confirmed"
+                            ? "bg-emerald-50 text-emerald-700"
+                            : guest.status === "declined"
+                              ? "bg-rose-50 text-rose-700"
+                              : "bg-amber-50 text-amber-700"
                         }`}
                       >
-                        {guest.invitationStatus === "sent" ? "Envoyée" : "Brouillon"}
+                        {guest.status === "confirmed"
+                          ? "Confirmé"
+                          : guest.status === "declined"
+                            ? "Décliné"
+                            : "En attente"}
                       </Badge>
-                      {guest.invitationSentAt && (
-                        <span className="text-[10px] text-foreground/40">
-                          {format(new Date(guest.invitationSentAt), "d MMM, HH:mm", { locale: fr })}
-                        </span>
-                      )}
-                      <span className="ml-auto text-[10px] text-foreground/35 truncate max-w-[180px] hidden sm:block">
-                        {guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`}
-                      </span>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="mt-3 pt-3 border-t border-primary/5 flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => shareViaWhatsApp(guest)}
-                        className="rounded-none border-green-200 text-[10px] uppercase tracking-[0.25em] text-green-700 hover:bg-green-50"
-                      >
-                        <MessageCircle className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
-                        WhatsApp
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => copyInvitationLink(guest)}
-                        className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
-                      >
-                        <Copy className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
-                        Copier
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => regenerateLinkMutation.mutate(guest.id)}
-                        className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
-                      >
-                        <RefreshCw className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
-                        Régénérer
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => startEditingGuest(guest)}
-                        className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
-                      >
-                        <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
-                        Modifier
-                      </Button>
-                      {!guest.checkedInAt && guest.status === "confirmed" && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => checkInMutation.mutate(guest.id)}
-                          className="rounded-none bg-primary text-[10px] uppercase tracking-[0.25em] text-primary-foreground hover:bg-foreground"
-                        >
-                          <UserCheck className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
-                          Check-in
-                        </Button>
-                      )}
-                      {guest.status !== "declined" && (
-                        <Button
-                          type="button"
-                          size="sm"
+                      {guest.checkedInAt && (
+                        <Badge
                           variant="outline"
-                          onClick={() => declineMutation.mutate(guest.id)}
-                          className="rounded-none border-orange-200 text-[10px] uppercase tracking-[0.25em] text-orange-700 hover:bg-orange-50"
+                          className="rounded-none border-0 px-3 py-0.5 text-[9px] uppercase tracking-[0.2em] bg-primary/5 text-primary"
                         >
-                          <XCircle className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
-                          Indispo.
-                        </Button>
+                          Check-in ✓
+                        </Badge>
                       )}
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => deleteGuestMutation.mutate(guest.id)}
-                        className="rounded-none border-rose-200 text-[10px] uppercase tracking-[0.25em] text-rose-700 hover:bg-rose-50"
-                      >
-                        <Trash2 className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
-                        Supprimer
-                      </Button>
                     </div>
-                  </article>
-                ))}
+                  </div>
 
-                {filteredGuests.length === 0 && (
-                  <p className="py-16 text-center font-serif text-2xl text-foreground/55">
-                    Aucun invité ne correspond à cette recherche.
-                  </p>
-                )}
+                  {/* Statut invitation */}
+                  <div className="mt-3 pt-3 border-t border-primary/8 flex items-center gap-3 flex-wrap">
+                    <Badge
+                      variant="outline"
+                      className={`rounded-none border-0 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] ${
+                        guest.invitationStatus === "sent"
+                          ? "bg-stone-100 text-stone-700"
+                          : "bg-[#ECEFF1] text-[#5F6870]"
+                      }`}
+                    >
+                      {guest.invitationStatus === "sent" ? "Envoyée" : "Brouillon"}
+                    </Badge>
+                    {guest.invitationSentAt && (
+                      <span className="text-[10px] text-foreground/40">
+                        {format(new Date(guest.invitationSentAt), "d MMM, HH:mm", { locale: fr })}
+                      </span>
+                    )}
+                    <span className="ml-auto text-[10px] text-foreground/30 truncate max-w-[200px] hidden md:block">
+                      {guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`}
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="mt-3 pt-3 border-t border-primary/8 flex flex-wrap gap-2">
+                    <Button
+                      type="button" size="sm" variant="outline"
+                      onClick={() => shareViaWhatsApp(guest)}
+                      className="rounded-none border-green-200 text-[10px] uppercase tracking-[0.25em] text-green-700 hover:bg-green-50"
+                    >
+                      <MessageCircle className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                      WhatsApp
+                    </Button>
+                    <Button
+                      type="button" size="sm" variant="outline"
+                      onClick={() => copyInvitationLink(guest)}
+                      className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
+                    >
+                      <Copy className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                      Copier
+                    </Button>
+                    <Button
+                      type="button" size="sm" variant="outline"
+                      onClick={() => regenerateLinkMutation.mutate(guest.id)}
+                      className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
+                    >
+                      <RefreshCw className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                      Régénérer
+                    </Button>
+                    <Button
+                      type="button" size="sm" variant="outline"
+                      onClick={() => startEditingGuest(guest)}
+                      className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
+                    >
+                      <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                      Modifier
+                    </Button>
+                    {!guest.checkedInAt && guest.status === "confirmed" && (
+                      <Button
+                        type="button" size="sm"
+                        onClick={() => checkInMutation.mutate(guest.id)}
+                        className="rounded-none bg-primary text-[10px] uppercase tracking-[0.25em] text-primary-foreground hover:bg-foreground"
+                      >
+                        <UserCheck className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                        Check-in
+                      </Button>
+                    )}
+                    {guest.status !== "declined" && (
+                      <Button
+                        type="button" size="sm" variant="outline"
+                        onClick={() => declineMutation.mutate(guest.id)}
+                        className="rounded-none border-orange-200 text-[10px] uppercase tracking-[0.25em] text-orange-700 hover:bg-orange-50"
+                      >
+                        <XCircle className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                        Indispo.
+                      </Button>
+                    )}
+                    <Button
+                      type="button" size="sm" variant="outline"
+                      onClick={() => deleteGuestMutation.mutate(guest.id)}
+                      className="rounded-none border-rose-200 text-[10px] uppercase tracking-[0.25em] text-rose-700 hover:bg-rose-50"
+                    >
+                      <Trash2 className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                      Supprimer
+                    </Button>
+                  </div>
+                </article>
+              ))}
+
+              {filteredGuests.length === 0 && (
+                <p className="py-16 text-center font-serif text-2xl text-foreground/55">
+                  Aucun invité ne correspond à cette recherche.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between border-t border-primary/8 pt-5">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/40">
+                Page {currentPage + 1} / {totalPages} · {filteredGuests.length} invité{filteredGuests.length > 1 ? "s" : ""}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  disabled={currentPage === 0}
+                  className="rounded-none border-primary/15 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
+                >
+                  <ChevronLeft className="h-4 w-4" strokeWidth={1.6} />
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <Button
+                    key={i}
+                    type="button"
+                    variant={i === currentPage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(i)}
+                    className={`rounded-none px-4 py-5 text-[10px] uppercase tracking-[0.25em] ${
+                      i === currentPage
+                        ? "bg-primary text-primary-foreground hover:bg-foreground"
+                        : "border-primary/15 text-primary hover:bg-primary/5"
+                    }`}
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  disabled={currentPage >= totalPages - 1}
+                  className="rounded-none border-primary/15 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
+                >
+                  <ChevronRight className="h-4 w-4" strokeWidth={1.6} />
+                </Button>
               </div>
-            )}
-          </article>
+            </div>
+          )}
         </section>
       </div>
     </main>
