@@ -506,7 +506,46 @@ export default function Home() {
                     <p className="text-[10px] italic text-muted-foreground/80">{dc.forbidden}</p>
                   </div>
                 )}
+
+                {idx === 1 && (
+                  <div className="mt-5 border-t border-border pt-4">
+                    <p className="text-sm leading-7 text-muted-foreground italic">
+                      Pour la soirée, les invités sont libres de choisir leur tenue. Venez comme vous vous sentez le plus élégants.
+                    </p>
+                  </div>
+                )}
               </motion.article>
+            ))}
+          </div>
+
+          {/* Versets bibliques */}
+          <div className="mt-16 space-y-10">
+            {[
+              {
+                text: "Deux valent mieux qu'un, parce qu'ils retirent un meilleur salaire de leur travail. Car s'ils tombent, l'un relève l'autre ; mais malheur à celui qui est seul et qui tombe, sans avoir un second pour le relever.",
+                ref: "Ecclésiaste 4 : 9–10",
+              },
+              {
+                text: "Ainsi ils ne sont plus deux, mais ils ne font qu'une seule chair. Que l'homme donc ne sépare pas ce que Dieu a joint.",
+                ref: "Matthieu 19 : 6",
+              },
+            ].map((verse, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.4 }}
+                transition={{ ...rv, delay: i * 0.12 }}
+                className="relative pl-6"
+              >
+                <span className="absolute -top-3 left-0 font-serif text-5xl leading-none text-primary/15 select-none">"</span>
+                <blockquote className="font-serif text-lg md:text-xl leading-9 italic text-foreground/75">
+                  « {verse.text} »
+                </blockquote>
+                <p className="mt-4 text-[10px] uppercase tracking-[0.45em] text-muted-foreground/50">
+                  — {verse.ref}
+                </p>
+              </motion.div>
             ))}
           </div>
 
