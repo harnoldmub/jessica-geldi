@@ -465,17 +465,6 @@ export default function Admin() {
 
           <div className="flex flex-wrap gap-3">
             <Button
-              asChild
-              type="button"
-              variant="outline"
-              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
-            >
-              <a href="/checkin" target="_blank" rel="noreferrer">
-                <UserCheck className="mr-2 h-4 w-4" strokeWidth={1.6} />
-                Page check-in
-              </a>
-            </Button>
-            <Button
               type="button"
               variant="outline"
               onClick={() => window.open("/api/admin/guests/export", "_blank")}
