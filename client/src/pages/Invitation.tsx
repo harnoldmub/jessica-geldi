@@ -430,18 +430,54 @@ export default function Invitation() {
                 {guest.firstName} {guest.lastName}
               </h2>
 
-              <div className="mt-6 inline-flex items-center gap-4 border border-border px-6 py-3">
-                <span className="text-[9px] uppercase tracking-[0.45em] text-muted-foreground">
-                  Places réservées
-                </span>
-                <span className="h-4 w-px bg-border" />
-                <span className="font-serif text-2xl text-foreground">
-                  {guest.guestCount || 1}
-                </span>
+              {/* Infos de participation */}
+              <div className="mt-6 flex flex-col items-center gap-3">
+                {/* Cérémonie(s) */}
+                {(() => {
+                  const c = guest.ceremonyChoice || "both";
+                  const items =
+                    c === "civil"
+                      ? [{ label: "Mariage civil & Bénédiction", time: "09h00" }]
+                      : c === "evening"
+                        ? [{ label: "Soirée dansante", time: "18h30" }]
+                        : [
+                            { label: "Mariage civil & Bénédiction", time: "09h00" },
+                            { label: "Soirée dansante", time: "18h30" },
+                          ];
+                  return (
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                      {items.map((item) => (
+                        <div
+                          key={item.label}
+                          className="inline-flex items-center gap-3 border border-border px-5 py-3"
+                        >
+                          <span className="text-[9px] uppercase tracking-[0.4em] text-muted-foreground">
+                            {item.label}
+                          </span>
+                          <span className="h-4 w-px bg-border" />
+                          <span className="font-serif text-lg text-foreground">
+                            {item.time}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+
+                {/* Nombre de personnes */}
+                <div className="inline-flex items-center gap-3 border border-border px-5 py-3">
+                  <span className="text-[9px] uppercase tracking-[0.45em] text-muted-foreground">
+                    {(guest.guestCount || 1) === 1 ? "Seul(e)" : "En couple"}
+                  </span>
+                  <span className="h-4 w-px bg-border" />
+                  <span className="font-serif text-lg text-foreground">
+                    {guest.guestCount || 1} personne{(guest.guestCount || 1) > 1 ? "s" : ""}
+                  </span>
+                </div>
               </div>
 
               {guest.status === "confirmed" && (
-                <p className="mt-6 text-[10px] uppercase tracking-[0.45em] text-emerald-600">
+                <p className="mt-5 text-[10px] uppercase tracking-[0.45em] text-emerald-600">
                   ✓ Présence confirmée
                 </p>
               )}
