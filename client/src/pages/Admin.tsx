@@ -837,16 +837,6 @@ export default function Admin() {
                       <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
                       Modifier
                     </Button>
-                    {!guest.checkedInAt && guest.status === "confirmed" && (
-                      <Button
-                        type="button" size="sm"
-                        onClick={() => checkInMutation.mutate(guest.id)}
-                        className="rounded-none bg-primary text-[10px] uppercase tracking-[0.25em] text-primary-foreground hover:bg-foreground"
-                      >
-                        <UserCheck className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
-                        Check-in
-                      </Button>
-                    )}
                     {guest.status !== "declined" && (
                       <Button
                         type="button" size="sm" variant="outline"
