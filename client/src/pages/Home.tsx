@@ -37,11 +37,6 @@ function CapacityBlocks() {
                   Complet
                 </span>
               )}
-              {!full && remaining !== null && remaining <= 10 && (
-                <span className="text-[8px] uppercase tracking-[0.3em] bg-amber-100 text-amber-700 px-2 py-0.5">
-                  {remaining} place{remaining > 1 ? "s" : ""} restante{remaining > 1 ? "s" : ""}
-                </span>
-              )}
             </div>
             <p className="mt-1 font-serif text-lg text-foreground">{e.time} · Kinshasa</p>
             <p className="text-[10px] italic text-muted-foreground">{isCivil ? mamisaMarylin.dresscode.blessing.theme : mamisaMarylin.dresscode.evening.theme}</p>
