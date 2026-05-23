@@ -568,10 +568,10 @@ export default function Admin() {
               <p className="text-[9px] uppercase tracking-[0.4em] text-yellow-700/60 mb-2">Civil · matin</p>
               <p className="font-serif text-2xl text-yellow-700">
                 {stats.civilAttendees}
-                <span className="text-sm font-sans font-normal text-yellow-600/50"> / 50</span>
+                <span className="text-sm font-sans font-normal text-yellow-600/50"> / 60</span>
               </p>
               <p className="mt-1 text-[9px] text-foreground/35">
-                {stats.civilAttendees >= 50 ? "🔴 Complet" : `${50 - stats.civilAttendees} places restantes`}
+                {stats.civilAttendees >= 60 ? "🔴 Complet" : `${60 - stats.civilAttendees} places restantes`}
               </p>
             </div>
             <div className="p-5 text-center bg-violet-50/50">
