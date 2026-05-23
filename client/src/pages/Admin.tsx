@@ -93,6 +93,7 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "confirmed" | "declined">("all");
   const [invitationFilter, setInvitationFilter] = useState<"all" | "draft" | "sent">("all");
+  const [ceremonyFilter, setCeremonyFilter] = useState<"all" | "civil" | "evening" | "both">("all");
   const [credentials, setCredentials] = useState({
     username: "",
     password: "",
@@ -265,8 +266,14 @@ export default function Admin() {
       const matchesStatus = statusFilter === "all" || guest.status === statusFilter;
       const matchesInvitation =
         invitationFilter === "all" || guest.invitationStatus === invitationFilter;
+      const gCeremony = guest.ceremonyChoice || "both";
+      const matchesCeremony =
+        ceremonyFilter === "all" ||
+        (ceremonyFilter === "civil" && (gCeremony === "civil" || gCeremony === "both")) ||
+        (ceremonyFilter === "evening" && (gCeremony === "evening" || gCeremony === "both")) ||
+        (ceremonyFilter === "both" && gCeremony === "both");
 
-      if (!matchesStatus || !matchesInvitation) {
+      if (!matchesStatus || !matchesInvitation || !matchesCeremony) {
         return false;
       }
 
@@ -286,7 +293,7 @@ export default function Admin() {
         .toLowerCase()
         .includes(term);
     });
-  }, [guests, invitationFilter, searchTerm, statusFilter]);
+  }, [guests, invitationFilter, searchTerm, statusFilter, ceremonyFilter]);
 
   const totalPages = Math.ceil(filteredGuests.length / pageSize);
   const paginatedGuests = filteredGuests.slice(
@@ -699,7 +706,7 @@ export default function Admin() {
           </div>
 
           {/* Filtres */}
-          <div className="mb-6 grid gap-3 sm:grid-cols-2">
+          <div className="mb-6 grid gap-3 sm:grid-cols-3">
             <select
               value={statusFilter}
               onChange={(event) =>
@@ -722,6 +729,18 @@ export default function Admin() {
               <option value="all">Toutes les invitations</option>
               <option value="draft">Brouillons</option>
               <option value="sent">Envoyées</option>
+            </select>
+            <select
+              value={ceremonyFilter}
+              onChange={(event) =>
+                setCeremonyFilter(event.target.value as "all" | "civil" | "evening" | "both")
+              }
+              className="h-11 rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
+            >
+              <option value="all">Toutes les cérémonies</option>
+              <option value="civil">Civil uniquement</option>
+              <option value="evening">Soirée uniquement</option>
+              <option value="both">Les deux</option>
             </select>
           </div>
 
@@ -747,7 +766,7 @@ export default function Admin() {
                         {guest.email || "—"} · {guest.phone || "—"}
                       </p>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/35">
-                        {guest.guestCount} place{guest.guestCount > 1 ? "s" : ""} ·{" "}
+                        {(guest.guestCount || 1) > 1 ? "En couple" : "Seul(e)"} ·{" "}
                         {guest.createdAt
                           ? format(new Date(guest.createdAt), "d MMM yyyy", { locale: fr })
                           : "—"}
@@ -792,6 +811,22 @@ export default function Admin() {
                       }`}
                     >
                       {guest.invitationStatus === "sent" ? "Envoyée" : "Brouillon"}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={`rounded-none border-0 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] ${
+                        (guest.ceremonyChoice || "both") === "both"
+                          ? "bg-purple-50 text-purple-700"
+                          : (guest.ceremonyChoice) === "civil"
+                          ? "bg-yellow-50 text-yellow-700"
+                          : "bg-violet-50 text-violet-700"
+                      }`}
+                    >
+                      {(guest.ceremonyChoice || "both") === "both"
+                        ? "Civil & Soirée"
+                        : guest.ceremonyChoice === "civil"
+                        ? "Civil · matin"
+                        : "Soirée · soir"}
                     </Badge>
                     {guest.invitationSentAt && (
                       <span className="text-[10px] text-foreground/40">
