@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { Clock, MapPin, ChevronDown, ExternalLink, Plus, Minus, Gift } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { mamisaMarylin } from "@shared/mamisaMarylin";
 import RsvpForm from "@/components/RsvpForm";
 import Countdown from "@/components/Countdown";
@@ -13,6 +14,43 @@ import img4 from "../../images/img-4.jpeg";
 
 const IMAGES = { hero: heroImg, img1, img2, img3, img4 } as Record<string, string>;
 const rv = { duration: 1.05, ease: [0.22, 1, 0.36, 1] as const };
+
+/* ─── Capacity blocks ─────────────────────────────────────── */
+function CapacityBlocks() {
+  const { data: cap } = useQuery<{ civil: number; civilMax: number; evening: number; eveningMax: number }>({
+    queryKey: ["/api/capacity"],
+    staleTime: 30_000,
+  });
+  const events = mamisaMarylin.programme.filter((e) => ["Mariage civil", "Soirée dansante"].includes(e.title));
+  return (
+    <div className="space-y-5">
+      {events.map((e) => {
+        const isCivil = e.theme === "blessing";
+        const full = cap ? (isCivil ? cap.civil >= cap.civilMax : cap.evening >= cap.eveningMax) : false;
+        const remaining = cap ? (isCivil ? cap.civilMax - cap.civil : cap.eveningMax - cap.evening) : null;
+        return (
+          <div key={`${e.time}-${e.title}`} className="border-l-2 border-border pl-5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-[9px] uppercase tracking-[0.45em] text-muted-foreground/60">{e.title}</p>
+              {full && (
+                <span className="text-[8px] uppercase tracking-[0.3em] bg-rose-100 text-rose-600 px-2 py-0.5">
+                  Complet
+                </span>
+              )}
+              {!full && remaining !== null && remaining <= 10 && (
+                <span className="text-[8px] uppercase tracking-[0.3em] bg-amber-100 text-amber-700 px-2 py-0.5">
+                  {remaining} place{remaining > 1 ? "s" : ""} restante{remaining > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+            <p className="mt-1 font-serif text-lg text-foreground">{e.time} · Kinshasa</p>
+            <p className="text-[10px] italic text-muted-foreground">{isCivil ? mamisaMarylin.dresscode.blessing.theme : mamisaMarylin.dresscode.evening.theme}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 /* ─── Ornamental rule ─────────────────────────────────────── */
 function Rule({ opacity = 0.5 }: { opacity?: number }) {
@@ -364,15 +402,7 @@ export default function Home() {
               <p className="mt-5 text-base leading-8 text-muted-foreground">Une réponse simple suffit : dites-nous si vous serez là, puis choisissez seul(e) ou en couple.</p>
             </div>
 
-            <div className="space-y-5">
-              {mamisaMarylin.programme.filter((e) => ["Mariage civil", "Soirée dansante"].includes(e.title)).map((e) => (
-                <div key={`${e.time}-${e.title}`} className="border-l-2 border-border pl-5">
-                  <p className="text-[9px] uppercase tracking-[0.45em] text-muted-foreground/60">{e.title}</p>
-                  <p className="mt-1 font-serif text-lg text-foreground">{e.time} · Kinshasa</p>
-                  <p className="text-[10px] italic text-muted-foreground">{e.theme === "blessing" ? mamisaMarylin.dresscode.blessing.theme : mamisaMarylin.dresscode.evening.theme}</p>
-                </div>
-              ))}
-            </div>
+            <CapacityBlocks />
 
           </motion.div>
 

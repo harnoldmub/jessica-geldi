@@ -61,6 +61,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
   await ensureAdminUser();
   
+  // Public capacity endpoint
+  const CIVIL_MAX = 50;
+  const EVENING_MAX = 250;
+
+  app.get("/api/capacity", async (_req, res) => {
+    const all = await storage.getAllRsvps();
+    const confirmed = all.filter((g) => g.status === "confirmed");
+    const civil = confirmed
+      .filter((g) => !g.ceremonyChoice || g.ceremonyChoice === "civil" || g.ceremonyChoice === "both")
+      .reduce((sum, g) => sum + (g.guestCount || 1), 0);
+    const evening = confirmed
+      .filter((g) => !g.ceremonyChoice || g.ceremonyChoice === "evening" || g.ceremonyChoice === "both")
+      .reduce((sum, g) => sum + (g.guestCount || 1), 0);
+    res.json({ civil, civilMax: CIVIL_MAX, evening, eveningMax: EVENING_MAX });
+  });
+
   // Public RSVP Submission
   app.post("/api/rsvp", async (req, res) => {
     try {

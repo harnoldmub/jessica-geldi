@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, ChevronDown } from "lucide-react";
 import { insertRsvpSchema, type RsvpFormInput, type RsvpResponse } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -299,6 +299,13 @@ export default function RsvpForm({
   const countrySelectorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  const { data: capacity } = useQuery<{ civil: number; civilMax: number; evening: number; eveningMax: number }>({
+    queryKey: ["/api/capacity"],
+    staleTime: 30_000,
+  });
+  const civilFull = capacity ? capacity.civil >= capacity.civilMax : false;
+  const eveningFull = capacity ? capacity.evening >= capacity.eveningMax : false;
+
   const form = useForm<RsvpFormInput>({
     resolver: zodResolver(insertRsvpSchema),
     defaultValues: { ...defaultValues, ...initialValues },
@@ -552,29 +559,41 @@ export default function RsvpForm({
                           <button
                             type="button"
                             aria-pressed={field.value === "civil"}
-                            onClick={() => field.onChange("civil")}
-                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === "civil" ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                            onClick={() => !civilFull && field.onChange("civil")}
+                            disabled={civilFull}
+                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${civilFull ? "opacity-40 cursor-not-allowed" : field.value === "civil" ? selectedChoiceClassName : unselectedChoiceClassName}`}
                           >
                             <span className="block font-medium">Mariage civil</span>
-                            <span className="block text-[10px] mt-0.5 opacity-70">09h00 · matin</span>
+                            {civilFull
+                              ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
+                              : <span className="block text-[10px] mt-0.5 opacity-70">09h00 · matin</span>
+                            }
                           </button>
                           <button
                             type="button"
                             aria-pressed={field.value === "evening"}
-                            onClick={() => field.onChange("evening")}
-                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === "evening" ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                            onClick={() => !eveningFull && field.onChange("evening")}
+                            disabled={eveningFull}
+                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${eveningFull ? "opacity-40 cursor-not-allowed" : field.value === "evening" ? selectedChoiceClassName : unselectedChoiceClassName}`}
                           >
                             <span className="block font-medium">Soirée dansante</span>
-                            <span className="block text-[10px] mt-0.5 opacity-70">18h30 · soir</span>
+                            {eveningFull
+                              ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
+                              : <span className="block text-[10px] mt-0.5 opacity-70">18h30 · soir</span>
+                            }
                           </button>
                           <button
                             type="button"
                             aria-pressed={field.value === "both"}
-                            onClick={() => field.onChange("both")}
-                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === "both" ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                            onClick={() => !(civilFull || eveningFull) && field.onChange("both")}
+                            disabled={civilFull || eveningFull}
+                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${(civilFull || eveningFull) ? "opacity-40 cursor-not-allowed" : field.value === "both" ? selectedChoiceClassName : unselectedChoiceClassName}`}
                           >
                             <span className="block font-medium">Les deux</span>
-                            <span className="block text-[10px] mt-0.5 opacity-70">toute la journée</span>
+                            {(civilFull || eveningFull)
+                              ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
+                              : <span className="block text-[10px] mt-0.5 opacity-70">toute la journée</span>
+                            }
                           </button>
                         </div>
                       </FormControl>
