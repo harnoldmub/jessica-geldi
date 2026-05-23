@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Check, Loader2, UserCheck } from "lucide-react";
+import { Search, Check, Loader2, UserCheck, Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const CHECKIN_CODE = "MMCheckin2026";
@@ -18,6 +18,7 @@ export default function CheckIn() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [codeError, setCodeError] = useState("");
+  const [showCode, setShowCode] = useState(false);
 
   useEffect(() => {
     setIsUnlocked(sessionStorage.getItem(CHECKIN_STORAGE_KEY) === "granted");
@@ -72,16 +73,27 @@ export default function CheckIn() {
               }
             }}
           >
-            <Input
-              value={codeInput}
-              onChange={(e) => {
-                setCodeInput(e.target.value);
-                setCodeError("");
-              }}
-              className="h-12 rounded-none text-center tracking-[0.2em] border-primary/15"
-              placeholder="Code d'accès"
-              autoFocus
-            />
+            <div className="relative">
+              <Input
+                type={showCode ? "text" : "password"}
+                value={codeInput}
+                onChange={(e) => {
+                  setCodeInput(e.target.value);
+                  setCodeError("");
+                }}
+                className="h-12 rounded-none text-center tracking-[0.2em] border-primary/15 pr-12"
+                placeholder="Code d'accès"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setShowCode((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/70 transition-colors"
+                tabIndex={-1}
+              >
+                {showCode ? <EyeOff className="h-4 w-4" strokeWidth={1.6} /> : <Eye className="h-4 w-4" strokeWidth={1.6} />}
+              </button>
+            </div>
             {codeError && (
               <p className="text-sm text-rose-600 text-center">{codeError}</p>
             )}

@@ -8,12 +8,15 @@ import {
   ChevronRight,
   Copy,
   Download,
+  Eye,
+  EyeOff,
   Loader2,
   LockKeyhole,
   LogOut,
   MessageCircle,
   Pencil,
   RefreshCw,
+  RotateCcw,
   Search,
   ShieldCheck,
   Trash2,
@@ -105,6 +108,7 @@ export default function Admin() {
   const [pageSize, setPageSize] = useState(10);
   const [msgPage, setMsgPage] = useState(0);
   const MSG_PAGE_SIZE = 9;
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     setCurrentPage(0);
@@ -228,6 +232,19 @@ export default function Admin() {
       toast({
         title: "Présence enregistrée",
         description: "Le check-in de l'invité a été validé.",
+      });
+    },
+  });
+
+  const resetCheckInsMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/admin/reset-checkins");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
+      toast({
+        title: "Check-ins réinitialisés",
+        description: "Tous les check-ins ont été effacés.",
       });
     },
   });
@@ -410,18 +427,28 @@ export default function Admin() {
                 <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">
                   Code d'accès
                 </label>
-                <Input
-                  type="password"
-                  value={credentials.password}
-                  onChange={(event) =>
-                    setCredentials((current) => ({
-                      ...current,
-                      password: event.target.value,
-                    }))
-                  }
-                  className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
-                  placeholder="Entrez le code d'accès"
-                />
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    value={credentials.password}
+                    onChange={(event) =>
+                      setCredentials((current) => ({
+                        ...current,
+                        password: event.target.value,
+                      }))
+                    }
+                    className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20 pr-12"
+                    placeholder="Entrez le code d'accès"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/70 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" strokeWidth={1.6} /> : <Eye className="h-4 w-4" strokeWidth={1.6} />}
+                  </button>
+                </div>
               </div>
 
               <Button
@@ -471,6 +498,31 @@ export default function Admin() {
           </div>
 
           <div className="flex flex-wrap gap-3">
+            <Button
+              asChild
+              type="button"
+              variant="outline"
+              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
+            >
+              <a href="/checkin" target="_blank" rel="noreferrer">
+                <UserCheck className="mr-2 h-4 w-4" strokeWidth={1.6} />
+                Page check-in
+              </a>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (confirm("Réinitialiser tous les check-ins ? Cette action efface toutes les arrivées enregistrées.")) {
+                  resetCheckInsMutation.mutate();
+                }
+              }}
+              disabled={resetCheckInsMutation.isPending}
+              className="rounded-none border-orange-200 px-5 text-[10px] uppercase tracking-[0.35em] text-orange-700 hover:bg-orange-50"
+            >
+              <RotateCcw className="mr-2 h-4 w-4" strokeWidth={1.6} />
+              Reset check-ins
+            </Button>
             <Button
               type="button"
               variant="outline"

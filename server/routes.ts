@@ -264,6 +264,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return next();
   }
 
+  // Reset all check-ins (admin protected)
+  app.post("/api/admin/reset-checkins", requireAuth, async (_req, res) => {
+    await storage.resetAllCheckIns();
+    res.json({ message: "Tous les check-ins ont été réinitialisés." });
+  });
+
   // Get confirmed guests only (for the check-in page)
   app.get("/api/checkin/guests", requireCheckinCode, async (_req, res) => {
     const guests = await storage.getAllRsvps();
