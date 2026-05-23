@@ -597,7 +597,7 @@ export default function RsvpForm({
                             onClick={() => field.onChange(1)}
                             className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${(field.value ?? 1) === 1 ? selectedChoiceClassName : unselectedChoiceClassName}`}
                           >
-                            Seul(e)
+                            1 personne
                           </button>
                           <button
                             type="button"
@@ -605,7 +605,7 @@ export default function RsvpForm({
                             onClick={() => field.onChange(2)}
                             className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === 2 ? selectedChoiceClassName : unselectedChoiceClassName}`}
                           >
-                            En couple
+                            2 personnes
                           </button>
                         </div>
                       </FormControl>
