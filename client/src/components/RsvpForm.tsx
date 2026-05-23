@@ -35,9 +35,9 @@ const defaultValues: RsvpFormInput = {
   lastName: "",
   email: "",
   phone: "",
-  status: "confirmed",
-  guestCount: 1,
-  ceremonyChoice: "both",
+  status: undefined as any,
+  guestCount: 0,
+  ceremonyChoice: undefined as any,
   mealChoice: "",
   message: "",
 };
@@ -304,7 +304,7 @@ export default function RsvpForm({
     defaultValues: { ...defaultValues, ...initialValues },
   });
   const status = form.watch("status");
-  const isAttending = status !== "declined";
+  const isAttending = status === "confirmed";
 
   useEffect(() => {
     form.reset({ ...defaultValues, ...initialValues });
@@ -593,9 +593,9 @@ export default function RsvpForm({
                         <div className="grid grid-cols-2 gap-2">
                           <button
                             type="button"
-                            aria-pressed={(field.value ?? 1) === 1}
+                            aria-pressed={field.value === 1}
                             onClick={() => field.onChange(1)}
-                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${(field.value ?? 1) === 1 ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === 1 ? selectedChoiceClassName : unselectedChoiceClassName}`}
                           >
                             Seul(e)
                           </button>

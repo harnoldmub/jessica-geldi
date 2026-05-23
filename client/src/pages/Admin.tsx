@@ -56,6 +56,7 @@ const emptyGuestForm: GuestFormState = {
   phone: "",
   status: "pending",
   guestCount: 1,
+  ceremonyChoice: "both",
   mealChoice: "",
   message: "",
 };
@@ -328,6 +329,7 @@ export default function Admin() {
       phone: guest.phone || "",
       status: guest.status as GuestFormState["status"],
       guestCount: guest.guestCount || 1,
+      ceremonyChoice: (guest.ceremonyChoice as GuestFormState["ceremonyChoice"]) || "both",
       mealChoice: guest.mealChoice || "",
       message: guest.message || "",
     });
@@ -494,55 +496,36 @@ export default function Admin() {
           </div>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {/* ── Stats condensées ─────────────────────────────────────────── */}
+        <section className="border border-primary/10 bg-white editorial-shadow">
+          {/* Ligne principale */}
+          <div className="grid grid-cols-3 divide-x divide-primary/8 sm:grid-cols-5 border-b border-primary/8">
             {[
-              { label: "Invités", value: stats.totalInvites, icon: Users },
-              { label: "En attente", value: stats.pendingInvites, icon: RefreshCw },
-              { label: "Confirmés", value: stats.confirmedInvites, icon: ShieldCheck },
-              { label: "Déclinés", value: stats.declinedInvites, icon: LockKeyhole },
-              { label: "Invitations envoyées", value: stats.sentInvitations, icon: UserPlus },
+              { label: "Invités", value: stats.totalInvites },
+              { label: "Confirmés", value: stats.confirmedInvites },
+              { label: "En attente", value: stats.pendingInvites },
+              { label: "Déclinés", value: stats.declinedInvites },
+              { label: "Envoyées", value: stats.sentInvitations },
             ].map((item) => (
-            <article
-              key={item.label}
-              className="border border-primary/10 bg-white p-6 editorial-shadow"
-            >
-              <item.icon className="h-5 w-5 text-primary/50" strokeWidth={1.5} />
-              <p className="mt-5 text-[10px] uppercase tracking-[0.35em] text-foreground/45">
-                {item.label}
-              </p>
-              <p className="mt-3 font-serif text-4xl text-foreground">
-                {item.value}
-              </p>
-            </article>
-          ))}
-        </section>
-
-        {/* ── Présences par cérémonie ───────────────────────────────────── */}
-        <section className="grid gap-4 sm:grid-cols-2">
-          <article className="border border-primary/10 bg-white p-6 editorial-shadow">
-            <CalendarDays className="h-5 w-5 text-primary/50" strokeWidth={1.5} />
-            <p className="mt-5 text-[10px] uppercase tracking-[0.35em] text-foreground/45">
-              Civil & Bénédiction
-            </p>
-            <p className="mt-3 font-serif text-4xl text-foreground">
-              {stats.civilAttendees}
-            </p>
-            <p className="mt-2 text-[10px] text-foreground/35 tracking-wide">
-              personnes attendues le matin
-            </p>
-          </article>
-          <article className="border border-primary/10 bg-white p-6 editorial-shadow">
-            <CalendarDays className="h-5 w-5 text-primary/50" strokeWidth={1.5} />
-            <p className="mt-5 text-[10px] uppercase tracking-[0.35em] text-foreground/45">
-              Soirée dansante
-            </p>
-            <p className="mt-3 font-serif text-4xl text-foreground">
-              {stats.eveningAttendees}
-            </p>
-            <p className="mt-2 text-[10px] text-foreground/35 tracking-wide">
-              personnes attendues le soir
-            </p>
-          </article>
+              <div key={item.label} className="p-5 text-center">
+                <p className="font-serif text-3xl text-foreground">{item.value}</p>
+                <p className="mt-2 text-[9px] uppercase tracking-[0.35em] text-foreground/40">{item.label}</p>
+              </div>
+            ))}
+          </div>
+          {/* Ligne cérémonies */}
+          <div className="grid grid-cols-2 divide-x divide-primary/8">
+            <div className="p-5 text-center">
+              <p className="text-[9px] uppercase tracking-[0.4em] text-primary/50 mb-2">Civil · matin</p>
+              <p className="font-serif text-2xl text-foreground">{stats.civilAttendees}</p>
+              <p className="mt-1 text-[9px] text-foreground/35">personnes attendues</p>
+            </div>
+            <div className="p-5 text-center">
+              <p className="text-[9px] uppercase tracking-[0.4em] text-primary/50 mb-2">Soirée · soir</p>
+              <p className="font-serif text-2xl text-foreground">{stats.eveningAttendees}</p>
+              <p className="mt-1 text-[9px] text-foreground/35">personnes attendues</p>
+            </div>
+          </div>
         </section>
 
         {/* ── Modale ajout / modification ────────────────────────────────── */}
@@ -627,16 +610,29 @@ export default function Admin() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Nombre de places</label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={2}
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Nombre de personnes</label>
+                    <select
                       value={guestForm.guestCount}
-                      onChange={(e) => setGuestForm((c) => ({ ...c, guestCount: Number.parseInt(e.target.value || "1", 10) }))}
-                      className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
-                    />
+                      onChange={(e) => setGuestForm((c) => ({ ...c, guestCount: Number.parseInt(e.target.value, 10) }))}
+                      className="h-12 w-full rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
+                    >
+                      <option value={1}>Seul(e) — 1 personne</option>
+                      <option value={2}>En couple — 2 personnes</option>
+                    </select>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Participe à</label>
+                  <select
+                    value={guestForm.ceremonyChoice || "both"}
+                    onChange={(e) => setGuestForm((c) => ({ ...c, ceremonyChoice: e.target.value as GuestFormState["ceremonyChoice"] }))}
+                    className="h-12 w-full rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
+                  >
+                    <option value="both">Les deux cérémonies</option>
+                    <option value="civil">Mariage civil seulement (09h00)</option>
+                    <option value="evening">Soirée dansante seulement (18h30)</option>
+                  </select>
                 </div>
 
                 <div className="space-y-2">

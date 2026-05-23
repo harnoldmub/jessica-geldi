@@ -86,9 +86,15 @@ export const insertRsvpSchema = createInsertSchema(rsvpResponses, {
       .transform((value) => (value ? value : null)),
   firstName: (schema) => schema.min(1, "Prénom requis"),
   lastName: (schema) => schema.min(1, "Nom requis"),
-  status: () => z.enum(["pending", "confirmed", "declined"]).default("confirmed"),
-  guestCount: (schema) => schema.min(1, "Au moins 1 personne").max(2, "Maximum 2 personnes"),
-  ceremonyChoice: () => z.enum(["civil", "evening", "both"]).default("both"),
+  status: () => z.enum(["pending", "confirmed", "declined"], {
+    required_error: "Veuillez choisir votre réponse",
+    invalid_type_error: "Veuillez choisir votre réponse",
+  }),
+  guestCount: (schema) => schema.min(1, "Veuillez choisir le nombre de personnes").max(2, "Maximum 2 personnes"),
+  ceremonyChoice: () => z.enum(["civil", "evening", "both"], {
+    required_error: "Veuillez choisir votre participation",
+    invalid_type_error: "Veuillez choisir votre participation",
+  }).optional(),
 }).omit({
   token: true,
   invitationSentAt: true,
@@ -99,6 +105,7 @@ export const insertRsvpSchema = createInsertSchema(rsvpResponses, {
 
 export const adminGuestSchema = insertRsvpSchema.extend({
   status: z.enum(["pending", "confirmed", "declined"]).default("pending"),
+  ceremonyChoice: z.enum(["civil", "evening", "both"]).default("both"),
 });
 
 export const updateGuestSchema = adminGuestSchema.partial();
