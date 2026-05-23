@@ -261,19 +261,20 @@ export default function Admin() {
   });
 
   const confirmed = guests.filter((g) => g.status === "confirmed");
+  const sumPeople = (list: typeof guests) => list.reduce((sum, g) => sum + (g.guestCount || 1), 0);
   const stats = {
-    totalInvites: guests.length,
-    pendingInvites: guests.filter((guest) => guest.status === "pending").length,
-    confirmedInvites: confirmed.length,
-    declinedInvites: guests.filter((guest) => guest.status === "declined").length,
+    totalInvites: sumPeople(guests),
+    pendingInvites: sumPeople(guests.filter((g) => g.status === "pending")),
+    confirmedInvites: sumPeople(confirmed),
+    declinedInvites: sumPeople(guests.filter((g) => g.status === "declined")),
     sentInvitations: guests.filter((guest) => guest.invitationStatus === "sent").length,
-    attendingGuests: confirmed.reduce((sum, g) => sum + (g.guestCount || 1), 0),
-    civilAttendees: confirmed
-      .filter((g) => !g.ceremonyChoice || g.ceremonyChoice === "civil" || g.ceremonyChoice === "both")
-      .reduce((sum, g) => sum + (g.guestCount || 1), 0),
-    eveningAttendees: confirmed
-      .filter((g) => !g.ceremonyChoice || g.ceremonyChoice === "evening" || g.ceremonyChoice === "both")
-      .reduce((sum, g) => sum + (g.guestCount || 1), 0),
+    attendingGuests: sumPeople(confirmed),
+    civilAttendees: sumPeople(
+      confirmed.filter((g) => !g.ceremonyChoice || g.ceremonyChoice === "civil" || g.ceremonyChoice === "both")
+    ),
+    eveningAttendees: sumPeople(
+      confirmed.filter((g) => !g.ceremonyChoice || g.ceremonyChoice === "evening" || g.ceremonyChoice === "both")
+    ),
   };
 
   const filteredGuests = useMemo(() => {
