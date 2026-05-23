@@ -486,32 +486,32 @@ export default function Admin() {
         </header>
 
         {/* ── Stats condensées ─────────────────────────────────────────── */}
-        <section className="border border-primary/10 bg-white editorial-shadow">
+        <section className="border border-primary/10 bg-white editorial-shadow overflow-hidden">
           {/* Ligne principale */}
           <div className="grid grid-cols-3 divide-x divide-primary/8 sm:grid-cols-5 border-b border-primary/8">
             {[
-              { label: "Invités", value: stats.totalInvites },
-              { label: "Confirmés", value: stats.confirmedInvites },
-              { label: "En attente", value: stats.pendingInvites },
-              { label: "Absents", value: stats.declinedInvites },
-              { label: "Envoyées", value: stats.sentInvitations },
+              { label: "Invités",    value: stats.totalInvites,    color: "text-foreground",    bg: "" },
+              { label: "Confirmés",  value: stats.confirmedInvites, color: "text-emerald-600",   bg: "bg-emerald-50/60" },
+              { label: "En attente", value: stats.pendingInvites,   color: "text-amber-500",     bg: "bg-amber-50/60" },
+              { label: "Absents",    value: stats.declinedInvites,  color: "text-rose-500",      bg: "bg-rose-50/60" },
+              { label: "Envoyées",   value: stats.sentInvitations,  color: "text-indigo-500",    bg: "bg-indigo-50/60" },
             ].map((item) => (
-              <div key={item.label} className="p-5 text-center">
-                <p className="font-serif text-3xl text-foreground">{item.value}</p>
+              <div key={item.label} className={`p-5 text-center ${item.bg}`}>
+                <p className={`font-serif text-3xl ${item.color}`}>{item.value}</p>
                 <p className="mt-2 text-[9px] uppercase tracking-[0.35em] text-foreground/40">{item.label}</p>
               </div>
             ))}
           </div>
           {/* Ligne cérémonies */}
           <div className="grid grid-cols-2 divide-x divide-primary/8">
-            <div className="p-5 text-center">
-              <p className="text-[9px] uppercase tracking-[0.4em] text-primary/50 mb-2">Civil · matin</p>
-              <p className="font-serif text-2xl text-foreground">{stats.civilAttendees}</p>
+            <div className="p-5 text-center bg-yellow-50/50">
+              <p className="text-[9px] uppercase tracking-[0.4em] text-yellow-700/60 mb-2">Civil · matin</p>
+              <p className="font-serif text-2xl text-yellow-700">{stats.civilAttendees}</p>
               <p className="mt-1 text-[9px] text-foreground/35">personnes attendues</p>
             </div>
-            <div className="p-5 text-center">
-              <p className="text-[9px] uppercase tracking-[0.4em] text-primary/50 mb-2">Soirée · soir</p>
-              <p className="font-serif text-2xl text-foreground">{stats.eveningAttendees}</p>
+            <div className="p-5 text-center bg-violet-50/50">
+              <p className="text-[9px] uppercase tracking-[0.4em] text-violet-700/60 mb-2">Soirée · soir</p>
+              <p className="font-serif text-2xl text-violet-700">{stats.eveningAttendees}</p>
               <p className="mt-1 text-[9px] text-foreground/35">personnes attendues</p>
             </div>
           </div>
