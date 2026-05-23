@@ -6,6 +6,7 @@ import { CalendarDays, Clock, MapPin, ChevronDown } from "lucide-react";
 import { type RsvpResponse } from "@shared/schema";
 import { mamisaMarylin } from "@shared/mamisaMarylin";
 import { Skeleton } from "@/components/ui/skeleton";
+import heroImg from "../../images/hero.jpeg";
 
 type InvitationGuest = RsvpResponse & { invitationUrl: string };
 
@@ -157,29 +158,30 @@ export default function Invitation() {
       ══════════════════════════════════════════════════════ */}
       <section
         ref={heroRef}
-        className="relative isolate overflow-hidden min-h-[100svh] bg-gradient-to-br from-background via-background to-secondary"
+        className="relative isolate overflow-hidden min-h-[100svh]"
       >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage:
-              "radial-gradient(ellipse at 28% 20%, hsl(var(--primary)/0.05) 0%, transparent 48%), radial-gradient(ellipse at 78% 74%, hsl(var(--primary)/0.05) 0%, transparent 44%)",
-          }}
-        />
-        <span className="absolute top-8 left-8 text-xl select-none pointer-events-none text-muted-foreground/30">✦</span>
-        <span className="absolute top-8 right-8 text-xl select-none pointer-events-none text-muted-foreground/30">✦</span>
-        <span className="absolute bottom-16 left-8 text-xl select-none pointer-events-none text-muted-foreground/20">✦</span>
-        <span className="absolute bottom-16 right-8 text-xl select-none pointer-events-none text-muted-foreground/20">✦</span>
+        {/* Hero photo en fond parallax */}
+        <motion.div
+          style={{ y: heroY }}
+          className="absolute inset-0 -z-10"
+        >
+          <img
+            src={heroImg}
+            alt="Mamisa & Marylin"
+            className="h-full w-full object-cover object-center scale-110"
+          />
+          <div className="absolute inset-0 bg-black/52" />
+        </motion.div>
 
         <motion.div
-          style={{ y: heroY, opacity: heroOpacity }}
+          style={{ opacity: heroOpacity }}
           className="relative mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-8 py-20 text-center"
         >
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            className="text-[10px] uppercase tracking-[0.62em] text-primary"
+            className="text-[10px] uppercase tracking-[0.62em] text-white/70"
           >
             {mamisaMarylin.hero.eyebrow}
           </motion.p>
@@ -190,11 +192,11 @@ export default function Invitation() {
             transition={{ duration: 1, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="mt-12"
           >
-            <p className="font-serif text-base italic text-muted-foreground">
+            <p className="font-serif text-base italic text-white/60">
               À l'attention de
             </p>
             <h1
-              className="mt-2 font-serif leading-tight text-foreground"
+              className="mt-2 font-serif leading-tight text-white"
               style={{ fontSize: "clamp(2rem, 6vw, 3.75rem)" }}
             >
               {guest.firstName} {guest.lastName}
@@ -208,12 +210,12 @@ export default function Invitation() {
             className="mt-10"
           >
             <p
-              className="font-script leading-tight text-foreground/80"
+              className="font-script leading-tight text-white/90"
               style={{ fontSize: "clamp(3.5rem, 10vw, 6rem)" }}
             >
               {mamisaMarylin.title}
             </p>
-            <p className="mt-3 font-serif text-xl md:text-2xl text-foreground/70">
+            <p className="mt-3 font-serif text-xl md:text-2xl text-white/70">
               vous invitent à leur mariage
             </p>
           </motion.div>
@@ -224,10 +226,10 @@ export default function Invitation() {
             transition={{ delay: 1.5, duration: 1 }}
             className="mt-16 flex flex-col items-center gap-2"
           >
-            <p className="text-[9px] uppercase tracking-[0.58em] text-muted-foreground">
+            <p className="text-[9px] uppercase tracking-[0.58em] text-white/50">
               Découvrir
             </p>
-            <ChevronDown className="h-4 w-4 animate-bounce text-primary" strokeWidth={1.4} />
+            <ChevronDown className="h-4 w-4 animate-bounce text-white/70" strokeWidth={1.4} />
           </motion.div>
         </motion.div>
       </section>
@@ -235,6 +237,7 @@ export default function Invitation() {
       {/* ══════════════════════════════════════════════════════
           MARIAGE CIVIL & BÉNÉDICTION
       ══════════════════════════════════════════════════════ */}
+      {(guest.ceremonyChoice === "civil" || guest.ceremonyChoice === "both" || !guest.ceremonyChoice) && (
       <section className="relative overflow-hidden bg-background">
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
@@ -285,10 +288,12 @@ export default function Invitation() {
           </motion.p>
         </div>
       </section>
+      )}
 
       {/* ══════════════════════════════════════════════════════
           SOIRÉE DANSANTE
       ══════════════════════════════════════════════════════ */}
+      {(guest.ceremonyChoice === "evening" || guest.ceremonyChoice === "both" || !guest.ceremonyChoice) && (
       <section className="relative overflow-hidden dark bg-background">
         <div
           className="absolute inset-0 pointer-events-none"
@@ -366,6 +371,7 @@ export default function Invitation() {
           </motion.div>
         </div>
       </section>
+      )}
 
       {/* ══════════════════════════════════════════════════════
           VERSETS BIBLIQUES
