@@ -37,6 +37,7 @@ const defaultValues: RsvpFormInput = {
   phone: "",
   status: "confirmed",
   guestCount: 1,
+  ceremonyChoice: "both",
   mealChoice: "",
   message: "",
 };
@@ -539,36 +540,80 @@ export default function RsvpForm({
             />
 
             {isAttending && (
-              <FormField
-                control={form.control}
-                name="guestCount"
-                render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel className={labelClassName}>Nombre de places</FormLabel>
-                    <FormControl>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          aria-pressed={(field.value ?? 1) === 1}
-                          onClick={() => field.onChange(1)}
-                          className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${(field.value ?? 1) === 1 ? selectedChoiceClassName : unselectedChoiceClassName}`}
-                        >
-                          Seul(e)
-                        </button>
-                        <button
-                          type="button"
-                          aria-pressed={field.value === 2}
-                          onClick={() => field.onChange(2)}
-                          className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === 2 ? selectedChoiceClassName : unselectedChoiceClassName}`}
-                        >
-                          En couple
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <>
+                <FormField
+                  control={form.control}
+                  name="ceremonyChoice"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel className={labelClassName}>Je participe à</FormLabel>
+                      <FormControl>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                          <button
+                            type="button"
+                            aria-pressed={field.value === "civil"}
+                            onClick={() => field.onChange("civil")}
+                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === "civil" ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                          >
+                            <span className="block font-medium">Mariage civil</span>
+                            <span className="block text-[10px] mt-0.5 opacity-70">09h00 · matin</span>
+                          </button>
+                          <button
+                            type="button"
+                            aria-pressed={field.value === "evening"}
+                            onClick={() => field.onChange("evening")}
+                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === "evening" ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                          >
+                            <span className="block font-medium">Soirée dansante</span>
+                            <span className="block text-[10px] mt-0.5 opacity-70">18h30 · soir</span>
+                          </button>
+                          <button
+                            type="button"
+                            aria-pressed={field.value === "both"}
+                            onClick={() => field.onChange("both")}
+                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === "both" ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                          >
+                            <span className="block font-medium">Les deux</span>
+                            <span className="block text-[10px] mt-0.5 opacity-70">toute la journée</span>
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="guestCount"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel className={labelClassName}>Je viens</FormLabel>
+                      <FormControl>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            aria-pressed={(field.value ?? 1) === 1}
+                            onClick={() => field.onChange(1)}
+                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${(field.value ?? 1) === 1 ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                          >
+                            Seul(e)
+                          </button>
+                          <button
+                            type="button"
+                            aria-pressed={field.value === 2}
+                            onClick={() => field.onChange(2)}
+                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === 2 ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                          >
+                            En couple
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
             )}
           </div>
 

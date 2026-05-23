@@ -345,6 +345,61 @@ export default function Invitation() {
           >
             {mamisaMarylin.venues[1].note}
           </motion.p>
+
+          {/* Tenue libre */}
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.5 }}
+            transition={{ ...reveal, delay: 0.38 }}
+            className="mt-12 border-t border-border pt-10 text-center"
+          >
+            <p className="text-[9px] uppercase tracking-[0.58em] text-muted-foreground/60">
+              Soirée · 18h30
+            </p>
+            <p className="mt-3 font-serif text-2xl italic text-primary/80">
+              Tenue libre
+            </p>
+            <p className="mt-4 mx-auto max-w-sm text-sm leading-7 text-muted-foreground">
+              Pour la soirée, les invités sont libres de choisir leur tenue. Venez comme vous vous sentez le plus élégants — aucune contrainte de couleur.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+          VERSETS BIBLIQUES
+      ══════════════════════════════════════════════════════ */}
+      <section className="relative bg-background">
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+        <div className="mx-auto max-w-3xl px-6 py-20 md:px-10 md:py-28 space-y-12">
+          {[
+            {
+              text: "Deux valent mieux qu'un, parce qu'ils retirent un meilleur salaire de leur travail. Car s'ils tombent, l'un relève l'autre ; mais malheur à celui qui est seul et qui tombe, sans avoir un second pour le relever.",
+              ref: "Ecclésiaste 4 : 9–10",
+            },
+            {
+              text: "Ainsi ils ne sont plus deux, mais ils ne font qu'une seule chair. Que l'homme donc ne sépare pas ce que Dieu a joint.",
+              ref: "Matthieu 19 : 6",
+            },
+          ].map((verse, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ ...reveal, delay: i * 0.12 }}
+              className="relative pl-6 border-l-0"
+            >
+              <span className="absolute -top-3 left-0 font-serif text-5xl leading-none text-primary/15 select-none">"</span>
+              <blockquote className="font-serif text-lg md:text-xl leading-9 italic text-foreground/75">
+                « {verse.text} »
+              </blockquote>
+              <p className="mt-5 text-[10px] uppercase tracking-[0.45em] text-muted-foreground/50">
+                — {verse.ref}
+              </p>
+            </motion.div>
+          ))}
         </div>
       </section>
 

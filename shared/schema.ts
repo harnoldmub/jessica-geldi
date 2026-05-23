@@ -43,6 +43,7 @@ export const rsvpResponses = pgTable("rsvp_responses", {
   // Status & Attendance
   status: varchar("status", { length: 50 }).notNull().default('pending'), // 'confirmed', 'declined', 'pending'
   guestCount: integer("guest_count").notNull().default(1),
+  ceremonyChoice: varchar("ceremony_choice", { length: 20 }).default('both'), // 'civil', 'evening', 'both'
   mealChoice: varchar("meal_choice", { length: 100 }),
   message: text("message"), // Optional message from guest
   
@@ -87,6 +88,7 @@ export const insertRsvpSchema = createInsertSchema(rsvpResponses, {
   lastName: (schema) => schema.min(1, "Nom requis"),
   status: () => z.enum(["pending", "confirmed", "declined"]).default("confirmed"),
   guestCount: (schema) => schema.min(1, "Au moins 1 personne").max(2, "Maximum 2 personnes"),
+  ceremonyChoice: () => z.enum(["civil", "evening", "both"]).default("both"),
 }).omit({
   token: true,
   invitationSentAt: true,

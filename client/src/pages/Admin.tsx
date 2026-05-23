@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -240,15 +241,20 @@ export default function Admin() {
     },
   });
 
+  const confirmed = guests.filter((g) => g.status === "confirmed");
   const stats = {
     totalInvites: guests.length,
     pendingInvites: guests.filter((guest) => guest.status === "pending").length,
-    confirmedInvites: guests.filter((guest) => guest.status === "confirmed").length,
+    confirmedInvites: confirmed.length,
     declinedInvites: guests.filter((guest) => guest.status === "declined").length,
     sentInvitations: guests.filter((guest) => guest.invitationStatus === "sent").length,
-    attendingGuests: guests
-      .filter((guest) => guest.status === "confirmed")
-      .reduce((sum, guest) => sum + (guest.guestCount || 1), 0),
+    attendingGuests: confirmed.reduce((sum, g) => sum + (g.guestCount || 1), 0),
+    civilAttendees: confirmed
+      .filter((g) => !g.ceremonyChoice || g.ceremonyChoice === "civil" || g.ceremonyChoice === "both")
+      .reduce((sum, g) => sum + (g.guestCount || 1), 0),
+    eveningAttendees: confirmed
+      .filter((g) => !g.ceremonyChoice || g.ceremonyChoice === "evening" || g.ceremonyChoice === "both")
+      .reduce((sum, g) => sum + (g.guestCount || 1), 0),
   };
 
   const filteredGuests = useMemo(() => {
@@ -509,6 +515,34 @@ export default function Admin() {
               </p>
             </article>
           ))}
+        </section>
+
+        {/* ── Présences par cérémonie ───────────────────────────────────── */}
+        <section className="grid gap-4 sm:grid-cols-2">
+          <article className="border border-primary/10 bg-white p-6 editorial-shadow">
+            <CalendarDays className="h-5 w-5 text-primary/50" strokeWidth={1.5} />
+            <p className="mt-5 text-[10px] uppercase tracking-[0.35em] text-foreground/45">
+              Civil & Bénédiction
+            </p>
+            <p className="mt-3 font-serif text-4xl text-foreground">
+              {stats.civilAttendees}
+            </p>
+            <p className="mt-2 text-[10px] text-foreground/35 tracking-wide">
+              personnes attendues le matin
+            </p>
+          </article>
+          <article className="border border-primary/10 bg-white p-6 editorial-shadow">
+            <CalendarDays className="h-5 w-5 text-primary/50" strokeWidth={1.5} />
+            <p className="mt-5 text-[10px] uppercase tracking-[0.35em] text-foreground/45">
+              Soirée dansante
+            </p>
+            <p className="mt-3 font-serif text-4xl text-foreground">
+              {stats.eveningAttendees}
+            </p>
+            <p className="mt-2 text-[10px] text-foreground/35 tracking-wide">
+              personnes attendues le soir
+            </p>
+          </article>
         </section>
 
         {/* ── Modale ajout / modification ────────────────────────────────── */}
