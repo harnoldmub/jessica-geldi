@@ -530,7 +530,7 @@ export default function RsvpForm({
                         onClick={() => field.onChange("declined")}
                         className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === "declined" ? selectedChoiceClassName : unselectedChoiceClassName}`}
                       >
-                        Je ne serai pas là
+                        Je serai absent(e)
                       </button>
                     </div>
                   </FormControl>

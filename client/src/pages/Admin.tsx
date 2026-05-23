@@ -504,7 +504,7 @@ export default function Admin() {
               { label: "Invités", value: stats.totalInvites },
               { label: "Confirmés", value: stats.confirmedInvites },
               { label: "En attente", value: stats.pendingInvites },
-              { label: "Déclinés", value: stats.declinedInvites },
+              { label: "Absents", value: stats.declinedInvites },
               { label: "Envoyées", value: stats.sentInvitations },
             ].map((item) => (
               <div key={item.label} className="p-5 text-center">
@@ -606,7 +606,7 @@ export default function Admin() {
                     >
                       <option value="pending">En attente</option>
                       <option value="confirmed">Confirmé</option>
-                      <option value="declined">Décliné</option>
+                      <option value="declined">Absent(e)</option>
                     </select>
                   </div>
                   <div className="space-y-2">
@@ -721,7 +721,7 @@ export default function Admin() {
               <option value="all">Tous les RSVP</option>
               <option value="pending">En attente</option>
               <option value="confirmed">Confirmés</option>
-              <option value="declined">Déclinés</option>
+              <option value="declined">Absents</option>
             </select>
             <select
               value={invitationFilter}
@@ -778,7 +778,7 @@ export default function Admin() {
                         {guest.status === "confirmed"
                           ? "Confirmé"
                           : guest.status === "declined"
-                            ? "Décliné"
+                            ? "Absent(e)"
                             : "En attente"}
                       </Badge>
                       {guest.checkedInAt && (
@@ -1002,7 +1002,7 @@ export default function Admin() {
                         {guest.status === "confirmed"
                           ? "Confirmé"
                           : guest.status === "declined"
-                            ? "Décliné"
+                            ? "Absent(e)"
                             : "En attente"}
                       </Badge>
                     </footer>
