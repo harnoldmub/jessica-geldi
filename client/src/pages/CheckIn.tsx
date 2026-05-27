@@ -78,9 +78,9 @@ export default function CheckIn() {
     (currentPage + 1) * PAGE_SIZE,
   );
 
+  const CAPACITY = 250;
   const checkedInCount = guests.filter((g) => g.checkedInAt).length;
   const waitingCount = guests.length - checkedInCount;
-  const totalPlaces = guests.reduce((sum, g) => sum + (g.guestCount || 1), 0);
 
   return (
     <div className="min-h-screen bg-[#F7F7F5] flex flex-col pb-24">
@@ -111,9 +111,12 @@ export default function CheckIn() {
           </div>
           <div className="w-px bg-border" />
           <div>
-            <p className="font-serif text-3xl text-foreground">{totalPlaces}</p>
+            <p className="font-serif text-3xl text-foreground">
+              {checkedInCount}
+              <span className="text-lg text-foreground/30"> / {CAPACITY}</span>
+            </p>
             <p className="text-[9px] uppercase tracking-[0.4em] text-foreground/40 mt-0.5">
-              Places
+              Capacité
             </p>
           </div>
         </div>
