@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { type RsvpResponse } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
@@ -6,22 +6,21 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Check, Loader2, UserCheck } from "lucide-react";
+import { Search, Check, Loader2, UserCheck, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const CHECKIN_CODE = "MMCheckin2026";
-const CHECKIN_STORAGE_KEY = "mm-checkin-access";
+const PAGE_SIZE = 15;
 
 export default function CheckIn() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [isUnlocked, setIsUnlocked] = useState(false);
-  const [codeInput, setCodeInput] = useState("");
-  const [codeError, setCodeError] = useState("");
+  const [currentPage, setCurrentPage] = useState(0);
 
+  // Reset page on search change
   useEffect(() => {
-    setIsUnlocked(sessionStorage.getItem(CHECKIN_STORAGE_KEY) === "granted");
-  }, []);
+    setCurrentPage(0);
+  }, [searchTerm]);
 
   const { data: guests = [], isLoading } = useQuery<RsvpResponse[]>({
     queryKey: ["/api/checkin/guests"],
@@ -32,7 +31,6 @@ export default function CheckIn() {
       if (!res.ok) throw new Error("Accès refusé");
       return res.json();
     },
-    enabled: isUnlocked,
     refetchInterval: 15000,
   });
 
@@ -51,51 +49,20 @@ export default function CheckIn() {
     },
   });
 
-  if (!isUnlocked) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-6 py-12">
-        <section className="w-full max-w-md border border-border bg-white p-8 text-center editorial-shadow">
-          <UserCheck className="mx-auto h-8 w-8 text-primary/50" strokeWidth={1.4} />
-          <h1 className="mt-5 font-serif text-3xl text-foreground">Accueil Invités</h1>
-          <p className="mt-3 text-sm text-foreground/60">
-            Entrez le code d'accès pour le jour J
-          </p>
-          <form
-            className="mt-8 space-y-4 text-left"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (codeInput.trim() === CHECKIN_CODE) {
-                sessionStorage.setItem(CHECKIN_STORAGE_KEY, "granted");
-                setIsUnlocked(true);
-              } else {
-                setCodeError("Code incorrect.");
-              }
-            }}
-          >
-            <Input
-              value={codeInput}
-              onChange={(e) => {
-                setCodeInput(e.target.value);
-                setCodeError("");
-              }}
-              className="h-12 rounded-none text-center tracking-[0.2em] border-primary/15"
-              placeholder="Code d'accès"
-              autoFocus
-            />
-            {codeError && (
-              <p className="text-sm text-rose-600 text-center">{codeError}</p>
-            )}
-            <Button
-              type="submit"
-              className="w-full rounded-none py-6 text-[10px] uppercase tracking-[0.4em] bg-primary text-primary-foreground hover:bg-foreground"
-            >
-              Accéder
-            </Button>
-          </form>
-        </section>
-      </main>
-    );
-  }
+  const uncheckMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/checkin/${id}/uncheck`, {
+        method: "PATCH",
+        headers: { "X-Checkin-Code": CHECKIN_CODE },
+      });
+      if (!res.ok) throw new Error("Erreur annulation");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/checkin/guests"] });
+      toast({ title: "Check-in annulé" });
+    },
+  });
 
   const filteredGuests = guests
     .filter((g) =>
@@ -104,6 +71,12 @@ export default function CheckIn() {
         .includes(searchTerm.toLowerCase()),
     )
     .sort((a, b) => (a.checkedInAt ? 1 : 0) - (b.checkedInAt ? 1 : 0));
+
+  const totalPages = Math.ceil(filteredGuests.length / PAGE_SIZE);
+  const paginatedGuests = filteredGuests.slice(
+    currentPage * PAGE_SIZE,
+    (currentPage + 1) * PAGE_SIZE,
+  );
 
   const checkedInCount = guests.filter((g) => g.checkedInAt).length;
   const waitingCount = guests.length - checkedInCount;
@@ -171,12 +144,12 @@ export default function CheckIn() {
         )}
 
         <AnimatePresence mode="popLayout">
-          {filteredGuests.map((guest) => (
+          {paginatedGuests.map((guest) => (
             <motion.div
               layout
               key={guest.id}
               initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: guest.checkedInAt ? 0.3 : 1, y: 0 }}
+              animate={{ opacity: guest.checkedInAt ? 0.45 : 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.35 }}
             >
@@ -210,9 +183,19 @@ export default function CheckIn() {
                     <Check className="w-7 h-7" strokeWidth={1.5} />
                   </Button>
                 ) : (
-                  <div className="w-16 h-16 flex items-center justify-center border border-emerald-200 bg-emerald-50 shrink-0">
-                    <Check className="w-7 h-7 text-emerald-600" strokeWidth={1.5} />
-                  </div>
+                  <button
+                    onClick={() => uncheckMutation.mutate(guest.id)}
+                    disabled={uncheckMutation.isPending}
+                    title="Annuler le check-in"
+                    className="w-16 h-16 flex flex-col items-center justify-center gap-1 border border-emerald-200 bg-emerald-50 hover:bg-rose-50 hover:border-rose-200 shrink-0 transition-colors duration-200 group"
+                  >
+                    <Check className="w-5 h-5 text-emerald-600 group-hover:hidden" strokeWidth={1.5} />
+                    <X className="w-5 h-5 text-rose-500 hidden group-hover:block" strokeWidth={1.5} />
+                    <span className="text-[8px] uppercase tracking-wider text-emerald-600 group-hover:text-rose-500 leading-none">
+                      <span className="group-hover:hidden">OK</span>
+                      <span className="hidden group-hover:inline">Annuler</span>
+                    </span>
+                  </button>
                 )}
               </div>
             </motion.div>
@@ -229,6 +212,50 @@ export default function CheckIn() {
           </motion.p>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="px-4 mt-6 flex items-center justify-between gap-4">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/40">
+            Page {currentPage + 1} / {totalPages} · {filteredGuests.length} invités
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => p - 1)}
+              disabled={currentPage === 0}
+              className="rounded-none border-primary/15 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
+            >
+              <ChevronLeft className="h-4 w-4" strokeWidth={1.6} />
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <Button
+                key={i}
+                size="sm"
+                variant={i === currentPage ? "default" : "outline"}
+                onClick={() => setCurrentPage(i)}
+                className={`rounded-none px-4 py-5 text-[10px] uppercase tracking-[0.25em] ${
+                  i === currentPage
+                    ? "bg-primary text-primary-foreground hover:bg-foreground"
+                    : "border-primary/15 text-primary hover:bg-primary/5"
+                }`}
+              >
+                {i + 1}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => p + 1)}
+              disabled={currentPage >= totalPages - 1}
+              className="rounded-none border-primary/15 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
+            >
+              <ChevronRight className="h-4 w-4" strokeWidth={1.6} />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <footer className="mt-auto py-8 text-center opacity-15 pointer-events-none">
         <p className="font-script text-3xl text-primary lowercase">m&m</p>

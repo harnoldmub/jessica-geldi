@@ -134,7 +134,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const data = insertRsvpSchema.parse(req.body);
-      const updatedGuest = await storage.updateGuest(guest.id, data);
+      const updatedGuest = await storage.updateGuest(guest.id, {
+        ...data,
+        ceremonyChoice: data.ceremonyChoice === null ? undefined : data.ceremonyChoice,
+      });
 
       if (updatedGuest.email) {
         sendRsvpConfirmationEmail(updatedGuest).catch((err) => {
@@ -198,6 +201,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "Content-Disposition": 'attachment; filename="mamisa-marylin-rsvp.csv"',
       })
       .send([header.join(","), ...rows].join("\n"));
+  });
+
+  // Admin: Bulk import guests (name only)
+  app.post("/api/admin/guests/import", requireAuth, async (req, res) => {
+    try {
+      const { guests: names, guestCount = 1, ceremonyChoice = "both" } = req.body as {
+        guests: { firstName: string; lastName: string }[];
+        guestCount?: number;
+        ceremonyChoice?: string;
+      };
+
+      if (!Array.isArray(names) || names.length === 0) {
+        return res.status(400).json({ message: "Aucun invité à importer" });
+      }
+
+      const created = [];
+      for (const { firstName, lastName } of names) {
+        if (!firstName?.trim() || !lastName?.trim()) continue;
+        const guest = await storage.createRsvp({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: null,
+          phone: null,
+          status: "pending",
+          guestCount,
+          ceremonyChoice: ceremonyChoice as "civil" | "evening" | "both",
+          token: nanoid(10),
+        });
+        created.push({
+          ...guest,
+          invitationUrl: buildInvitationLink(req, guest.token),
+          invitationStatus: getInvitationStatus(guest),
+        });
+      }
+
+      return res.status(201).json(created);
+    } catch (error: any) {
+      return res.status(400).json({ message: error.message || "Erreur lors de l'import" });
+    }
   });
 
   app.post("/api/admin/guests", requireAuth, async (req, res) => {
@@ -296,6 +338,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/checkin/:id/check-in", requireCheckinCode, async (req, res) => {
     const id = parseInt(req.params.id);
     const guest = await storage.checkInGuest(id);
+    res.json(guest);
+  });
+
+  // Uncheck-in a guest via the check-in page
+  app.patch("/api/checkin/:id/uncheck", requireCheckinCode, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const guest = await storage.uncheckInGuest(id);
     res.json(guest);
   });
 

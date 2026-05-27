@@ -44,6 +44,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import CardGeneratorDialog from "@/components/CardGeneratorDialog";
 
 type GuestRecord = RsvpResponse & {
   invitationUrl?: string;
@@ -107,6 +108,11 @@ export default function Admin() {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [msgPage, setMsgPage] = useState(0);
+  const [cardGeneratorGuest, setCardGeneratorGuest] = useState<GuestRecord | null>(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importGuestCount, setImportGuestCount] = useState(1);
+  const [importCeremony, setImportCeremony] = useState<"both" | "civil" | "evening">("both");
   const MSG_PAGE_SIZE = 9;
   const [showPassword, setShowPassword] = useState(false);
 
@@ -246,6 +252,42 @@ export default function Admin() {
         title: "Check-ins réinitialisés",
         description: "Tous les check-ins ont été effacés.",
       });
+    },
+  });
+
+  const importGuestsMutation = useMutation({
+    mutationFn: async () => {
+      const lines = importText
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.includes(" "));
+
+      const guests = lines.map((line) => {
+        const idx = line.indexOf(" ");
+        return {
+          firstName: line.slice(0, idx),
+          lastName: line.slice(idx + 1),
+        };
+      });
+
+      const response = await apiRequest("POST", "/api/admin/guests/import", {
+        guests,
+        guestCount: importGuestCount,
+        ceremonyChoice: importCeremony,
+      });
+      return response.json();
+    },
+    onSuccess: (created: GuestRecord[]) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
+      toast({
+        title: `${created.length} invité${created.length > 1 ? "s" : ""} importé${created.length > 1 ? "s" : ""}`,
+        description: "Les liens d'invitation sont prêts.",
+      });
+      setImportText("");
+      setIsImportOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erreur d'import", description: error.message, variant: "destructive" });
     },
   });
 
@@ -527,6 +569,15 @@ export default function Admin() {
             <Button
               type="button"
               variant="outline"
+              onClick={() => setIsImportOpen(true)}
+              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
+            >
+              <UserPlus className="mr-2 h-4 w-4" strokeWidth={1.6} />
+              Importer liste
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => window.open("/api/admin/guests/export", "_blank")}
               className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
             >
@@ -586,6 +637,82 @@ export default function Admin() {
             </div>
           </div>
         </section>
+
+        {/* ── Modale import en masse ─────────────────────────────────────── */}
+        <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+          <DialogContent className="max-w-lg p-0 flex flex-col max-h-[88vh]">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b border-primary/8 shrink-0">
+              <p className="text-[10px] uppercase tracking-[0.4em] text-primary/55">Import rapide</p>
+              <DialogTitle>Importer une liste d'invités</DialogTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Un invité par ligne, format : <span className="font-mono">Prénom Nom</span>
+              </p>
+            </DialogHeader>
+
+            <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
+              <Textarea
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                placeholder={"Jean Dupont\nMarie Martin\nPierre Jean Paul"}
+                className="min-h-[180px] rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20 font-mono text-sm"
+              />
+
+              {importText.trim() && (() => {
+                const count = importText.split("\n").filter((l) => l.trim().includes(" ")).length;
+                return (
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-primary/60">
+                    {count} invité{count > 1 ? "s" : ""} détecté{count > 1 ? "s" : ""}
+                  </p>
+                );
+              })()}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Personnes</label>
+                  <select
+                    value={importGuestCount}
+                    onChange={(e) => setImportGuestCount(Number(e.target.value))}
+                    className="h-11 w-full rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
+                  >
+                    <option value={1}>Seul(e) — 1</option>
+                    <option value={2}>En couple — 2</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Cérémonie</label>
+                  <select
+                    value={importCeremony}
+                    onChange={(e) => setImportCeremony(e.target.value as "both" | "civil" | "evening")}
+                    className="h-11 w-full rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
+                  >
+                    <option value="both">Les deux</option>
+                    <option value="civil">Civil seulement</option>
+                    <option value="evening">Soirée seulement</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="px-6 py-4 border-t border-primary/8 shrink-0">
+              <Button
+                type="button"
+                onClick={() => importGuestsMutation.mutate()}
+                disabled={importGuestsMutation.isPending || !importText.trim().includes(" ")}
+                className="rounded-none bg-primary px-7 py-6 text-[10px] uppercase tracking-[0.35em] text-primary-foreground hover:bg-foreground"
+              >
+                {importGuestsMutation.isPending ? "Import en cours..." : "Importer"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => { setIsImportOpen(false); setImportText(""); }}
+                className="rounded-none border-primary/15 px-7 py-6 text-[10px] uppercase tracking-[0.35em] text-primary"
+              >
+                Annuler
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* ── Modale ajout / modification ────────────────────────────────── */}
         <Dialog
@@ -903,22 +1030,36 @@ export default function Admin() {
 
                   {/* Actions */}
                   <div className="mt-3 pt-3 border-t border-primary/8 flex flex-wrap gap-2">
-                    <Button
-                      type="button" size="sm" variant="outline"
-                      onClick={() => shareViaWhatsApp(guest)}
-                      className="rounded-none border-green-200 text-[10px] uppercase tracking-[0.25em] text-green-700 hover:bg-green-50"
-                    >
-                      <MessageCircle className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
-                      WhatsApp
-                    </Button>
-                    <Button
-                      type="button" size="sm" variant="outline"
-                      onClick={() => copyInvitationLink(guest)}
-                      className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
-                    >
-                      <Copy className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
-                      Copier
-                    </Button>
+                    {guest.status !== "declined" && (
+                      <Button
+                        type="button" size="sm" variant="outline"
+                        onClick={() => shareViaWhatsApp(guest)}
+                        className="rounded-none border-green-200 text-[10px] uppercase tracking-[0.25em] text-green-700 hover:bg-green-50"
+                      >
+                        <MessageCircle className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                        WhatsApp
+                      </Button>
+                    )}
+                    {guest.status !== "declined" && (
+                      <Button
+                        type="button" size="sm" variant="outline"
+                        onClick={() => setCardGeneratorGuest(guest)}
+                        className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
+                      >
+                        <Download className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                        Carte
+                      </Button>
+                    )}
+                    {guest.status !== "declined" && (
+                      <Button
+                        type="button" size="sm" variant="outline"
+                        onClick={() => copyInvitationLink(guest)}
+                        className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
+                      >
+                        <Copy className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                        Copier
+                      </Button>
+                    )}
                     <Button
                       type="button" size="sm" variant="outline"
                       onClick={() => regenerateLinkMutation.mutate(guest.id)}
@@ -1124,6 +1265,12 @@ export default function Admin() {
             </section>
           );
         })()}
+        
+        <CardGeneratorDialog
+          guest={cardGeneratorGuest}
+          isOpen={!!cardGeneratorGuest}
+          onClose={() => setCardGeneratorGuest(null)}
+        />
       </div>
     </main>
   );
