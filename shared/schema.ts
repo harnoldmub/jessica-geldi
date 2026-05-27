@@ -48,6 +48,7 @@ export const rsvpResponses = pgTable("rsvp_responses", {
   message: text("message"), // Optional message from guest
   
   // Invitation & Check-in
+  tableNumber: integer("table_number"),
   token: varchar("token").unique().notNull(), // For personalized invitation links
   invitationSentAt: timestamp("invitation_sent_at"),
   checkedInAt: timestamp("checked_in_at"),
@@ -106,6 +107,7 @@ export const insertRsvpSchema = createInsertSchema(rsvpResponses, {
 export const adminGuestSchema = insertRsvpSchema.extend({
   status: z.enum(["pending", "confirmed", "declined"]).default("pending"),
   ceremonyChoice: z.enum(["civil", "evening", "both"]).default("both"),
+  tableNumber: z.number().int().min(1).max(25).nullable().optional(),
 });
 
 export const updateGuestSchema = adminGuestSchema.partial();

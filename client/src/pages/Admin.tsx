@@ -63,6 +63,7 @@ const emptyGuestForm: GuestFormState = {
   ceremonyChoice: "both",
   mealChoice: "",
   message: "",
+  tableNumber: null,
 };
 
 async function getCurrentUser() {
@@ -399,6 +400,7 @@ export default function Admin() {
       ceremonyChoice: (guest.ceremonyChoice as GuestFormState["ceremonyChoice"]) || "both",
       mealChoice: guest.mealChoice || "",
       message: guest.message || "",
+      tableNumber: guest.tableNumber ?? null,
     });
     setIsFormOpen(true);
   }
@@ -822,6 +824,20 @@ export default function Admin() {
                 </div>
 
                 <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Numéro de table</label>
+                  <select
+                    value={guestForm.tableNumber ?? ""}
+                    onChange={(e) => setGuestForm((c) => ({ ...c, tableNumber: e.target.value ? Number(e.target.value) : null }))}
+                    className="h-12 w-full rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
+                  >
+                    <option value="">— Aucune table —</option>
+                    {Array.from({ length: 25 }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>Table {n}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Note</label>
                   <Textarea
                     value={guestForm.message || ""}
@@ -957,6 +973,7 @@ export default function Admin() {
                       </p>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/35">
                         {(guest.guestCount || 1) > 1 ? "En couple" : "Seul(e)"} ·{" "}
+                        {guest.tableNumber ? `Table ${guest.tableNumber} · ` : ""}
                         {guest.createdAt
                           ? format(new Date(guest.createdAt), "d MMM yyyy", { locale: fr })
                           : "—"}

@@ -67,7 +67,8 @@ export default function CardGeneratorDialog({
   const [fontSize, setFontSize] = useState(42);
   const [fontColor, setFontColor] = useState("#333333");
   const [textX, setTextX] = useState(52); // En %
-  const [textY, setTextY] = useState(90); // En %
+  const [textY, setTextY] = useState(80); // En % — la table est affichée 10% en dessous
+  const [tableNumber, setTableNumber] = useState<number | null>(null);
   const [textAlign, setTextAlign] = useState<"left" | "center" | "right">("center");
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
@@ -87,6 +88,7 @@ export default function CardGeneratorDialog({
           ? `${baseName} & +1`
           : baseName
       );
+      setTableNumber((guest as any).tableNumber ?? null);
 
       // Charger la configuration sauvegardée
       try {
@@ -140,12 +142,19 @@ export default function CardGeneratorDialog({
     isItalic,
   ]);
 
-  // Précharger l'image d'invitation de fond
+  // Précharger l'image d'invitation de fond selon la cérémonie du guest
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && guest) {
       setIsImageLoading(true);
+      const imgSrc =
+        guest.ceremonyChoice === "civil"
+          ? "/images/invitation_civil.PNG"
+          : guest.ceremonyChoice === "evening"
+          ? "/images/invitation_soir%C3%A9e.PNG"
+          : "/images/invitation_all.PNG";
+
       const img = new Image();
-      img.src = "/images/invitation-MM.png";
+      img.src = imgSrc;
       img.onload = () => {
         setImageObj(img);
         setIsImageLoading(false);
@@ -154,14 +163,14 @@ export default function CardGeneratorDialog({
         setIsImageLoading(false);
         toast({
           title: "Erreur de chargement",
-          description: "Impossible de charger le modèle de carte d'invitation-MM.",
+          description: "Impossible de charger le modèle de carte d'invitation.",
           variant: "destructive",
         });
       };
     } else {
       setImageObj(null);
     }
-  }, [isOpen, toast]);
+  }, [isOpen, guest, toast]);
 
   // Redessiner le canevas lorsque les styles changent
   useEffect(() => {
@@ -195,11 +204,19 @@ export default function CardGeneratorDialog({
     const pxX = (textX / 100) * canvas.width;
     const pxY = (textY / 100) * canvas.height;
 
-    // Dessiner le texte
+    // Dessiner le nom
     ctx.fillText(guestName, pxX, pxY);
+
+    // Dessiner le numéro de table (4% en dessous du nom, après le "TABLE :" imprimé sur l'image)
+    if (tableNumber) {
+      const tablePxY = ((textY + 4) / 100) * canvas.height;
+      ctx.font = `${fontSize * 0.65}px "${fontFamily}", sans-serif`;
+      ctx.fillText(`${tableNumber}`, pxX, tablePxY);
+    }
   }, [
     imageObj,
     guestName,
+    tableNumber,
     fontFamily,
     fontSize,
     fontColor,
@@ -262,7 +279,7 @@ export default function CardGeneratorDialog({
   // Fonction de réinitialisation de la position
   const resetPosition = () => {
     setTextX(52);
-    setTextY(90);
+    setTextY(80);
     setFontSize(42);
     setFontFamily("Cormorant Garamond");
     setFontColor("#333333");
