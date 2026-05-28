@@ -292,6 +292,19 @@ export default function Admin() {
     },
   });
 
+  const updateTableMutation = useMutation({
+    mutationFn: async ({ id, tableNumber }: { id: number; tableNumber: number | null }) => {
+      const response = await apiRequest("PATCH", `/api/admin/guests/${id}`, { tableNumber });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
+    },
+    onError: () => {
+      toast({ title: "Erreur", description: "Impossible de mettre à jour la table.", variant: "destructive" });
+    },
+  });
+
   const declineMutation = useMutation({
     mutationFn: async (guestId: number) => {
       const response = await apiRequest("PATCH", `/api/admin/guests/${guestId}`, { status: "declined" });
@@ -1046,7 +1059,26 @@ export default function Admin() {
                   </div>
 
                   {/* Actions */}
-                  <div className="mt-3 pt-3 border-t border-primary/8 flex flex-wrap gap-2">
+                  <div className="mt-3 pt-3 border-t border-primary/8 flex flex-wrap items-center gap-2">
+                    {/* Select table inline */}
+                    <select
+                      value={(guest as any).tableNumber ?? ""}
+                      onChange={(e) =>
+                        updateTableMutation.mutate({
+                          id: guest.id,
+                          tableNumber: e.target.value ? Number(e.target.value) : null,
+                        })
+                      }
+                      className="h-8 rounded-none border border-primary/15 bg-transparent px-2 text-[10px] uppercase tracking-[0.2em] text-primary outline-none focus:border-primary cursor-pointer"
+                    >
+                      <option value="">— Table —</option>
+                      {Array.from({ length: 25 }, (_, i) => i + 1).map((n) => (
+                        <option key={n} value={n}>Table {n}</option>
+                      ))}
+                    </select>
+
+                    <div className="w-px h-6 bg-primary/10 mx-1" />
+
                     {guest.status !== "declined" && (
                       <Button
                         type="button" size="sm" variant="outline"
@@ -1079,30 +1111,12 @@ export default function Admin() {
                     )}
                     <Button
                       type="button" size="sm" variant="outline"
-                      onClick={() => regenerateLinkMutation.mutate(guest.id)}
-                      className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
-                    >
-                      <RefreshCw className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
-                      Régénérer
-                    </Button>
-                    <Button
-                      type="button" size="sm" variant="outline"
                       onClick={() => startEditingGuest(guest)}
                       className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
                     >
                       <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
                       Modifier
                     </Button>
-                    {guest.status !== "declined" && (
-                      <Button
-                        type="button" size="sm" variant="outline"
-                        onClick={() => declineMutation.mutate(guest.id)}
-                        className="rounded-none border-orange-200 text-[10px] uppercase tracking-[0.25em] text-orange-700 hover:bg-orange-50"
-                      >
-                        <XCircle className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
-                        Indispo.
-                      </Button>
-                    )}
                     <Button
                       type="button" size="sm" variant="outline"
                       onClick={() => deleteGuestMutation.mutate(guest.id)}
