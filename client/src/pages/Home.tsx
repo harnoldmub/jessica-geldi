@@ -79,11 +79,10 @@ function InvitationProposals() {
             className="overflow-hidden border border-[#6b1733]/25 bg-[#fbf7f2] editorial-shadow"
           >
             <div className="relative min-h-[680px]">
-              <div className="absolute inset-0 grid grid-cols-2 opacity-95">
-                <img src={pagneGlodieImg} alt="Pagne coutumier rose et turquoise" className="h-full w-full object-cover" />
-                <img src={pagneSamuelImg} alt="Pagne coutumier bleu et jaune" className="h-full w-full object-cover" />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-b from-[#140a12]/28 via-[#fff7ef]/82 to-[#fff7ef]" />
+              <img src={pagneGlodieImg} alt="Pagne coutumier rose et turquoise" className="absolute inset-0 h-full w-full object-cover opacity-95" />
+              <img src={pagneSamuelImg} alt="Pagne coutumier bleu et jaune" className="absolute inset-y-0 right-0 h-full w-[34%] object-cover opacity-90" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#140a12]/16 via-[#fff7ef]/82 to-[#fff7ef]/68" />
+              <div className="absolute inset-y-0 right-[31%] w-2 bg-[#6b1733]" />
               <div className="relative flex min-h-[680px] flex-col justify-between p-8 text-[#251119]">
                 <div className="flex items-start justify-between gap-4">
                   <div className="border border-white/70 bg-white/80 px-4 py-3 backdrop-blur-sm">
