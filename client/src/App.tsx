@@ -12,8 +12,8 @@ import Admin from "@/pages/Admin";
 import CheckIn from "@/pages/CheckIn";
 import NotFound from "@/pages/NotFound";
 
-const SITE_ACCESS_CODE = "LoveMM2026";
-const SITE_ACCESS_STORAGE_KEY = "mamisa-marylin-site-access";
+const SITE_ACCESS_CODE = "LoveGS2026";
+const SITE_ACCESS_STORAGE_KEY = "glodie-samuel-site-access";
 
 function SiteAccessGate({ children }: { children: React.ReactNode }) {
   const isAdminRoute = window.location.pathname === "/admin" || window.location.pathname === "/accueil" || window.location.pathname === "/checkin" || window.location.pathname.startsWith("/invitation/");
@@ -34,7 +34,7 @@ function SiteAccessGate({ children }: { children: React.ReactNode }) {
     <main className="flex min-h-screen items-center justify-center bg-background px-6 py-12">
       <section className="w-full max-w-md border border-border bg-white p-8 text-center editorial-shadow md:p-10">
         <p className="text-[11px] uppercase tracking-[0.45em] text-primary/65">
-          Mamisa & Marylin
+          Glodie & Samuel
         </p>
         <h1 className="mt-5 font-serif text-4xl text-foreground md:text-5xl">
           Accès privé

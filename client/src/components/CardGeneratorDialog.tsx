@@ -23,6 +23,10 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { type RsvpResponse } from "@shared/schema";
+import PrettySelect from "@/components/PrettySelect";
+import eveningPhotoUrl from "../../images/image-coutumier.png";
+import pagneGlodieUrl from "../../images/glodie.png";
+import pagneSamuelUrl from "../../images/samuel.png";
 
 type GuestRecord = RsvpResponse & {
   invitationUrl?: string;
@@ -51,6 +55,144 @@ const FONT_PRESETS = [
   { value: "Playfair Display", name: "Éditorial (Playfair)" },
   { value: "Lato", name: "Moderne (Lato)" },
 ];
+
+const CARD_WIDTH = 1080;
+const CARD_HEIGHT = 1620;
+
+function loadCardImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+function coverImage(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  const ratio = Math.max(width / img.naturalWidth, height / img.naturalHeight);
+  const drawWidth = img.naturalWidth * ratio;
+  const drawHeight = img.naturalHeight * ratio;
+  ctx.drawImage(img, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+}
+
+function fillTextBlock(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  x: number,
+  y: number,
+  lineHeight: number,
+) {
+  lines.forEach((line, index) => {
+    ctx.fillText(line, x, y + index * lineHeight);
+  });
+}
+
+async function buildInvitationTemplate(kind: "civil" | "evening" | "both") {
+  const [eveningPhoto, pagneGlodie, pagneSamuel] = await Promise.all([
+    loadCardImage(eveningPhotoUrl),
+    loadCardImage(pagneGlodieUrl),
+    loadCardImage(pagneSamuelUrl),
+  ]);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = CARD_WIDTH;
+  canvas.height = CARD_HEIGHT;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas indisponible");
+
+  ctx.fillStyle = "#fff8ec";
+  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+
+  if (kind === "evening") {
+    coverImage(ctx, eveningPhoto, 0, 0, CARD_WIDTH, 940);
+    const gradient = ctx.createLinearGradient(0, 450, 0, 1020);
+    gradient.addColorStop(0, "rgba(255,255,255,0)");
+    gradient.addColorStop(0.72, "rgba(255,248,236,0.92)");
+    gradient.addColorStop(1, "#fff8ec");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 450, CARD_WIDTH, 620);
+    ctx.strokeStyle = "#d4af37";
+    ctx.lineWidth = 5;
+    ctx.strokeRect(58, 58, CARD_WIDTH - 116, CARD_HEIGHT - 116);
+    ctx.fillStyle = "#b58b18";
+    ctx.font = '38px "Lato", sans-serif';
+    ctx.textAlign = "center";
+    ctx.fillText("DIMANCHE 12 JUILLET 2026", CARD_WIDTH / 2, 1010);
+    ctx.fillStyle = "#24180a";
+    ctx.font = '82px "Playfair Display", serif';
+    ctx.fillText("Soiree dansante", CARD_WIDTH / 2, 1118);
+    ctx.font = '44px "Cormorant Garamond", serif';
+    fillTextBlock(ctx, ["Accueil des invites · 19h30", "Entree des maries · 20h30", "Theme : blanc & doree"], CARD_WIDTH / 2, 1198, 58);
+    ctx.font = '31px "Lato", sans-serif';
+    fillTextBlock(ctx, ["Salle Exaudus Arena", "Avenue Bonga 23, croisement avenue du Stade", "En face du marche de Djakarta · Matonge · Kalamu"], CARD_WIDTH / 2, 1410, 42);
+  } else if (kind === "civil") {
+    coverImage(ctx, pagneGlodie, 0, 0, CARD_WIDTH / 2, CARD_HEIGHT);
+    coverImage(ctx, pagneSamuel, CARD_WIDTH / 2, 0, CARD_WIDTH / 2, CARD_HEIGHT);
+    ctx.fillStyle = "rgba(255, 247, 239, 0.88)";
+    ctx.fillRect(105, 240, CARD_WIDTH - 210, 1080);
+    ctx.strokeStyle = "#6b1733";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(135, 270, CARD_WIDTH - 270, 1020);
+    ctx.fillStyle = "#6b1733";
+    ctx.font = '36px "Lato", sans-serif';
+    ctx.textAlign = "center";
+    ctx.fillText("VENDREDI 26 JUIN 2026", CARD_WIDTH / 2, 380);
+    ctx.fillStyle = "#231017";
+    ctx.font = '84px "Playfair Display", serif';
+    ctx.fillText("Mariage coutumier", CARD_WIDTH / 2, 515);
+    ctx.font = '42px "Cormorant Garamond", serif';
+    fillTextBlock(ctx, ["20h00 · celebration du coutumier", "21h30 · entree des maries", "Pagnes, traditions & familles"], CARD_WIDTH / 2, 630, 58);
+    ctx.fillStyle = "#a65f3b";
+    ctx.font = '31px "Lato", sans-serif';
+    fillTextBlock(ctx, ["Avant le coutumier :", "11h00 celebration du mariage", "13h00 benediction nuptiale & cocktail"], CARD_WIDTH / 2, 1040, 43);
+  } else {
+    ctx.fillStyle = "#f6ede1";
+    ctx.fillRect(0, 0, CARD_WIDTH / 2, CARD_HEIGHT);
+    ctx.fillStyle = "#fffaf0";
+    ctx.fillRect(CARD_WIDTH / 2, 0, CARD_WIDTH / 2, CARD_HEIGHT);
+    coverImage(ctx, pagneGlodie, 0, 0, CARD_WIDTH / 2, 470);
+    coverImage(ctx, eveningPhoto, CARD_WIDTH / 2, 0, CARD_WIDTH / 2, 470);
+    ctx.fillStyle = "rgba(255,255,255,0.82)";
+    ctx.fillRect(0, 390, CARD_WIDTH, 1220);
+    ctx.strokeStyle = "#d4af37";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(CARD_WIDTH / 2, 95);
+    ctx.lineTo(CARD_WIDTH / 2, CARD_HEIGHT - 95);
+    ctx.stroke();
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#6b1733";
+    ctx.font = '35px "Lato", sans-serif';
+    ctx.fillText("VENDREDI 26 JUIN", CARD_WIDTH / 4, 620);
+    ctx.fillStyle = "#241017";
+    ctx.font = '58px "Playfair Display", serif';
+    fillTextBlock(ctx, ["Civil,", "benediction", "& coutumier"], CARD_WIDTH / 4, 720, 70);
+    ctx.font = '33px "Cormorant Garamond", serif';
+    fillTextBlock(ctx, ["11h00 · mariage", "13h00 · benediction", "20h00 · coutumier", "21h30 · entree"], CARD_WIDTH / 4, 1010, 50);
+    ctx.fillStyle = "#b58b18";
+    ctx.font = '35px "Lato", sans-serif';
+    ctx.fillText("DIMANCHE 12 JUILLET", (CARD_WIDTH / 4) * 3, 620);
+    ctx.fillStyle = "#24180a";
+    ctx.font = '62px "Playfair Display", serif';
+    fillTextBlock(ctx, ["Soiree", "dansante"], (CARD_WIDTH / 4) * 3, 760, 76);
+    ctx.font = '33px "Cormorant Garamond", serif';
+    fillTextBlock(ctx, ["19h30 · accueil", "20h30 · entree", "Blanc & doree", "Exaudus Arena"], (CARD_WIDTH / 4) * 3, 1010, 50);
+  }
+
+  ctx.fillStyle = kind === "civil" ? "#6b1733" : "#b58b18";
+  ctx.font = '72px "Great Vibes", cursive';
+  ctx.textAlign = "center";
+  ctx.fillText("Glodie & Samuel", CARD_WIDTH / 2, 1485);
+
+  return canvas.toDataURL("image/png");
+}
 
 export default function CardGeneratorDialog({
   guest,
@@ -92,7 +234,7 @@ export default function CardGeneratorDialog({
 
       // Charger la configuration sauvegardée
       try {
-        const saved = localStorage.getItem("mamisa_marylin_invitation_card_config");
+        const saved = localStorage.getItem("glodie_samuel_invitation_card_config");
         if (saved) {
           const config = JSON.parse(saved);
           if (config.fontFamily) setFontFamily(config.fontFamily);
@@ -124,7 +266,7 @@ export default function CardGeneratorDialog({
           isBold,
           isItalic,
         };
-        localStorage.setItem("mamisa_marylin_invitation_card_config", JSON.stringify(config));
+        localStorage.setItem("glodie_samuel_invitation_card_config", JSON.stringify(config));
       } catch (e) {
         console.error(e);
       }
@@ -142,30 +284,50 @@ export default function CardGeneratorDialog({
     isItalic,
   ]);
 
-  // Précharger l'image d'invitation de fond selon la cérémonie du guest
+  // Generer le fond selon la ceremonie du guest.
   useEffect(() => {
     if (isOpen && guest) {
+      let cancelled = false;
       setIsImageLoading(true);
-      const imgSrc =
+      const templateKind =
         guest.ceremonyChoice === "civil"
-          ? "/images/invitation_civil.PNG"
+          ? "civil"
           : guest.ceremonyChoice === "evening"
-          ? "/images/invitation_soir%C3%A9e.PNG"
-          : "/images/invitation_all.PNG";
+          ? "evening"
+          : "both";
 
-      const img = new Image();
-      img.src = imgSrc;
-      img.onload = () => {
-        setImageObj(img);
-        setIsImageLoading(false);
-      };
-      img.onerror = () => {
-        setIsImageLoading(false);
-        toast({
-          title: "Erreur de chargement",
-          description: "Impossible de charger le modèle de carte d'invitation.",
-          variant: "destructive",
+      buildInvitationTemplate(templateKind)
+        .then((dataUrl) => {
+          if (cancelled) return;
+          const img = new Image();
+          img.onload = () => {
+            if (cancelled) return;
+            setImageObj(img);
+            setIsImageLoading(false);
+          };
+          img.onerror = () => {
+            if (cancelled) return;
+            setIsImageLoading(false);
+            toast({
+              title: "Erreur de chargement",
+              description: "Impossible de charger le modele de carte d'invitation.",
+              variant: "destructive",
+            });
+          };
+          img.src = dataUrl;
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setIsImageLoading(false);
+          toast({
+            title: "Erreur de chargement",
+            description: "Impossible de generer le modele de carte d'invitation.",
+            variant: "destructive",
+          });
         });
+
+      return () => {
+        cancelled = true;
       };
     } else {
       setImageObj(null);
@@ -398,17 +560,13 @@ export default function CardGeneratorDialog({
                   <Label className="text-[10px] uppercase tracking-[0.3em] text-foreground/75">
                     Style de police
                   </Label>
-                  <select
+                  <PrettySelect
                     value={fontFamily}
-                    onChange={(e) => setFontFamily(e.target.value)}
-                    className="h-11 w-full rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
-                  >
-                    {FONT_PRESETS.map((font) => (
-                      <option key={font.value} value={font.value}>
-                        {font.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setFontFamily}
+                    options={FONT_PRESETS.map((font) => ({ value: font.value, label: font.name }))}
+                    placeholder="Style de police"
+                    buttonClassName="bg-transparent"
+                  />
                 </div>
 
                 {/* Taille du texte */}

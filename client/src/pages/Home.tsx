@@ -2,18 +2,135 @@ import { useRef, useState } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { Clock, MapPin, ChevronDown, ExternalLink, Plus, Minus, Gift } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { mamisaMarylin } from "@shared/mamisaMarylin";
+import { glodieSamuel } from "@shared/glodieSamuel";
 import RsvpForm from "@/components/RsvpForm";
 import Countdown from "@/components/Countdown";
 
-import heroImg from "../../images/hero.jpeg";
-import img1 from "../../images/img-1.jpeg";
-import img2 from "../../images/img-2.jpeg";
-import img3 from "../../images/img-3.jpeg";
-import img4 from "../../images/img-4.jpeg";
+import heroImg from "../../images/hero.png";
+import coutumierImg from "../../images/image-coutumier.png";
+import pagneGlodieImg from "../../images/glodie.png";
+import pagneSamuelImg from "../../images/samuel.png";
 
-const IMAGES = { hero: heroImg, img1, img2, img3, img4 } as Record<string, string>;
+const IMAGES = { hero: heroImg, coutumier: coutumierImg } as Record<string, string>;
 const rv = { duration: 1.05, ease: [0.22, 1, 0.36, 1] as const };
+
+function InvitationProposals() {
+  return (
+    <section id="invitations" className="relative overflow-hidden bg-background">
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      <div className="mx-auto max-w-6xl px-6 py-24 md:px-10 md:py-28">
+        <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.45 }} transition={rv} className="mb-14 text-center">
+          <Label>Invitations proposees</Label>
+          <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3.25rem)" }}>
+            Deux dates, deux ambiances.
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
+            Les invitations distinguent clairement le vendredi 26 juin, dedie au mariage civil, a la benediction et au coutumier, du dimanche 12 juillet, reserve a la soiree blanche et doree.
+          </p>
+        </motion.div>
+
+        <div className="grid gap-8 lg:grid-cols-2">
+          <motion.article
+            initial={{ opacity: 0, y: 22 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.35 }}
+            transition={rv}
+            className="overflow-hidden border border-[#D4AF37]/30 bg-[#fffaf0] editorial-shadow"
+          >
+            <div className="grid min-h-[680px] md:grid-cols-[0.92fr_1.08fr]">
+              <div className="relative min-h-[360px] overflow-hidden bg-[#D4AF37]">
+                <img src={coutumierImg} alt="Glodie et Samuel en blanc et dore" className="absolute inset-0 h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#201508]/55 via-transparent to-white/10" />
+                <div className="absolute bottom-5 left-5 right-5 border border-white/45 bg-white/12 px-4 py-3 text-white backdrop-blur-sm">
+                  <p className="text-[9px] uppercase tracking-[0.35em]">Invitation photo</p>
+                  <p className="mt-1 font-serif text-lg">Blanc & doree</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col justify-between p-8 text-[#2a1b0a]">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.45em] text-[#B58B18]">Dimanche 12 Juillet 2026</p>
+                  <h3 className="mt-6 font-serif text-5xl leading-none md:text-6xl">Soiree dansante</h3>
+                  <p className="mt-5 font-script text-6xl leading-none text-[#B58B18]">Glodie & Samuel</p>
+                </div>
+
+                <div className="space-y-5">
+                  <div className="border-l-2 border-[#D4AF37] pl-5">
+                    <p className="text-[10px] uppercase tracking-[0.36em] text-[#B58B18]">Accueil</p>
+                    <p className="mt-1 font-serif text-2xl">19h30</p>
+                  </div>
+                  <div className="border-l-2 border-[#D4AF37] pl-5">
+                    <p className="text-[10px] uppercase tracking-[0.36em] text-[#B58B18]">Entree des maries</p>
+                    <p className="mt-1 font-serif text-2xl">20h30</p>
+                  </div>
+                  <div className="border-t border-[#D4AF37]/30 pt-5">
+                    <p className="text-sm leading-7">Salle Exaudus Arena, Avenue Bonga numero 23, croisement avenue du Stade. Reference : en face du marche de Djakarta, Matonge, C/ Kalamu.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.article>
+
+          <motion.article
+            initial={{ opacity: 0, y: 22 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.35 }}
+            transition={{ ...rv, delay: 0.08 }}
+            className="overflow-hidden border border-[#6b1733]/25 bg-[#fbf7f2] editorial-shadow"
+          >
+            <div className="relative min-h-[680px]">
+              <div className="absolute inset-0 grid grid-cols-2 opacity-95">
+                <img src={pagneGlodieImg} alt="Pagne coutumier rose et turquoise" className="h-full w-full object-cover" />
+                <img src={pagneSamuelImg} alt="Pagne coutumier bleu et jaune" className="h-full w-full object-cover" />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-b from-[#140a12]/28 via-[#fff7ef]/82 to-[#fff7ef]" />
+              <div className="relative flex min-h-[680px] flex-col justify-between p-8 text-[#251119]">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="border border-white/70 bg-white/80 px-4 py-3 backdrop-blur-sm">
+                    <p className="text-[9px] uppercase tracking-[0.35em] text-[#6b1733]">Vendredi 26 Juin 2026</p>
+                    <p className="mt-1 font-serif text-xl">Jour traditionnel</p>
+                  </div>
+                  <div className="border border-[#6b1733]/25 bg-[#6b1733] px-4 py-3 text-white">
+                    <p className="text-[9px] uppercase tracking-[0.35em]">Coutumier</p>
+                  </div>
+                </div>
+
+                <div className="mx-auto max-w-md border border-white/75 bg-white/88 p-8 text-center shadow-2xl backdrop-blur-sm">
+                  <p className="text-[10px] uppercase tracking-[0.48em] text-[#6b1733]/75">Mariage coutumier</p>
+                  <h3 className="mt-6 font-serif text-5xl leading-none">Glodie & Samuel</h3>
+                  <p className="mx-auto mt-5 max-w-xs text-sm leading-7 text-[#251119]/70">
+                    Une invitation inspiree des pagnes du coutumier, vive, familiale et ancree dans la tradition.
+                  </p>
+                  <div className="mt-8 grid grid-cols-2 gap-3 text-left">
+                    <div className="border border-[#6b1733]/15 bg-white p-4">
+                      <p className="text-[9px] uppercase tracking-[0.32em] text-[#6b1733]/70">Celebration</p>
+                      <p className="mt-1 font-serif text-2xl">20h00</p>
+                    </div>
+                    <div className="border border-[#6b1733]/15 bg-white p-4">
+                      <p className="text-[9px] uppercase tracking-[0.32em] text-[#6b1733]/70">Entree</p>
+                      <p className="mt-1 font-serif text-2xl">21h30</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="border border-white/70 bg-white/82 p-4 backdrop-blur-sm">
+                    <p className="text-[9px] uppercase tracking-[0.35em] text-[#a65f3b]">Matin & apres-midi</p>
+                    <p className="mt-1 font-serif text-lg">11h mariage · 13h benediction</p>
+                  </div>
+                  <div className="border border-[#D4AF37]/35 bg-[#fffaf0]/90 p-4">
+                    <p className="text-[9px] uppercase tracking-[0.35em] text-[#b58b18]">Autre date</p>
+                    <p className="mt-1 font-serif text-lg">12 juillet · soiree blanche & doree</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.article>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 /* ─── Capacity blocks ─────────────────────────────────────── */
 function CapacityBlocks() {
@@ -21,15 +138,27 @@ function CapacityBlocks() {
     queryKey: ["/api/capacity"],
     staleTime: 30_000,
   });
-  const events = mamisaMarylin.programme.filter((e) => ["Mariage civil", "Soirée dansante"].includes(e.title));
+  const events = [
+    {
+      key: "civil",
+      title: "Mariage civil, benediction & coutumier",
+      time: "Vendredi 26 juin 2026",
+      theme: glodieSamuel.dresscode.blessing.theme,
+    },
+    {
+      key: "evening",
+      title: "Soiree dansante",
+      time: "Dimanche 12 juillet 2026",
+      theme: glodieSamuel.dresscode.evening.theme,
+    },
+  ];
   return (
     <div className="space-y-5">
       {events.map((e) => {
-        const isCivil = e.theme === "blessing";
+        const isCivil = e.key === "civil";
         const full = cap ? (isCivil ? cap.civil >= cap.civilMax : cap.evening >= cap.eveningMax) : false;
-        const remaining = cap ? (isCivil ? cap.civilMax - cap.civil : cap.eveningMax - cap.evening) : null;
         return (
-          <div key={`${e.time}-${e.title}`} className="border-l-2 border-border pl-5">
+          <div key={e.key} className="border-l-2 border-border pl-5">
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-[9px] uppercase tracking-[0.45em] text-muted-foreground/60">{e.title}</p>
               {full && (
@@ -39,7 +168,7 @@ function CapacityBlocks() {
               )}
             </div>
             <p className="mt-1 font-serif text-lg text-foreground">{e.time} · Kinshasa</p>
-            <p className="text-[10px] italic text-muted-foreground">{isCivil ? mamisaMarylin.dresscode.blessing.theme : mamisaMarylin.dresscode.evening.theme}</p>
+            <p className="text-[10px] italic text-muted-foreground">{e.theme}</p>
           </div>
         );
       })}
@@ -108,7 +237,7 @@ export default function Home() {
   const heroOpacity = useTransform(heroScroll, [0, 0.8], [1, 0]);
   const heroY = useTransform(heroScroll, [0, 1], ["0%", "18%"]);
 
-  const weddingDate = mamisaMarylin.weddingDate;
+  const weddingDate = glodieSamuel.weddingDate;
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-background">
@@ -122,7 +251,7 @@ export default function Home() {
         <div className="absolute inset-0 pointer-events-none md:hidden overflow-hidden">
           <motion.img
             src={heroImg}
-            alt={mamisaMarylin.title}
+            alt={glodieSamuel.title}
             className="absolute inset-0 h-full w-full object-cover"
             initial={{ scale: 1.08, x: "-2%" }}
             animate={{ scale: [1.08, 1.16, 1.08], x: ["-2%", "2%", "-2%"] }}
@@ -150,7 +279,7 @@ export default function Home() {
               transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
               className="text-[10px] uppercase tracking-[0.68em] text-foreground/50"
             >
-              {mamisaMarylin.hero.eyebrow}
+              {glodieSamuel.hero.eyebrow}
             </motion.p>
 
             <motion.p
@@ -160,7 +289,7 @@ export default function Home() {
               className="mt-6 font-script leading-none text-foreground"
               style={{ fontSize: "clamp(3.5rem, 7vw, 6rem)" }}
             >
-              {mamisaMarylin.title}
+              {glodieSamuel.title}
             </motion.p>
 
             <motion.p
@@ -178,7 +307,7 @@ export default function Home() {
               transition={{ duration: 1, delay: 0.6 }}
               className="mt-3 inline-flex w-fit border border-foreground/15 bg-background/70 px-4 py-2 text-[11px] uppercase tracking-[0.38em] text-foreground/80"
             >
-              {mamisaMarylin.date.display}
+              {glodieSamuel.date.display}
             </motion.p>
 
             {/* Separator */}
@@ -229,7 +358,7 @@ export default function Home() {
             className="relative flex-shrink-0 overflow-hidden"
             style={{ width: "calc(100svh * 9 / 16)" }}
           >
-            <img src={heroImg} alt={mamisaMarylin.title} className="absolute inset-0 h-full w-full object-cover" />
+            <img src={heroImg} alt={glodieSamuel.title} className="absolute inset-0 h-full w-full object-cover" />
             {/* Fondu gauche */}
             <div
               className="absolute inset-y-0 left-0 w-28 pointer-events-none bg-gradient-to-r from-secondary to-transparent"
@@ -243,13 +372,13 @@ export default function Home() {
           className="absolute inset-0 flex flex-col items-center justify-end pb-12 px-6 text-center text-white md:hidden"
         >
           <p className="text-[10px] uppercase tracking-[0.68em] text-white/50">
-            {mamisaMarylin.hero.eyebrow}
+            {glodieSamuel.hero.eyebrow}
           </p>
           <p className="mt-5 font-script text-white leading-none" style={{ fontSize: "clamp(3.5rem,14vw,5.5rem)" }}>
-            {mamisaMarylin.title}
+            {glodieSamuel.title}
           </p>
           <p className="mt-4 border border-white/25 bg-black/35 px-4 py-2 font-serif text-base text-white shadow-xl backdrop-blur-sm">
-            {mamisaMarylin.date.display}
+            {glodieSamuel.date.display}
           </p>
           <div className="mt-6">
             <Countdown target={weddingDate} dark />
@@ -282,7 +411,7 @@ export default function Home() {
             <div className="absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 hidden md:block bg-gradient-to-b from-transparent via-border to-transparent" />
 
             <div className="space-y-16 md:space-y-24">
-              {mamisaMarylin.story.map((chapter, i) => (
+              {glodieSamuel.story.map((chapter, i) => (
                 <motion.div
                   key={chapter.title}
                   initial={{ opacity: 0, y: 28 }}
@@ -320,7 +449,7 @@ export default function Home() {
                       className="flex items-center justify-center editorial-shadow bg-gradient-to-br from-background to-secondary"
                       style={{ height: "clamp(200px,30vw,320px)" }}
                     >
-                      <p className="font-script text-6xl text-primary/30">{mamisaMarylin.brand}</p>
+                      <p className="font-script text-6xl text-primary/30">{glodieSamuel.brand}</p>
                     </div>
                   )}
                 </motion.div>
@@ -338,7 +467,7 @@ export default function Home() {
 
         <div className="mx-auto max-w-3xl px-6 py-24 md:px-10 md:py-28">
           <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={rv} className="mb-16 text-center">
-            <Label>25 Juillet 2026</Label>
+            <Label>26 Juin & 12 Juillet 2026</Label>
             <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3.25rem)" }}>
               Programme de la journée
             </h2>
@@ -349,7 +478,7 @@ export default function Home() {
             <div className="absolute left-0 top-2 bottom-2 w-px bg-gradient-to-b from-border to-transparent" />
 
             <div className="space-y-10">
-              {mamisaMarylin.programme.map((event, i) => (
+              {glodieSamuel.programme.map((event, i) => (
                 <motion.div
                   key={`${event.time}-${event.title}`}
                   initial={{ opacity: 0, x: -16 }}
@@ -368,7 +497,7 @@ export default function Home() {
                         {event.time}
                       </p>
                       <span className="text-[8px] uppercase tracking-[0.5em] px-2 py-0.5 text-primary border border-primary/30">
-                        {event.theme === "blessing" ? "Civil" : "Soirée"}
+                        {event.theme === "blessing" ? "26 Juin" : "12 Juillet"}
                       </span>
                     </div>
                     <p className="font-serif text-2xl text-foreground">{event.title}</p>
@@ -380,6 +509,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <InvitationProposals />
 
       {/* ══════════════════════════════════════════════════════
           4 · RSVP — Ultra important
@@ -394,7 +525,7 @@ export default function Home() {
               <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,4.5vw,3rem)" }}>
                 Confirmez votre présence.
               </h2>
-              <p className="mt-5 text-base leading-8 text-muted-foreground">Une réponse simple suffit : dites-nous si vous serez là, puis choisissez seul(e) ou en couple.</p>
+              <p className="mt-5 text-base leading-8 text-muted-foreground">Une reponse simple suffit : dites-nous si vous serez la, puis choisissez seul(e) ou en couple et votre boisson souhaitee.</p>
             </div>
 
             <CapacityBlocks />
@@ -405,7 +536,7 @@ export default function Home() {
             <RsvpForm
               variant="invitation"
               title="Répondre à l'invitation"
-              description="Dites-nous simplement si vous venez. Si oui, choisissez seul(e) ou en couple."
+              description="Dites-nous simplement si vous venez. Si oui, choisissez seul(e) ou en couple, puis votre boisson souhaitee."
               submitLabel="Envoyer ma réponse"
               successDescription="Merci. Votre réponse a bien été enregistrée. Nous avons hâte de vous accueillir."
             />
@@ -426,12 +557,12 @@ export default function Home() {
               Lieux &amp; Accès
             </h2>
             <p className="mt-4 text-sm italic text-muted-foreground">
-              Les informations précises seront communiquées avec votre invitation personnelle.
+              Le lieu du 26 juin sera communique d'ici peu. La soiree dansante aura lieu a Exaudus Arena.
             </p>
           </motion.div>
 
           <div className="grid gap-5 md:grid-cols-2">
-            {mamisaMarylin.venues.map((venue, i) => (
+            {glodieSamuel.venues.map((venue, i) => (
               <motion.article
                 key={venue.label}
                 initial={{ opacity: 0, y: 20 }}
@@ -449,13 +580,13 @@ export default function Home() {
                   <div className="flex items-start gap-3">
                     <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.4} />
                     <p className="text-sm leading-6 text-muted-foreground">
-                      {venue.city}, République Démocratique du Congo
+                      {venue.address} · {venue.city}, Republique Democratique du Congo
                     </p>
                   </div>
                   <div className="flex items-start gap-3">
                     <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.4} />
                     <p className="text-sm leading-6 text-muted-foreground">
-                      {venue.theme === "blessing" ? mamisaMarylin.ceremony.blessing.time : mamisaMarylin.ceremony.evening.time} · {mamisaMarylin.date.display}
+                      {venue.theme === "blessing" ? glodieSamuel.ceremony.blessing.time : glodieSamuel.ceremony.evening.time} · {venue.theme === "blessing" ? glodieSamuel.date.display : glodieSamuel.secondDate.display}
                     </p>
                   </div>
                 </div>
@@ -494,7 +625,7 @@ export default function Home() {
           </motion.div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            {[mamisaMarylin.dresscode.blessing, mamisaMarylin.dresscode.evening].map((dc, idx) => (
+            {[glodieSamuel.dresscode.blessing, glodieSamuel.dresscode.evening].map((dc, idx) => (
               <motion.article
                 key={dc.label}
                 initial={{ opacity: 0, y: 20 }}
@@ -535,7 +666,7 @@ export default function Home() {
                 {idx === 1 && (
                   <div className="mt-5 border-t border-border pt-4">
                     <p className="text-sm leading-7 text-muted-foreground italic">
-                      Pour la soirée, les invités sont libres de choisir leur tenue. Venez comme vous vous sentez le plus élégants.
+                      La soiree religieuse et festive se vit en blanc et doree.
                     </p>
                   </div>
                 )}
@@ -593,10 +724,10 @@ export default function Home() {
 
             <Label>Liste de mariage</Label>
             <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3rem)" }}>
-              {mamisaMarylin.cagnotte.title}
+              {glodieSamuel.cagnotte.title}
             </h2>
             <p className="mt-6 text-base leading-8 text-muted-foreground whitespace-pre-wrap">
-              {mamisaMarylin.cagnotte.message}
+              {glodieSamuel.cagnotte.message}
             </p>
           </motion.div>
         </div>
@@ -618,7 +749,7 @@ export default function Home() {
 
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, amount: 0.3 }} transition={rv}>
             <div className="border-t border-border">
-              {mamisaMarylin.faq.map((item) => (
+              {glodieSamuel.faq.map((item) => (
                 <FaqItem key={item.q} q={item.q} a={item.a} />
               ))}
             </div>
@@ -632,12 +763,12 @@ export default function Home() {
       <footer className="px-6 py-16 text-center bg-secondary border-t border-border">
         <Rule opacity={0.5} />
         <div className="my-10">
-          <p className="font-script leading-none text-foreground" style={{ fontSize: "5rem" }}>{mamisaMarylin.brand}</p>
+          <p className="font-script leading-none text-foreground" style={{ fontSize: "5rem" }}>{glodieSamuel.brand}</p>
           <p className="mt-5 text-[10px] uppercase tracking-[0.55em] text-muted-foreground">
-            {mamisaMarylin.title} · 25 Juillet 2026 · Kinshasa
+            {glodieSamuel.title} · 26 Juin & 12 Juillet 2026 · Kinshasa
           </p>
           <p className="mt-7 mx-auto max-w-sm font-serif text-sm italic leading-7 text-muted-foreground/80">
-            {mamisaMarylin.couple.statement}
+            {glodieSamuel.couple.statement}
           </p>
         </div>
         <Rule opacity={0.5} />

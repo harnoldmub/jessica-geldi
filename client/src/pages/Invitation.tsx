@@ -4,9 +4,9 @@ import { useRoute } from "wouter";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { CalendarDays, Clock, MapPin, ChevronDown } from "lucide-react";
 import { type RsvpResponse } from "@shared/schema";
-import { mamisaMarylin } from "@shared/mamisaMarylin";
+import { glodieSamuel } from "@shared/glodieSamuel";
 import { Skeleton } from "@/components/ui/skeleton";
-import heroImg from "../../images/hero.jpeg";
+import heroImg from "../../images/hero.png";
 
 type InvitationGuest = RsvpResponse & { invitationUrl: string };
 
@@ -140,7 +140,7 @@ export default function Invitation() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-7 p-6 text-center bg-background">
         <OrnamentRule opacity={0.2} />
-        <p className="font-script text-6xl text-foreground/80">{mamisaMarylin.brand}</p>
+        <p className="font-script text-6xl text-foreground/80">{glodieSamuel.brand}</p>
         <h1 className="font-serif text-2xl text-foreground">Invitation introuvable</h1>
         <p className="text-[10px] uppercase tracking-[0.42em] max-w-xs text-muted-foreground">
           Ce lien semble invalide ou a expiré. Veuillez contacter les mariés directement.
@@ -167,7 +167,7 @@ export default function Invitation() {
         >
           <img
             src={heroImg}
-            alt="Mamisa & Marylin"
+            alt="Glodie & Samuel"
             className="h-full w-full object-cover object-center scale-110"
           />
           <div className="absolute inset-0 bg-black/52" />
@@ -183,7 +183,7 @@ export default function Invitation() {
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
             className="text-[10px] uppercase tracking-[0.62em] text-white/70"
           >
-            {mamisaMarylin.hero.eyebrow}
+            {glodieSamuel.hero.eyebrow}
           </motion.p>
 
           <motion.div
@@ -213,7 +213,7 @@ export default function Invitation() {
               className="font-script leading-tight text-white/90"
               style={{ fontSize: "clamp(3.5rem, 10vw, 6rem)" }}
             >
-              {mamisaMarylin.title}
+              {glodieSamuel.title}
             </p>
             <p className="mt-3 font-serif text-xl md:text-2xl text-white/70">
               vous invitent à leur mariage
@@ -256,23 +256,23 @@ export default function Invitation() {
               className="mt-5 font-serif leading-tight text-foreground"
               style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
             >
-              {mamisaMarylin.ceremony.blessing.label}
+              {glodieSamuel.ceremony.blessing.label}
             </h2>
             <ThemeBadge
-              theme={mamisaMarylin.ceremony.blessing.theme}
-              note={mamisaMarylin.ceremony.blessing.themeNote}
-              colors={mamisaMarylin.dresscode.blessing.colors}
-              colorNames={mamisaMarylin.dresscode.blessing.colorNames}
+              theme={glodieSamuel.ceremony.blessing.theme}
+              note={glodieSamuel.ceremony.blessing.themeNote}
+              colors={glodieSamuel.dresscode.blessing.colors}
+              colorNames={glodieSamuel.dresscode.blessing.colorNames}
             />
           </motion.div>
 
           <div className="mt-14 grid gap-5 md:grid-cols-3">
-            <InfoCard icon={CalendarDays} label="Date" value={mamisaMarylin.date.display} delay={0} />
-            <InfoCard icon={Clock} label="Heure" value={mamisaMarylin.ceremony.blessing.time} delay={0.08} />
+            <InfoCard icon={CalendarDays} label="Date" value={glodieSamuel.date.display} delay={0} />
+            <InfoCard icon={Clock} label="Heure" value={glodieSamuel.ceremony.blessing.time} delay={0.08} />
             <InfoCard
               icon={MapPin}
               label="Lieu"
-              value={`${mamisaMarylin.venues[0].name} · ${mamisaMarylin.venues[0].city}`}
+              value={`${glodieSamuel.venues[0].name} · ${glodieSamuel.venues[0].city}`}
               delay={0.16}
             />
           </div>
@@ -284,7 +284,7 @@ export default function Invitation() {
             transition={{ ...reveal, delay: 0.28 }}
             className="mt-7 text-center text-sm italic text-muted-foreground"
           >
-            {mamisaMarylin.venues[0].note}
+            {glodieSamuel.venues[0].note}
           </motion.p>
         </div>
       </section>
@@ -318,24 +318,24 @@ export default function Invitation() {
               className="mt-5 font-serif leading-tight text-foreground"
               style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
             >
-              {mamisaMarylin.ceremony.evening.label}
+              {glodieSamuel.ceremony.evening.label}
             </h2>
             <ThemeBadge
-              theme={mamisaMarylin.ceremony.evening.theme}
-              note={mamisaMarylin.ceremony.evening.themeNote}
-              colors={mamisaMarylin.dresscode.evening.colors}
-              colorNames={mamisaMarylin.dresscode.evening.colorNames}
+              theme={glodieSamuel.ceremony.evening.theme}
+              note={glodieSamuel.ceremony.evening.themeNote}
+              colors={glodieSamuel.dresscode.evening.colors}
+              colorNames={glodieSamuel.dresscode.evening.colorNames}
               dark
             />
           </motion.div>
 
           <div className="mt-14 grid gap-5 md:grid-cols-3">
-            <InfoCard icon={CalendarDays} label="Date" value={mamisaMarylin.date.display} dark delay={0} />
-            <InfoCard icon={Clock} label="Heure" value={mamisaMarylin.ceremony.evening.time} dark delay={0.08} />
+            <InfoCard icon={CalendarDays} label="Date" value={glodieSamuel.secondDate.display} dark delay={0} />
+            <InfoCard icon={Clock} label="Heure" value={glodieSamuel.ceremony.evening.time} dark delay={0.08} />
             <InfoCard
               icon={MapPin}
               label="Lieu"
-              value={`${mamisaMarylin.venues[1].name} · ${mamisaMarylin.venues[1].city}`}
+              value={`${glodieSamuel.venues[1].name} · ${glodieSamuel.venues[1].city}`}
               dark
               delay={0.16}
             />
@@ -348,10 +348,10 @@ export default function Invitation() {
             transition={{ ...reveal, delay: 0.28 }}
             className="mt-7 text-center text-sm italic text-muted-foreground"
           >
-            {mamisaMarylin.venues[1].note}
+            {glodieSamuel.venues[1].note}
           </motion.p>
 
-          {/* Tenue libre */}
+          {/* Theme de soiree */}
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -360,13 +360,13 @@ export default function Invitation() {
             className="mt-12 border-t border-border pt-10 text-center"
           >
             <p className="text-[9px] uppercase tracking-[0.58em] text-muted-foreground/60">
-              Soirée · 18h30
+              Soiree · 19h30
             </p>
             <p className="mt-3 font-serif text-2xl italic text-primary/80">
-              Tenue libre
+              Blanc & doree
             </p>
             <p className="mt-4 mx-auto max-w-sm text-sm leading-7 text-muted-foreground">
-              Pour la soirée, les invités sont libres de choisir leur tenue. Venez comme vous vous sentez le plus élégants — aucune contrainte de couleur.
+              Pour la fete, les invites sont attendus dans le theme blanc et doree.
             </p>
           </motion.div>
         </div>
@@ -443,12 +443,12 @@ export default function Invitation() {
                   const c = guest.ceremonyChoice || "both";
                   const items =
                     c === "civil"
-                      ? [{ label: "Mariage civil & Bénédiction", time: "09h00" }]
+                      ? [{ label: "Mariage civil & Benediction", time: "11h00" }]
                       : c === "evening"
-                        ? [{ label: "Soirée dansante", time: "18h30" }]
+                        ? [{ label: "Soiree dansante", time: "19h30" }]
                         : [
-                            { label: "Mariage civil & Bénédiction", time: "09h00" },
-                            { label: "Soirée dansante", time: "18h30" },
+                            { label: "Mariage civil & Benediction", time: "11h00" },
+                            { label: "Soiree dansante", time: "19h30" },
                           ];
                   return (
                     <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -490,7 +490,7 @@ export default function Invitation() {
             </div>
 
             <p className="mx-auto max-w-md font-serif text-base italic leading-8 text-muted-foreground">
-              {mamisaMarylin.couple.statement}
+              {glodieSamuel.couple.statement}
             </p>
 
             <OrnamentRule opacity={0.35} />
@@ -505,10 +505,10 @@ export default function Invitation() {
         <OrnamentRule opacity={0.5} />
         <div className="mt-10 mb-10">
           <p className="font-script text-6xl leading-none text-foreground">
-            {mamisaMarylin.brand}
+            {glodieSamuel.brand}
           </p>
           <p className="mt-5 text-[10px] uppercase tracking-[0.55em] text-muted-foreground">
-            {mamisaMarylin.title} · 25 Juillet 2026 · Kinshasa
+            {glodieSamuel.title} · 26 Juin & 12 Juillet 2026 · Kinshasa
           </p>
           <p className="mt-7 mx-auto max-w-sm font-serif text-sm italic leading-7 text-muted-foreground/80">
             Avec joie, nous vous attendons.

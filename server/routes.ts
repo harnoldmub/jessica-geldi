@@ -173,6 +173,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "phone",
       "status",
       "guestCount",
+      "ceremonyChoice",
+      "beverageChoice",
       "message",
       "checkedInAt",
       "createdAt",
@@ -186,6 +188,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         guest.phone,
         guest.status,
         guest.guestCount,
+        guest.ceremonyChoice,
+        guest.beverageChoice,
         guest.message,
         guest.checkedInAt?.toISOString(),
         guest.createdAt?.toISOString(),
@@ -198,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .status(200)
       .set({
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": 'attachment; filename="mamisa-marylin-rsvp.csv"',
+        "Content-Disposition": 'attachment; filename="glodie-samuel-rsvp.csv"',
       })
       .send([header.join(","), ...rows].join("\n"));
   });
@@ -312,7 +316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ── Check-in page endpoints (protected by a lighter code) ──────────────
-  const CHECKIN_CODE = "MMCheckin2026";
+  const CHECKIN_CODE = "GSCheckin2026";
 
   function requireCheckinCode(req: Request, res: Response, next: NextFunction) {
     const code = req.headers["x-checkin-code"];

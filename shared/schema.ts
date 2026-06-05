@@ -45,6 +45,7 @@ export const rsvpResponses = pgTable("rsvp_responses", {
   guestCount: integer("guest_count").notNull().default(1),
   ceremonyChoice: varchar("ceremony_choice", { length: 20 }).default('both'), // 'civil', 'evening', 'both'
   mealChoice: varchar("meal_choice", { length: 100 }),
+  beverageChoice: varchar("beverage_choice", { length: 100 }),
   message: text("message"), // Optional message from guest
   
   // Invitation & Check-in
@@ -77,6 +78,14 @@ export const insertRsvpSchema = createInsertSchema(rsvpResponses, {
     z
       .string()
       .trim()
+      .optional()
+      .transform((value) => (value ? value : null)),
+  beverageChoice: () =>
+    z
+      .string()
+      .trim()
+      .max(100, "La boisson doit faire moins de 100 caracteres")
+      .or(z.literal(""))
       .optional()
       .transform((value) => (value ? value : null)),
   message: () =>

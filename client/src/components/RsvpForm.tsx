@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, ChevronDown } from "lucide-react";
 import { insertRsvpSchema, type RsvpFormInput, type RsvpResponse } from "@shared/schema";
+import { beverageOptions } from "@shared/glodieSamuel";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -17,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import PrettySelect from "@/components/PrettySelect";
 
 type RsvpFormProps = {
   variant?: "section" | "page" | "invitation";
@@ -39,6 +41,7 @@ const defaultValues: RsvpFormInput = {
   guestCount: 0,
   ceremonyChoice: undefined as any,
   mealChoice: "",
+  beverageChoice: "",
   message: "",
 };
 
@@ -261,6 +264,23 @@ const FLAGS_BY_COUNTRY: Record<string, string> = {
   Zambie: "🇿🇲",
   Zimbabwe: "🇿🇼",
 };
+
+const OTHER_BEVERAGE_VALUE = "__other_beverage__";
+const beverageSelectOptions = [
+  ...beverageOptions.beers.map((drink) => ({ value: drink, label: drink, group: "Bieres" })),
+  ...beverageOptions.softDrinks.map((drink) => ({ value: drink, label: drink, group: "Boissons sucrees" })),
+  { value: OTHER_BEVERAGE_VALUE, label: "Autre boisson", detail: "Preciser votre choix", group: "Autre" },
+];
+
+function getBeverageSelectValue(value?: string | null) {
+  if (!value) return "";
+  return beverageSelectOptions.some((option) => option.value === value) ? value : OTHER_BEVERAGE_VALUE;
+}
+
+function getOtherBeverageValue(value?: string | null) {
+  if (!value || getBeverageSelectValue(value) !== OTHER_BEVERAGE_VALUE) return "";
+  return value.startsWith("Autre: ") ? value.slice(7) : value;
+}
 
 const getFlag = (country: string) => FLAGS_BY_COUNTRY[country] || "🏳";
 
@@ -566,7 +586,7 @@ export default function RsvpForm({
                             <span className="block font-medium">Mariage civil</span>
                             {civilFull
                               ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
-                              : <span className="block text-[10px] mt-0.5 opacity-70">09h00 · matin</span>
+                              : <span className="block text-[10px] mt-0.5 opacity-70">26 juin · 11h00</span>
                             }
                           </button>
                           <button
@@ -579,7 +599,7 @@ export default function RsvpForm({
                             <span className="block font-medium">Soirée dansante</span>
                             {eveningFull
                               ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
-                              : <span className="block text-[10px] mt-0.5 opacity-70">18h30 · soir</span>
+                              : <span className="block text-[10px] mt-0.5 opacity-70">12 juillet · 19h30</span>
                             }
                           </button>
                           <button
@@ -592,7 +612,7 @@ export default function RsvpForm({
                             <span className="block font-medium">Les deux</span>
                             {(civilFull || eveningFull)
                               ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
-                              : <span className="block text-[10px] mt-0.5 opacity-70">toute la journée</span>
+                              : <span className="block text-[10px] mt-0.5 opacity-70">26 juin & 12 juillet</span>
                             }
                           </button>
                         </div>
@@ -626,6 +646,38 @@ export default function RsvpForm({
                           >
                             En couple
                           </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="beverageChoice"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel className={labelClassName}>Boisson souhaitee</FormLabel>
+                      <FormControl>
+                        <div className="space-y-3">
+                          <PrettySelect
+                            value={getBeverageSelectValue(field.value)}
+                            onChange={(value) => {
+                              field.onChange(value === OTHER_BEVERAGE_VALUE ? "Autre: " : value);
+                            }}
+                            options={beverageSelectOptions}
+                            placeholder="Choisir une boisson"
+                            buttonClassName="border-[#d7d7d7] text-[#111111] focus:ring-[#111111]/20"
+                          />
+                          {getBeverageSelectValue(field.value) === OTHER_BEVERAGE_VALUE && (
+                            <Input
+                              value={getOtherBeverageValue(field.value)}
+                              onChange={(event) => field.onChange(event.target.value ? `Autre: ${event.target.value}` : "Autre: ")}
+                              className={inputClassName}
+                              placeholder="Precisez la boisson souhaitee"
+                            />
+                          )}
                         </div>
                       </FormControl>
                       <FormMessage />

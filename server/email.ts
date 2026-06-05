@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import { type RsvpResponse } from "@shared/schema";
-import { mamisaMarylin } from "@shared/mamisaMarylin";
+import { glodieSamuel } from "@shared/glodieSamuel";
 
 export async function sendRsvpConfirmationEmail(rsvp: RsvpResponse) {
   if (!rsvp.email) return;
@@ -13,8 +13,8 @@ export async function sendRsvpConfirmationEmail(rsvp: RsvpResponse) {
   const html = `
     <div style="font-family: 'Playfair Display', serif; background-color: #F7F7F5; padding: 40px; color: #181818; max-width: 600px; margin: auto; border: 1px solid #7E8990;">
       <div style="text-align: center; margin-bottom: 40px;">
-        <h1 style="font-family: 'Great Vibes', cursive; font-size: 48px; color: #181818; margin: 0;">${mamisaMarylin.brand}</h1>
-        <p style="text-transform: uppercase; letter-spacing: 4px; font-size: 10px; margin-top: 10px;">Invitation de ${mamisaMarylin.couple.bride} & ${mamisaMarylin.couple.groom}</p>
+        <h1 style="font-family: 'Great Vibes', cursive; font-size: 48px; color: #181818; margin: 0;">${glodieSamuel.brand}</h1>
+        <p style="text-transform: uppercase; letter-spacing: 4px; font-size: 10px; margin-top: 10px;">Invitation de ${glodieSamuel.couple.bride} & ${glodieSamuel.couple.groom}</p>
       </div>
       
       <div style="background-color: white; padding: 40px; border: 1px solid #D5DADF;">
@@ -35,6 +35,14 @@ export async function sendRsvpConfirmationEmail(rsvp: RsvpResponse) {
               <td style="padding: 5px 0; color: #999;">Nombre de personnes</td>
               <td style="padding: 5px 0; text-align: right; font-style: italic;">${rsvp.guestCount}</td>
             </tr>
+            ${
+              rsvp.beverageChoice
+                ? `<tr>
+                    <td style="padding: 5px 0; color: #999;">Boisson souhaitee</td>
+                    <td style="padding: 5px 0; text-align: right; font-style: italic;">${rsvp.beverageChoice}</td>
+                  </tr>`
+                : ""
+            }
           </table>
         </div>
 
@@ -47,15 +55,15 @@ export async function sendRsvpConfirmationEmail(rsvp: RsvpResponse) {
       </div>
 
       <div style="text-align: center; margin-top: 40px; font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 2px;">
-        ${mamisaMarylin.venues[0]?.name} • ${mamisaMarylin.date.display}
+        ${glodieSamuel.venues[0]?.name} • ${glodieSamuel.date.display}
       </div>
     </div>
   `;
 
   await resend.emails.send({
-    from: "Mamisa & Marylin <invitations@replit.app>",
+    from: "Glodie & Samuel <invitations@replit.app>",
     to: [rsvp.email],
-    subject: "Confirmation de votre RSVP - Mamisa & Marylin",
+    subject: "Confirmation de votre RSVP - Glodie & Samuel",
     html,
   });
 }

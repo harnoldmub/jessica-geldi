@@ -31,12 +31,14 @@ import {
   type RsvpResponse,
   type SafeUser,
 } from "@shared/schema";
+import { beverageOptions } from "@shared/glodieSamuel";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import PrettySelect from "@/components/PrettySelect";
 import {
   Dialog,
   DialogContent,
@@ -62,9 +64,69 @@ const emptyGuestForm: GuestFormState = {
   guestCount: 1,
   ceremonyChoice: "both",
   mealChoice: "",
+  beverageChoice: "",
   message: "",
   tableNumber: null,
 };
+
+const OTHER_BEVERAGE_VALUE = "__other_beverage__";
+const statusOptions = [
+  { value: "pending", label: "En attente" },
+  { value: "confirmed", label: "Confirme" },
+  { value: "declined", label: "Absent(e)" },
+];
+const statusFilterOptions = [
+  { value: "all", label: "Tous les RSVP" },
+  ...statusOptions,
+];
+const invitationFilterOptions = [
+  { value: "all", label: "Toutes les invitations" },
+  { value: "draft", label: "Brouillons" },
+  { value: "sent", label: "Envoyees" },
+];
+const ceremonyOptions = [
+  { value: "both", label: "Les deux ceremonies" },
+  { value: "civil", label: "26 juin seulement", detail: "11h00" },
+  { value: "evening", label: "12 juillet seulement", detail: "19h30" },
+];
+const ceremonyFilterOptions = [
+  { value: "all", label: "Toutes les ceremonies" },
+  { value: "civil", label: "26 juin" },
+  { value: "evening", label: "12 juillet" },
+  { value: "both", label: "Les deux" },
+];
+const guestCountOptions = [
+  { value: "1", label: "Seul(e)", detail: "1 personne" },
+  { value: "2", label: "En couple", detail: "2 personnes" },
+];
+const pageSizeOptions = [
+  { value: "10", label: "10 / page" },
+  { value: "20", label: "20 / page" },
+  { value: "50", label: "50 / page" },
+];
+const tableOptions = [
+  { value: "", label: "Aucune table" },
+  ...Array.from({ length: 25 }, (_, i) => {
+    const table = i + 1;
+    return { value: String(table), label: `Table ${table}` };
+  }),
+];
+const beverageSelectOptions = [
+  { value: "", label: "Aucune preference" },
+  ...beverageOptions.beers.map((drink) => ({ value: drink, label: drink, group: "Bieres" })),
+  ...beverageOptions.softDrinks.map((drink) => ({ value: drink, label: drink, group: "Boissons sucrees" })),
+  { value: OTHER_BEVERAGE_VALUE, label: "Autre boisson", detail: "Preciser le choix", group: "Autre" },
+];
+
+function getBeverageSelectValue(value?: string | null) {
+  if (!value) return "";
+  return beverageSelectOptions.some((option) => option.value === value) ? value : OTHER_BEVERAGE_VALUE;
+}
+
+function getOtherBeverageValue(value?: string | null) {
+  if (!value || getBeverageSelectValue(value) !== OTHER_BEVERAGE_VALUE) return "";
+  return value.startsWith("Autre: ") ? value.slice(7) : value;
+}
 
 async function getCurrentUser() {
   const res = await fetch("/api/user", {
@@ -361,6 +423,7 @@ export default function Admin() {
         guest.email || "",
         guest.phone || "",
         guest.status,
+        guest.beverageChoice || "",
         guest.invitationStatus || "",
       ]
         .join(" ")
@@ -391,10 +454,12 @@ export default function Admin() {
     const url =
       guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`;
     const message =
-      `Bonjour ${guest.firstName} 👋\n\n` +
-      `Nous avons la joie de vous inviter au mariage de *Mamisa & Marylin*, le *25 juillet 2026* à Kinshasa.\n\n` +
+      `Bonjour ${guest.firstName},\n\n` +
+      `Nous avons la joie de vous inviter au mariage de *Glodie & Samuel* a Kinshasa.\n\n` +
+      `Vendredi 26 juin 2026 : mariage civil, benediction nuptiale et mariage coutumier.\n` +
+      `Dimanche 12 juillet 2026 : soiree dansante a Exaudus Arena.\n\n` +
       `Voici votre invitation personnelle :\n${url}\n\n` +
-      `Avec joie de vous avoir parmi nous 💍`;
+      `Avec joie de vous avoir parmi nous.`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
     apiRequest("POST", `/api/admin/guests/${guest.id}/mark-sent`).then(() => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
@@ -412,6 +477,7 @@ export default function Admin() {
       guestCount: guest.guestCount || 1,
       ceremonyChoice: (guest.ceremonyChoice as GuestFormState["ceremonyChoice"]) || "both",
       mealChoice: guest.mealChoice || "",
+      beverageChoice: guest.beverageChoice || "",
       message: guest.message || "",
       tableNumber: guest.tableNumber ?? null,
     });
@@ -435,7 +501,7 @@ export default function Admin() {
               Espace admin
             </p>
             <h1 className="mt-6 font-serif text-4xl leading-tight md:text-6xl">
-              Gérer les invités de Mamisa & Marylin avec précision.
+              Gerer les invites de Glodie & Samuel avec precision.
             </h1>
             <p className="mt-6 max-w-lg text-sm leading-8 text-white/72">
               Créez les invités, générez leurs liens d'invitation individuels,
@@ -631,7 +697,7 @@ export default function Admin() {
           {/* Ligne cérémonies */}
           <div className="grid grid-cols-2 divide-x divide-primary/8">
             <div className="p-5 text-center bg-yellow-50/50">
-              <p className="text-[9px] uppercase tracking-[0.4em] text-yellow-700/60 mb-2">Civil · matin</p>
+              <p className="text-[9px] uppercase tracking-[0.4em] text-yellow-700/60 mb-2">26 juin · civil</p>
               <p className="font-serif text-2xl text-yellow-700">
                 {stats.civilAttendees}
                 <span className="text-sm font-sans font-normal text-yellow-600/50"> / 60</span>
@@ -641,7 +707,7 @@ export default function Admin() {
               </p>
             </div>
             <div className="p-5 text-center bg-violet-50/50">
-              <p className="text-[9px] uppercase tracking-[0.4em] text-violet-700/60 mb-2">Soirée · soir</p>
+              <p className="text-[9px] uppercase tracking-[0.4em] text-violet-700/60 mb-2">12 juillet · soiree</p>
               <p className="font-serif text-2xl text-violet-700">
                 {stats.eveningAttendees}
                 <span className="text-sm font-sans font-normal text-violet-600/50"> / 250</span>
@@ -684,26 +750,21 @@ export default function Admin() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Personnes</label>
-                  <select
+                  <PrettySelect
                     value={importGuestCount}
-                    onChange={(e) => setImportGuestCount(Number(e.target.value))}
-                    className="h-11 w-full rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
-                  >
-                    <option value={1}>Seul(e) — 1</option>
-                    <option value={2}>En couple — 2</option>
-                  </select>
+                    onChange={(value) => setImportGuestCount(Number(value))}
+                    options={guestCountOptions}
+                    placeholder="Personnes"
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Cérémonie</label>
-                  <select
+                  <PrettySelect
                     value={importCeremony}
-                    onChange={(e) => setImportCeremony(e.target.value as "both" | "civil" | "evening")}
-                    className="h-11 w-full rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
-                  >
-                    <option value="both">Les deux</option>
-                    <option value="civil">Civil seulement</option>
-                    <option value="evening">Soirée seulement</option>
-                  </select>
+                    onChange={(value) => setImportCeremony(value as "both" | "civil" | "evening")}
+                    options={ceremonyOptions}
+                    placeholder="Ceremonie"
+                  />
                 </div>
               </div>
             </div>
@@ -800,54 +861,60 @@ export default function Admin() {
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Statut</label>
-                    <select
+                    <PrettySelect
                       value={guestForm.status}
-                      onChange={(e) => setGuestForm((c) => ({ ...c, status: e.target.value as GuestFormState["status"] }))}
-                      className="h-12 w-full rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
-                    >
-                      <option value="pending">En attente</option>
-                      <option value="confirmed">Confirmé</option>
-                      <option value="declined">Absent(e)</option>
-                    </select>
+                      onChange={(value) => setGuestForm((c) => ({ ...c, status: value as GuestFormState["status"] }))}
+                      options={statusOptions}
+                      placeholder="Statut"
+                    />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Nombre de personnes</label>
-                    <select
+                    <PrettySelect
                       value={guestForm.guestCount}
-                      onChange={(e) => setGuestForm((c) => ({ ...c, guestCount: Number.parseInt(e.target.value, 10) }))}
-                      className="h-12 w-full rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
-                    >
-                      <option value={1}>Seul(e) — 1 personne</option>
-                      <option value={2}>En couple — 2 personnes</option>
-                    </select>
+                      onChange={(value) => setGuestForm((c) => ({ ...c, guestCount: Number.parseInt(value, 10) }))}
+                      options={guestCountOptions}
+                      placeholder="Nombre de personnes"
+                    />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Participe à</label>
-                  <select
+                  <PrettySelect
                     value={guestForm.ceremonyChoice || "both"}
-                    onChange={(e) => setGuestForm((c) => ({ ...c, ceremonyChoice: e.target.value as GuestFormState["ceremonyChoice"] }))}
-                    className="h-12 w-full rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
-                  >
-                    <option value="both">Les deux cérémonies</option>
-                    <option value="civil">Mariage civil seulement (09h00)</option>
-                    <option value="evening">Soirée dansante seulement (18h30)</option>
-                  </select>
+                    onChange={(value) => setGuestForm((c) => ({ ...c, ceremonyChoice: value as GuestFormState["ceremonyChoice"] }))}
+                    options={ceremonyOptions}
+                    placeholder="Participation"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Boisson souhaitee</label>
+                  <PrettySelect
+                    value={getBeverageSelectValue(guestForm.beverageChoice)}
+                    onChange={(value) => setGuestForm((c) => ({ ...c, beverageChoice: value === OTHER_BEVERAGE_VALUE ? "Autre: " : value }))}
+                    options={beverageSelectOptions}
+                    placeholder="Boisson"
+                  />
+                  {getBeverageSelectValue(guestForm.beverageChoice) === OTHER_BEVERAGE_VALUE && (
+                    <Input
+                      value={getOtherBeverageValue(guestForm.beverageChoice)}
+                      onChange={(e) => setGuestForm((c) => ({ ...c, beverageChoice: e.target.value ? `Autre: ${e.target.value}` : "Autre: " }))}
+                      className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                      placeholder="Preciser la boisson"
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Numéro de table</label>
-                  <select
+                  <PrettySelect
                     value={guestForm.tableNumber ?? ""}
-                    onChange={(e) => setGuestForm((c) => ({ ...c, tableNumber: e.target.value ? Number(e.target.value) : null }))}
-                    className="h-12 w-full rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
-                  >
-                    <option value="">— Aucune table —</option>
-                    {Array.from({ length: 25 }, (_, i) => i + 1).map((n) => (
-                      <option key={n} value={n}>Table {n}</option>
-                    ))}
-                  </select>
+                    onChange={(value) => setGuestForm((c) => ({ ...c, tableNumber: value ? Number(value) : null }))}
+                    options={tableOptions}
+                    placeholder="Table"
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -926,41 +993,24 @@ export default function Admin() {
 
           {/* Filtres */}
           <div className="mb-6 grid gap-3 sm:grid-cols-3">
-            <select
+            <PrettySelect
               value={statusFilter}
-              onChange={(event) =>
-                setStatusFilter(event.target.value as "all" | "pending" | "confirmed" | "declined")
-              }
-              className="h-11 rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
-            >
-              <option value="all">Tous les RSVP</option>
-              <option value="pending">En attente</option>
-              <option value="confirmed">Confirmés</option>
-              <option value="declined">Absents</option>
-            </select>
-            <select
+              onChange={(value) => setStatusFilter(value as "all" | "pending" | "confirmed" | "declined")}
+              options={statusFilterOptions}
+              placeholder="RSVP"
+            />
+            <PrettySelect
               value={invitationFilter}
-              onChange={(event) =>
-                setInvitationFilter(event.target.value as "all" | "draft" | "sent")
-              }
-              className="h-11 rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
-            >
-              <option value="all">Toutes les invitations</option>
-              <option value="draft">Brouillons</option>
-              <option value="sent">Envoyées</option>
-            </select>
-            <select
+              onChange={(value) => setInvitationFilter(value as "all" | "draft" | "sent")}
+              options={invitationFilterOptions}
+              placeholder="Invitations"
+            />
+            <PrettySelect
               value={ceremonyFilter}
-              onChange={(event) =>
-                setCeremonyFilter(event.target.value as "all" | "civil" | "evening" | "both")
-              }
-              className="h-11 rounded-none border border-primary/15 bg-transparent px-3 text-sm outline-none focus:border-primary"
-            >
-              <option value="all">Toutes les cérémonies</option>
-              <option value="civil">Civil uniquement</option>
-              <option value="evening">Soirée uniquement</option>
-              <option value="both">Les deux</option>
-            </select>
+              onChange={(value) => setCeremonyFilter(value as "all" | "civil" | "evening" | "both")}
+              options={ceremonyFilterOptions}
+              placeholder="Ceremonies"
+            />
           </div>
 
           {/* Cartes */}
@@ -1045,9 +1095,17 @@ export default function Admin() {
                       {(guest.ceremonyChoice || "both") === "both"
                         ? "Civil & Soirée"
                         : guest.ceremonyChoice === "civil"
-                        ? "Civil · matin"
-                        : "Soirée · soir"}
+                        ? "26 juin"
+                        : "12 juillet"}
                     </Badge>
+                    {guest.beverageChoice && (
+                      <Badge
+                        variant="outline"
+                        className="rounded-none border-0 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] bg-sky-50 text-sky-700"
+                      >
+                        {guest.beverageChoice}
+                      </Badge>
+                    )}
                     {guest.invitationSentAt && (
                       <span className="text-[10px] text-foreground/40">
                         {format(new Date(guest.invitationSentAt), "d MMM, HH:mm", { locale: fr })}
@@ -1060,22 +1118,20 @@ export default function Admin() {
 
                   {/* Actions */}
                   <div className="mt-3 pt-3 border-t border-primary/8 flex flex-wrap items-center gap-2">
-                    {/* Select table inline */}
-                    <select
+                    <PrettySelect
                       value={(guest as any).tableNumber ?? ""}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         updateTableMutation.mutate({
                           id: guest.id,
-                          tableNumber: e.target.value ? Number(e.target.value) : null,
+                          tableNumber: value ? Number(value) : null,
                         })
                       }
-                      className="h-8 rounded-none border border-primary/15 bg-transparent px-2 text-[10px] uppercase tracking-[0.2em] text-primary outline-none focus:border-primary cursor-pointer"
-                    >
-                      <option value="">— Table —</option>
-                      {Array.from({ length: 25 }, (_, i) => i + 1).map((n) => (
-                        <option key={n} value={n}>Table {n}</option>
-                      ))}
-                    </select>
+                      options={tableOptions}
+                      placeholder="Table"
+                      compact
+                      className="min-w-[138px]"
+                      buttonClassName="bg-transparent text-primary"
+                    />
 
                     <div className="w-px h-6 bg-primary/10 mx-1" />
 
@@ -1144,15 +1200,15 @@ export default function Admin() {
                 <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/40">
                   Page {currentPage + 1} / {totalPages} · {filteredGuests.length} invité{filteredGuests.length > 1 ? "s" : ""}
                 </p>
-                <select
+                <PrettySelect
                   value={pageSize}
-                  onChange={(e) => setPageSize(Number(e.target.value))}
-                  className="h-9 rounded-none border border-primary/15 bg-transparent px-2 text-[10px] uppercase tracking-[0.25em] text-primary outline-none focus:border-primary"
-                >
-                  <option value={10}>10 / page</option>
-                  <option value={20}>20 / page</option>
-                  <option value={50}>50 / page</option>
-                </select>
+                  onChange={(value) => setPageSize(Number(value))}
+                  options={pageSizeOptions}
+                  placeholder="Par page"
+                  compact
+                  className="min-w-[130px]"
+                  buttonClassName="bg-transparent text-primary"
+                />
               </div>
               <div className="flex gap-2">
                 <Button
