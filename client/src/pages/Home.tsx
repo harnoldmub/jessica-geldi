@@ -8,128 +8,9 @@ import Countdown from "@/components/Countdown";
 
 import heroImg from "../../images/hero.png";
 import coutumierImg from "../../images/image-coutumier.png";
-import pagneGlodieImg from "../../images/glodie.png";
-import pagneSamuelImg from "../../images/samuel.png";
 
 const IMAGES = { hero: heroImg, coutumier: coutumierImg } as Record<string, string>;
 const rv = { duration: 1.05, ease: [0.22, 1, 0.36, 1] as const };
-
-function InvitationProposals() {
-  return (
-    <section id="invitations" className="relative overflow-hidden bg-background">
-      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      <div className="mx-auto max-w-6xl px-6 py-24 md:px-10 md:py-28">
-        <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.45 }} transition={rv} className="mb-14 text-center">
-          <Label>Invitations proposees</Label>
-          <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3.25rem)" }}>
-            Deux dates, deux ambiances.
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-            Les invitations distinguent clairement le vendredi 26 juin, dedie au mariage civil, a la benediction et au coutumier, du dimanche 12 juillet, reserve a la soiree blanche et doree.
-          </p>
-        </motion.div>
-
-        <div className="grid gap-8 lg:grid-cols-2">
-          <motion.article
-            initial={{ opacity: 0, y: 22 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.35 }}
-            transition={rv}
-            className="overflow-hidden border border-[#D4AF37]/30 bg-[#fffaf0] editorial-shadow"
-          >
-            <div className="grid min-h-[680px] md:grid-cols-[0.92fr_1.08fr]">
-              <div className="relative min-h-[360px] overflow-hidden bg-[#D4AF37]">
-                <img src={coutumierImg} alt="Glodie et Samuel en blanc et dore" className="absolute inset-0 h-full w-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#201508]/55 via-transparent to-white/10" />
-                <div className="absolute bottom-5 left-5 right-5 border border-white/45 bg-white/12 px-4 py-3 text-white backdrop-blur-sm">
-                  <p className="text-[9px] uppercase tracking-[0.35em]">Invitation photo</p>
-                  <p className="mt-1 font-serif text-lg">Blanc & doree</p>
-                </div>
-              </div>
-
-              <div className="flex flex-col justify-between p-8 text-[#2a1b0a]">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.45em] text-[#B58B18]">Dimanche 12 Juillet 2026</p>
-                  <h3 className="mt-6 font-serif text-5xl leading-none md:text-6xl">Soiree dansante</h3>
-                  <p className="mt-5 font-script text-6xl leading-none text-[#B58B18]">Glodie & Samuel</p>
-                </div>
-
-                <div className="space-y-5">
-                  <div className="border-l-2 border-[#D4AF37] pl-5">
-                    <p className="text-[10px] uppercase tracking-[0.36em] text-[#B58B18]">Accueil</p>
-                    <p className="mt-1 font-serif text-2xl">19h30</p>
-                  </div>
-                  <div className="border-l-2 border-[#D4AF37] pl-5">
-                    <p className="text-[10px] uppercase tracking-[0.36em] text-[#B58B18]">Entree des maries</p>
-                    <p className="mt-1 font-serif text-2xl">20h30</p>
-                  </div>
-                  <div className="border-t border-[#D4AF37]/30 pt-5">
-                    <p className="text-sm leading-7">Salle Exaudus Arena, Avenue Bonga numero 23, croisement avenue du Stade. Reference : en face du marche de Djakarta, Matonge, C/ Kalamu.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.article>
-
-          <motion.article
-            initial={{ opacity: 0, y: 22 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.35 }}
-            transition={{ ...rv, delay: 0.08 }}
-            className="overflow-hidden border border-[#6b1733]/25 bg-[#fbf7f2] editorial-shadow"
-          >
-            <div className="relative min-h-[680px]">
-              <img src={pagneGlodieImg} alt="Pagne coutumier rose et turquoise" className="absolute inset-0 h-full w-full object-cover opacity-95" />
-              <img src={pagneSamuelImg} alt="Pagne coutumier bleu et jaune" className="absolute inset-y-0 right-0 h-full w-[34%] object-cover opacity-90" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#140a12]/16 via-[#fff7ef]/82 to-[#fff7ef]/68" />
-              <div className="absolute inset-y-0 right-[31%] w-2 bg-[#6b1733]" />
-              <div className="relative flex min-h-[680px] flex-col justify-between p-8 text-[#251119]">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="border border-white/70 bg-white/80 px-4 py-3 backdrop-blur-sm">
-                    <p className="text-[9px] uppercase tracking-[0.35em] text-[#6b1733]">Vendredi 26 Juin 2026</p>
-                    <p className="mt-1 font-serif text-xl">Jour traditionnel</p>
-                  </div>
-                  <div className="border border-[#6b1733]/25 bg-[#6b1733] px-4 py-3 text-white">
-                    <p className="text-[9px] uppercase tracking-[0.35em]">Coutumier</p>
-                  </div>
-                </div>
-
-                <div className="mx-auto max-w-md border border-white/75 bg-white/88 p-8 text-center shadow-2xl backdrop-blur-sm">
-                  <p className="text-[10px] uppercase tracking-[0.48em] text-[#6b1733]/75">Mariage coutumier</p>
-                  <h3 className="mt-6 font-serif text-5xl leading-none">Glodie & Samuel</h3>
-                  <p className="mx-auto mt-5 max-w-xs text-sm leading-7 text-[#251119]/70">
-                    Une invitation inspiree des pagnes du coutumier, vive, familiale et ancree dans la tradition.
-                  </p>
-                  <div className="mt-8 grid grid-cols-2 gap-3 text-left">
-                    <div className="border border-[#6b1733]/15 bg-white p-4">
-                      <p className="text-[9px] uppercase tracking-[0.32em] text-[#6b1733]/70">Celebration</p>
-                      <p className="mt-1 font-serif text-2xl">20h00</p>
-                    </div>
-                    <div className="border border-[#6b1733]/15 bg-white p-4">
-                      <p className="text-[9px] uppercase tracking-[0.32em] text-[#6b1733]/70">Entree</p>
-                      <p className="mt-1 font-serif text-2xl">21h30</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="border border-white/70 bg-white/82 p-4 backdrop-blur-sm">
-                    <p className="text-[9px] uppercase tracking-[0.35em] text-[#a65f3b]">Matin & apres-midi</p>
-                    <p className="mt-1 font-serif text-lg">11h mariage · 13h benediction</p>
-                  </div>
-                  <div className="border border-[#D4AF37]/35 bg-[#fffaf0]/90 p-4">
-                    <p className="text-[9px] uppercase tracking-[0.35em] text-[#b58b18]">Autre date</p>
-                    <p className="mt-1 font-serif text-lg">12 juillet · soiree blanche & doree</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.article>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 /* ─── Capacity blocks ─────────────────────────────────────── */
 function CapacityBlocks() {
@@ -508,8 +389,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      <InvitationProposals />
 
       {/* ══════════════════════════════════════════════════════
           4 · RSVP — Ultra important
