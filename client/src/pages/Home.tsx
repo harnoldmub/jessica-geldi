@@ -273,7 +273,39 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          2 · NOTRE HISTOIRE — Timeline
+          2 · RSVP — Ultra important
+      ══════════════════════════════════════════════════════ */}
+      <section id="rsvp" className="relative overflow-hidden dark bg-background">
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_50%_0%,hsl(var(--primary)/0.15)_0%,transparent_55%)]" />
+        <div className="relative mx-auto grid max-w-6xl gap-14 px-6 py-24 md:px-10 md:py-28 lg:grid-cols-[1fr_1.5fr]">
+
+          <motion.div initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={rv} className="space-y-8 text-foreground">
+            <div>
+              <Label>RSVP</Label>
+              <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,4.5vw,3rem)" }}>
+                Confirmez votre présence.
+              </h2>
+              <p className="mt-5 text-base leading-8 text-muted-foreground">Une reponse simple suffit : dites-nous si vous serez la, puis choisissez seul(e) ou en couple et votre boisson souhaitee.</p>
+            </div>
+
+            <CapacityBlocks />
+
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ ...rv, delay: 0.1 }}>
+            <RsvpForm
+              variant="invitation"
+              title="Répondre à l'invitation"
+              description="Dites-nous simplement si vous venez. Si oui, choisissez seul(e) ou en couple, puis votre boisson souhaitee."
+              submitLabel="Envoyer ma réponse"
+              successDescription="Merci. Votre réponse a bien été enregistrée. Nous avons hâte de vous accueillir."
+            />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+          3 · NOTRE HISTOIRE — Timeline
       ══════════════════════════════════════════════════════ */}
       <section id="histoire" className="relative overflow-hidden bg-gradient-to-br from-background to-secondary">
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
@@ -340,7 +372,7 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          3 · PROGRAMME — Timeline du jour
+          4 · PROGRAMME — Timeline du jour
       ══════════════════════════════════════════════════════ */}
       <section id="programme" className="relative overflow-hidden bg-muted">
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
@@ -387,38 +419,6 @@ export default function Home() {
               ))}
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════════
-          4 · RSVP — Ultra important
-      ══════════════════════════════════════════════════════ */}
-      <section id="rsvp" className="relative overflow-hidden dark bg-background">
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_50%_0%,hsl(var(--primary)/0.15)_0%,transparent_55%)]" />
-        <div className="relative mx-auto grid max-w-6xl gap-14 px-6 py-24 md:px-10 md:py-28 lg:grid-cols-[1fr_1.5fr]">
-
-          <motion.div initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={rv} className="space-y-8 text-foreground">
-            <div>
-              <Label>RSVP</Label>
-              <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,4.5vw,3rem)" }}>
-                Confirmez votre présence.
-              </h2>
-              <p className="mt-5 text-base leading-8 text-muted-foreground">Une reponse simple suffit : dites-nous si vous serez la, puis choisissez seul(e) ou en couple et votre boisson souhaitee.</p>
-            </div>
-
-            <CapacityBlocks />
-
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ ...rv, delay: 0.1 }}>
-            <RsvpForm
-              variant="invitation"
-              title="Répondre à l'invitation"
-              description="Dites-nous simplement si vous venez. Si oui, choisissez seul(e) ou en couple, puis votre boisson souhaitee."
-              submitLabel="Envoyer ma réponse"
-              successDescription="Merci. Votre réponse a bien été enregistrée. Nous avons hâte de vous accueillir."
-            />
-          </motion.div>
         </div>
       </section>
 
