@@ -22,7 +22,7 @@ function CapacityBlocks() {
     {
       key: "civil",
       title: "Mariage civil, benediction & coutumier",
-      time: "Vendredi 26 juin 2026",
+      time: "Samedi 04 juillet 2026",
       theme: glodieSamuel.dresscode.blessing.theme,
     },
     {
@@ -379,7 +379,7 @@ export default function Home() {
 
         <div className="mx-auto max-w-3xl px-6 py-24 md:px-10 md:py-28">
           <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={rv} className="mb-16 text-center">
-            <Label>26 Juin & 12 Juillet 2026</Label>
+            <Label>04 Juillet & 12 Juillet 2026</Label>
             <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3.25rem)" }}>
               Programme de la journée
             </h2>
@@ -409,7 +409,7 @@ export default function Home() {
                         {event.time}
                       </p>
                       <span className="text-[8px] uppercase tracking-[0.5em] px-2 py-0.5 text-primary border border-primary/30">
-                        {event.theme === "blessing" ? "26 Juin" : "12 Juillet"}
+                        {event.theme === "blessing" ? "04 Juillet" : "12 Juillet"}
                       </span>
                     </div>
                     <p className="font-serif text-2xl text-foreground">{event.title}</p>
@@ -435,7 +435,7 @@ export default function Home() {
               Lieux &amp; Accès
             </h2>
             <p className="mt-4 text-sm italic text-muted-foreground">
-              Le lieu du 26 juin sera communique d'ici peu. La soiree dansante aura lieu a Exaudus Arena.
+              Le lieu du 04 juillet sera communique d'ici peu. La soiree dansante aura lieu a Exaudus Arena.
             </p>
           </motion.div>
 
@@ -643,7 +643,7 @@ export default function Home() {
         <div className="my-10">
           <p className="font-script leading-none text-foreground" style={{ fontSize: "5rem" }}>{glodieSamuel.brand}</p>
           <p className="mt-5 text-[10px] uppercase tracking-[0.55em] text-muted-foreground">
-            {glodieSamuel.title} · 26 Juin & 12 Juillet 2026 · Kinshasa
+            {glodieSamuel.title} · 04 Juillet & 12 Juillet 2026 · Kinshasa
           </p>
           <p className="mt-7 mx-auto max-w-sm font-serif text-sm italic leading-7 text-muted-foreground/80">
             {glodieSamuel.couple.statement}

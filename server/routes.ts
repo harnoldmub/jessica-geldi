@@ -62,8 +62,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await ensureAdminUser();
   
   // Public capacity endpoint
-  const CIVIL_MAX = 60;
-  const EVENING_MAX = 250;
+  const CIVIL_MAX = 100;
+  const EVENING_MAX = 350;
 
   app.get("/api/capacity", async (_req, res) => {
     const all = await storage.getAllRsvps();

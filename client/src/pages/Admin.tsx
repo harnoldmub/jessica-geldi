@@ -86,12 +86,12 @@ const invitationFilterOptions = [
 ];
 const ceremonyOptions = [
   { value: "both", label: "Les deux ceremonies" },
-  { value: "civil", label: "26 juin seulement", detail: "11h00" },
+  { value: "civil", label: "04 juillet seulement", detail: "11h00" },
   { value: "evening", label: "12 juillet seulement", detail: "19h30" },
 ];
 const ceremonyFilterOptions = [
   { value: "all", label: "Toutes les ceremonies" },
-  { value: "civil", label: "26 juin" },
+  { value: "civil", label: "04 juillet" },
   { value: "evening", label: "12 juillet" },
   { value: "both", label: "Les deux" },
 ];
@@ -456,7 +456,7 @@ export default function Admin() {
     const message =
       `Bonjour ${guest.firstName},\n\n` +
       `Nous avons la joie de vous inviter au mariage de *Glodie & Samuel* a Kinshasa.\n\n` +
-      `Vendredi 26 juin 2026 : mariage civil, benediction nuptiale et mariage coutumier.\n` +
+      `Samedi 04 juillet 2026 : mariage civil, benediction nuptiale et mariage coutumier.\n` +
       `Dimanche 12 juillet 2026 : soiree dansante a Exaudus Arena.\n\n` +
       `Voici votre invitation personnelle :\n${url}\n\n` +
       `Avec joie de vous avoir parmi nous.`;
@@ -697,23 +697,23 @@ export default function Admin() {
           {/* Ligne cérémonies */}
           <div className="grid grid-cols-2 divide-x divide-primary/8">
             <div className="p-5 text-center bg-yellow-50/50">
-              <p className="text-[9px] uppercase tracking-[0.4em] text-yellow-700/60 mb-2">26 juin · civil</p>
+              <p className="text-[9px] uppercase tracking-[0.4em] text-yellow-700/60 mb-2">04 juillet · civil</p>
               <p className="font-serif text-2xl text-yellow-700">
                 {stats.civilAttendees}
-                <span className="text-sm font-sans font-normal text-yellow-600/50"> / 60</span>
+                <span className="text-sm font-sans font-normal text-yellow-600/50"> / 100</span>
               </p>
               <p className="mt-1 text-[9px] text-foreground/35">
-                {stats.civilAttendees >= 60 ? "🔴 Complet" : `${60 - stats.civilAttendees} places restantes`}
+                {stats.civilAttendees >= 100 ? "🔴 Complet" : `${100 - stats.civilAttendees} places restantes`}
               </p>
             </div>
             <div className="p-5 text-center bg-violet-50/50">
               <p className="text-[9px] uppercase tracking-[0.4em] text-violet-700/60 mb-2">12 juillet · soiree</p>
               <p className="font-serif text-2xl text-violet-700">
                 {stats.eveningAttendees}
-                <span className="text-sm font-sans font-normal text-violet-600/50"> / 250</span>
+                <span className="text-sm font-sans font-normal text-violet-600/50"> / 350</span>
               </p>
               <p className="mt-1 text-[9px] text-foreground/35">
-                {stats.eveningAttendees >= 250 ? "🔴 Complet" : `${250 - stats.eveningAttendees} places restantes`}
+                {stats.eveningAttendees >= 350 ? "🔴 Complet" : `${350 - stats.eveningAttendees} places restantes`}
               </p>
             </div>
           </div>
@@ -1095,7 +1095,7 @@ export default function Admin() {
                       {(guest.ceremonyChoice || "both") === "both"
                         ? "Civil & Soirée"
                         : guest.ceremonyChoice === "civil"
-                        ? "26 juin"
+                        ? "04 juillet"
                         : "12 juillet"}
                     </Badge>
                     {guest.beverageChoice && (

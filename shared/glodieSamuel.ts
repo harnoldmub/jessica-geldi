@@ -28,10 +28,10 @@ export const glodieSamuel = {
   brand: "Glodie & Samuel",
   title: "Glodie & Samuel",
   tagline: "Une celebration lumineuse, familiale et pleine de grace.",
-  weddingDate: new Date("2026-06-26T11:00:00+01:00"),
+  weddingDate: new Date("2026-07-04T11:00:00+01:00"),
   date: {
-    display: "Vendredi 26 Juin 2026",
-    iso: "2026-06-26",
+    display: "Samedi 04 Juillet 2026",
+    iso: "2026-07-04",
     time: "Mariage civil 11h · Benediction nuptiale 13h · Coutumier 20h",
   },
   secondDate: {
@@ -68,7 +68,7 @@ export const glodieSamuel = {
     statement:
       "Nous avons la joie de vous convier a la celebration de notre mariage. Votre presence donnera a ces moments toute leur profondeur, leur grace et leur lumiere.",
     narrative:
-      "Le 26 juin et le 12 juillet, nous celebrerons notre union entoures des personnes qui comptent pour nous. Des instants de foi, de famille, de tradition et de fete a partager avec vous.",
+      "Le 04 juillet et le 12 juillet, nous celebrerons notre union entoures des personnes qui comptent pour nous. Des instants de foi, de famille, de tradition et de fete a partager avec vous.",
   },
   hero: {
     eyebrow: "Invitation officielle",
@@ -196,11 +196,11 @@ export const glodieSamuel = {
     },
     {
       q: "A quelle heure dois-je arriver ?",
-      a: "Le vendredi 26 juin 2026, le mariage commence a 11h, la benediction a 13h et le coutumier a 20h. Le dimanche 12 juillet 2026, l'arrivee des invites est prevue a 19h30.",
+      a: "Le samedi 04 juillet 2026, le mariage commence a 11h, la benediction a 13h et le coutumier a 20h. Le dimanche 12 juillet 2026, l'arrivee des invites est prevue a 19h30.",
     },
     {
       q: "Comment acceder au lieu ?",
-      a: "Le lieu du 26 juin sera communique d'ici peu. La soiree dansante aura lieu a la salle Exaudus Arena, Avenue Bonga numero 23, croisement avenue du Stade, en face du marche de Djakarta, Matonge, commune de Kalamu.",
+      a: "Le lieu du 04 juillet sera communique d'ici peu. La soiree dansante aura lieu a la salle Exaudus Arena, Avenue Bonga numero 23, croisement avenue du Stade, en face du marche de Djakarta, Matonge, commune de Kalamu.",
     },
     {
       q: "Y a-t-il un espace pour les enfants ?",

@@ -508,7 +508,7 @@ export default function Invitation() {
             {glodieSamuel.brand}
           </p>
           <p className="mt-5 text-[10px] uppercase tracking-[0.55em] text-muted-foreground">
-            {glodieSamuel.title} · 26 Juin & 12 Juillet 2026 · Kinshasa
+            {glodieSamuel.title} · 04 Juillet & 12 Juillet 2026 · Kinshasa
           </p>
           <p className="mt-7 mx-auto max-w-sm font-serif text-sm italic leading-7 text-muted-foreground/80">
             Avec joie, nous vous attendons.

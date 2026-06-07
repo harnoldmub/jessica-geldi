@@ -173,7 +173,7 @@ async function buildInvitationTemplate(kind: "civil" | "evening" | "both") {
     ctx.fillStyle = "#6b1733";
     ctx.font = '36px "Lato", sans-serif';
     ctx.textAlign = "center";
-    ctx.fillText("VENDREDI 26 JUIN 2026", 455, 380);
+    ctx.fillText("SAMEDI 04 JUILLET 2026", 455, 380);
     ctx.fillStyle = "#231017";
     ctx.font = '84px "Playfair Display", serif';
     ctx.fillText("Mariage coutumier", 455, 515);
@@ -181,7 +181,7 @@ async function buildInvitationTemplate(kind: "civil" | "evening" | "both") {
     fillTextBlock(ctx, ["20h00 · celebration du coutumier", "21h30 · entree des maries", "Pagnes, traditions & familles"], 455, 640, 58);
     ctx.fillStyle = "#a65f3b";
     ctx.font = '31px "Lato", sans-serif';
-    fillTextBlock(ctx, ["Avant le coutumier :", "11h00 celebration du mariage", "13h00 benediction nuptiale & cocktail", "Lieu du 26 juin communique d'ici peu"], 455, 1035, 43);
+    fillTextBlock(ctx, ["Avant le coutumier :", "11h00 celebration du mariage", "13h00 benediction nuptiale & cocktail", "Lieu du 04 juillet communique d'ici peu"], 455, 1035, 43);
     ctx.save();
     ctx.translate(CARD_WIDTH - 250, 810);
     ctx.rotate(-Math.PI / 2);
@@ -211,7 +211,7 @@ async function buildInvitationTemplate(kind: "civil" | "evening" | "both") {
 
     ctx.fillStyle = "#6b1733";
     ctx.font = '35px "Lato", sans-serif';
-    ctx.fillText("VENDREDI 26 JUIN 2026", CARD_WIDTH / 2, 790);
+    ctx.fillText("SAMEDI 04 JUILLET 2026", CARD_WIDTH / 2, 790);
     ctx.fillStyle = "#241017";
     ctx.font = '43px "Playfair Display", serif';
     ctx.fillText("Civil · benediction · coutumier", CARD_WIDTH / 2, 850);

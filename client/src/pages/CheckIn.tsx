@@ -78,7 +78,7 @@ export default function CheckIn() {
     (currentPage + 1) * PAGE_SIZE,
   );
 
-  const CAPACITY = 250;
+  const CAPACITY = 350;
   const checkedInCount = guests.filter((g) => g.checkedInAt).length;
   const waitingCount = guests.length - checkedInCount;
 
