@@ -58,7 +58,7 @@ const FONT_PRESETS = [
 
 const CARD_WIDTH = 1080;
 const CARD_HEIGHT = 1620;
-const CARD_CONFIG_KEY = "glodie_samuel_invitation_card_config_v2";
+const CARD_CONFIG_KEY = "glodie_samuel_invitation_card_config_v3";
 
 function loadCardImage(src: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -83,6 +83,20 @@ function coverImage(
   ctx.drawImage(img, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
 }
 
+function containImage(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  const ratio = Math.min(width / img.naturalWidth, height / img.naturalHeight);
+  const drawWidth = img.naturalWidth * ratio;
+  const drawHeight = img.naturalHeight * ratio;
+  ctx.drawImage(img, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+}
+
 function fillTextBlock(
   ctx: CanvasRenderingContext2D,
   lines: string[],
@@ -93,32 +107,6 @@ function fillTextBlock(
   lines.forEach((line, index) => {
     ctx.fillText(line, x, y + index * lineHeight);
   });
-}
-
-function drawWrappedText(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-  maxWidth: number,
-  lineHeight: number,
-) {
-  const words = text.split(" ");
-  const lines: string[] = [];
-  let currentLine = "";
-
-  words.forEach((word) => {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    if (ctx.measureText(testLine).width > maxWidth && currentLine) {
-      lines.push(currentLine);
-      currentLine = word;
-      return;
-    }
-    currentLine = testLine;
-  });
-
-  if (currentLine) lines.push(currentLine);
-  lines.forEach((line, index) => ctx.fillText(line, x, y + index * lineHeight));
 }
 
 function drawSquareImageCard(
@@ -217,14 +205,6 @@ async function buildInvitationTemplate(kind: "civil" | "evening" | "both") {
     ctx.fillStyle = topGradient;
     ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
-    coverImage(ctx, eveningPhoto, 590, 0, 480, 560);
-    const photoFade = ctx.createLinearGradient(560, 0, 920, 0);
-    photoFade.addColorStop(0, "#fff8ec");
-    photoFade.addColorStop(0.5, "rgba(255,248,236,0.4)");
-    photoFade.addColorStop(1, "rgba(255,248,236,0)");
-    ctx.fillStyle = photoFade;
-    ctx.fillRect(540, 0, 460, 560);
-
     ctx.fillStyle = "#fff8ec";
     ctx.fillRect(62, 62, CARD_WIDTH - 124, CARD_HEIGHT - 124);
     ctx.strokeStyle = "rgba(166, 95, 59, 0.32)";
@@ -234,6 +214,13 @@ async function buildInvitationTemplate(kind: "civil" | "evening" | "both") {
     ctx.fillRect(86, 86, 12, CARD_HEIGHT - 172);
     ctx.fillStyle = "#d7a529";
     ctx.fillRect(CARD_WIDTH - 98, 86, 12, CARD_HEIGHT - 172);
+
+    ctx.fillStyle = "#f7eadc";
+    ctx.fillRect(620, 138, 312, 416);
+    containImage(ctx, eveningPhoto, 632, 150, 288, 392);
+    ctx.strokeStyle = "rgba(166, 95, 59, 0.4)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(620, 138, 312, 416);
 
     ctx.textAlign = "left";
     ctx.fillStyle = "#6b3522";
@@ -252,11 +239,23 @@ async function buildInvitationTemplate(kind: "civil" | "evening" | "both") {
     ctx.font = '30px "Lato", sans-serif';
     ctx.fillText("Glodie & Samuel", 142, 558);
 
-    drawInfoTile(ctx, 142, 660, 390, "Matinee", "11h00 · Mariage civil", [
+    ctx.fillStyle = "rgba(166, 95, 59, 0.08)";
+    ctx.fillRect(142, 620, 804, 92);
+    ctx.strokeStyle = "rgba(166, 95, 59, 0.28)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(142, 620, 804, 92);
+    ctx.fillStyle = "#a65f3b";
+    ctx.font = '18px "Lato", sans-serif';
+    ctx.textAlign = "center";
+    ctx.fillText("ESPACE NOM DE L'INVITE", CARD_WIDTH / 2, 652);
+    ctx.fillStyle = "rgba(36, 16, 23, 0.18)";
+    ctx.fillRect(230, 682, 620, 2);
+
+    drawInfoTile(ctx, 142, 780, 390, "Matinee", "11h00 · Mariage civil", [
       "13h00 · Benediction",
       "Cocktail au meme endroit",
     ]);
-    drawInfoTile(ctx, 556, 660, 390, "Soiree", "20h00 · Coutumier", [
+    drawInfoTile(ctx, 556, 780, 390, "Soiree", "20h00 · Coutumier", [
       "21h30 · Entree des maries",
       "Traditions & familles",
     ]);
@@ -264,17 +263,19 @@ async function buildInvitationTemplate(kind: "civil" | "evening" | "both") {
     ctx.fillStyle = "#241017";
     ctx.font = '34px "Playfair Display", serif';
     ctx.textAlign = "center";
-    ctx.fillText("Informations pagnes", CARD_WIDTH / 2, 970);
-    drawSquareImageCard(ctx, pagneGlodie, 214, 1010, 220, "Pagne Glodie");
-    drawSquareImageCard(ctx, pagneSamuel, 646, 1010, 220, "Pagne Samuel");
+    ctx.fillText("Informations pagnes", CARD_WIDTH / 2, 1088);
+    drawSquareImageCard(ctx, pagneGlodie, 214, 1130, 196, "Pagne Glodie");
+    drawSquareImageCard(ctx, pagneSamuel, 670, 1130, 196, "Pagne Samuel");
 
     ctx.fillStyle = "rgba(36, 16, 23, 0.68)";
     ctx.font = '25px "Lato", sans-serif';
-    ctx.fillText("Lieu du 04 juillet communique d'ici peu", CARD_WIDTH / 2, 1398);
+    ctx.fillText("Lieu du 04 juillet communique d'ici peu", CARD_WIDTH / 2, 1428);
   } else {
     ctx.fillStyle = "#fff8ec";
     ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-    coverImage(ctx, eveningPhoto, 0, 0, CARD_WIDTH, 510);
+    ctx.fillStyle = "#f7eadc";
+    ctx.fillRect(290, 40, 500, 390);
+    containImage(ctx, eveningPhoto, 310, 60, 460, 350);
     const topFade = ctx.createLinearGradient(0, 220, 0, 560);
     topFade.addColorStop(0, "rgba(255,248,236,0)");
     topFade.addColorStop(1, "#fff8ec");
@@ -336,8 +337,8 @@ export default function CardGeneratorDialog({
   const [fontFamily, setFontFamily] = useState("Cormorant Garamond");
   const [fontSize, setFontSize] = useState(42);
   const [fontColor, setFontColor] = useState("#333333");
-  const [textX, setTextX] = useState(52); // En %
-  const [textY, setTextY] = useState(86); // En % — la table est affichée 4% en dessous
+  const [textX, setTextX] = useState(50); // En %
+  const [textY, setTextY] = useState(42); // En % — la table est affichée 4% en dessous
   const [tableNumber, setTableNumber] = useState<number | null>(null);
   const [textAlign, setTextAlign] = useState<"left" | "center" | "right">("center");
   const [isBold, setIsBold] = useState(false);
@@ -504,18 +505,6 @@ export default function CardGeneratorDialog({
       ctx.fillText(`${tableNumber}`, pxX, tablePxY);
     }
 
-    if (guest?.invitationUrl || guest?.token) {
-      const invitationUrl = guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`;
-      ctx.save();
-      ctx.textAlign = "center";
-      ctx.textBaseline = "alphabetic";
-      ctx.fillStyle = "rgba(35, 24, 10, 0.72)";
-      ctx.font = '24px "Lato", sans-serif';
-      ctx.fillText("Lien personnel de confirmation", canvas.width / 2, canvas.height - 92);
-      ctx.font = '22px "Lato", sans-serif';
-      drawWrappedText(ctx, invitationUrl, canvas.width / 2, canvas.height - 56, canvas.width - 150, 28);
-      ctx.restore();
-    }
   }, [
     imageObj,
     guest,
@@ -582,8 +571,8 @@ export default function CardGeneratorDialog({
 
   // Fonction de réinitialisation de la position
   const resetPosition = () => {
-    setTextX(52);
-    setTextY(86);
+    setTextX(50);
+    setTextY(42);
     setFontSize(42);
     setFontFamily("Cormorant Garamond");
     setFontColor("#333333");
