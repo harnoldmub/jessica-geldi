@@ -60,16 +60,16 @@ export default function PrettySelect({
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
         className={cn(
-          "flex w-full items-center justify-between gap-3 border border-primary/15 bg-white/90 text-left text-foreground shadow-sm transition-colors hover:border-primary/35 focus:outline-none focus:ring-2 focus:ring-primary/15",
+          "flex w-full items-center justify-between gap-3 border border-[#d7d7d7] bg-white text-left text-[#111111] shadow-sm transition-colors hover:border-[#111111]/35 focus:outline-none focus:ring-2 focus:ring-[#111111]/15",
           compact ? "h-9 px-3 text-[10px] uppercase tracking-[0.2em]" : "h-12 px-3 text-sm",
           buttonClassName,
         )}
       >
-        <span className={cn("min-w-0 truncate", selected ? "text-foreground" : "text-foreground/45")}>
+        <span className={cn("min-w-0 truncate", selected ? "text-[#111111]" : "text-[#777777]")}>
           {selected?.label || placeholder}
         </span>
         <ChevronDown
-          className={cn("h-4 w-4 shrink-0 text-foreground/45 transition-transform", open && "rotate-180")}
+          className={cn("h-4 w-4 shrink-0 text-[#555555] transition-transform", open && "rotate-180")}
           strokeWidth={1.6}
         />
       </button>
@@ -77,14 +77,14 @@ export default function PrettySelect({
       {open && (
         <div
           className={cn(
-            "absolute left-0 top-[calc(100%+6px)] z-40 max-h-72 w-full min-w-[220px] overflow-y-auto border border-primary/15 bg-white p-1 shadow-2xl",
+            "absolute left-0 top-[calc(100%+6px)] z-40 max-h-72 w-full min-w-[220px] overflow-y-auto border border-[#d7d7d7] bg-white p-2 text-[#111111] shadow-2xl",
             menuClassName,
           )}
         >
           {Object.entries(groups).map(([group, groupOptions]) => (
             <div key={group || "default"}>
               {group && (
-                <p className="px-3 pb-1 pt-3 text-[9px] uppercase tracking-[0.32em] text-foreground/35">
+                <p className="px-3 pb-1 pt-3 text-[9px] uppercase tracking-[0.32em] text-[#777777]">
                   {group}
                 </p>
               )}
@@ -101,15 +101,15 @@ export default function PrettySelect({
                       setOpen(false);
                     }}
                     className={cn(
-                      "flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm transition-colors",
-                      isSelected ? "bg-[#111111] text-white" : "text-foreground hover:bg-primary/5",
+                      "flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition-colors",
+                      isSelected ? "bg-[#111111] text-white" : "bg-white text-[#111111] hover:bg-[#f3f3f3]",
                       option.disabled && "cursor-not-allowed opacity-40",
                     )}
                   >
                     <span className="min-w-0">
                       <span className="block truncate">{option.label}</span>
                       {option.detail && (
-                        <span className={cn("mt-0.5 block text-[10px]", isSelected ? "text-white/65" : "text-foreground/45")}>
+                        <span className={cn("mt-0.5 block text-[10px]", isSelected ? "text-white/65" : "text-[#777777]")}>
                           {option.detail}
                         </span>
                       )}
