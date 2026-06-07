@@ -58,6 +58,7 @@ const FONT_PRESETS = [
 
 const CARD_WIDTH = 1080;
 const CARD_HEIGHT = 1620;
+const CARD_CONFIG_KEY = "glodie_samuel_invitation_card_config_v2";
 
 function loadCardImage(src: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -120,6 +121,56 @@ function drawWrappedText(
   lines.forEach((line, index) => ctx.fillText(line, x, y + index * lineHeight));
 }
 
+function drawSquareImageCard(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  size: number,
+  label: string,
+) {
+  ctx.save();
+  ctx.fillStyle = "#fffaf2";
+  ctx.fillRect(x, y, size, size + 78);
+  ctx.strokeStyle = "rgba(105, 54, 32, 0.22)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, size, size + 78);
+  coverImage(ctx, img, x + 14, y + 14, size - 28, size - 28);
+  ctx.fillStyle = "#6b3522";
+  ctx.font = '22px "Lato", sans-serif';
+  ctx.textAlign = "center";
+  ctx.fillText(label, x + size / 2, y + size + 48);
+  ctx.restore();
+}
+
+function drawInfoTile(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  eyebrow: string,
+  title: string,
+  details: string[],
+) {
+  ctx.save();
+  ctx.fillStyle = "rgba(255, 250, 242, 0.92)";
+  ctx.fillRect(x, y, width, 170);
+  ctx.strokeStyle = "rgba(166, 95, 59, 0.34)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, width, 170);
+  ctx.fillStyle = "#a65f3b";
+  ctx.font = '18px "Lato", sans-serif';
+  ctx.textAlign = "left";
+  ctx.fillText(eyebrow.toUpperCase(), x + 26, y + 40);
+  ctx.fillStyle = "#241017";
+  ctx.font = '30px "Playfair Display", serif';
+  ctx.fillText(title, x + 26, y + 82);
+  ctx.fillStyle = "rgba(36, 16, 23, 0.72)";
+  ctx.font = '20px "Lato", sans-serif';
+  details.forEach((detail, index) => ctx.fillText(detail, x + 26, y + 118 + index * 28));
+  ctx.restore();
+}
+
 async function buildInvitationTemplate(kind: "civil" | "evening" | "both") {
   const [eveningPhoto, pagneGlodie, pagneSamuel] = await Promise.all([
     loadCardImage(eveningPhotoUrl),
@@ -159,73 +210,108 @@ async function buildInvitationTemplate(kind: "civil" | "evening" | "both") {
     ctx.font = '31px "Lato", sans-serif';
     fillTextBlock(ctx, ["Salle Exaudus Arena", "Avenue Bonga 23, croisement avenue du Stade", "En face du marche de Djakarta · Matonge · Kalamu"], CARD_WIDTH / 2, 1410, 42);
   } else if (kind === "civil") {
-    coverImage(ctx, pagneGlodie, 0, 0, CARD_WIDTH, CARD_HEIGHT);
-    coverImage(ctx, pagneSamuel, CARD_WIDTH - 360, 0, 360, CARD_HEIGHT);
-    ctx.fillStyle = "rgba(37, 17, 25, 0.24)";
+    const topGradient = ctx.createLinearGradient(0, 0, CARD_WIDTH, 0);
+    topGradient.addColorStop(0, "#7f3f29");
+    topGradient.addColorStop(0.46, "#f3dfcf");
+    topGradient.addColorStop(1, "#fff8ec");
+    ctx.fillStyle = topGradient;
     ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-    ctx.fillStyle = "rgba(255, 247, 239, 0.93)";
-    ctx.fillRect(92, 230, CARD_WIDTH - 260, 1130);
-    ctx.fillStyle = "rgba(107, 23, 51, 0.95)";
-    ctx.fillRect(CARD_WIDTH - 330, 210, 160, 1180);
-    ctx.strokeStyle = "#6b1733";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(125, 270, CARD_WIDTH - 330, 1040);
-    ctx.fillStyle = "#6b1733";
-    ctx.font = '36px "Lato", sans-serif';
-    ctx.textAlign = "center";
-    ctx.fillText("SAMEDI 04 JUILLET 2026", 455, 380);
-    ctx.fillStyle = "#231017";
-    ctx.font = '84px "Playfair Display", serif';
-    ctx.fillText("Mariage coutumier", 455, 515);
-    ctx.font = '42px "Cormorant Garamond", serif';
-    fillTextBlock(ctx, ["20h00 · celebration du coutumier", "21h30 · entree des maries", "Pagnes, traditions & familles"], 455, 640, 58);
+
+    coverImage(ctx, eveningPhoto, 590, 0, 480, 560);
+    const photoFade = ctx.createLinearGradient(560, 0, 920, 0);
+    photoFade.addColorStop(0, "#fff8ec");
+    photoFade.addColorStop(0.5, "rgba(255,248,236,0.4)");
+    photoFade.addColorStop(1, "rgba(255,248,236,0)");
+    ctx.fillStyle = photoFade;
+    ctx.fillRect(540, 0, 460, 560);
+
+    ctx.fillStyle = "#fff8ec";
+    ctx.fillRect(62, 62, CARD_WIDTH - 124, CARD_HEIGHT - 124);
+    ctx.strokeStyle = "rgba(166, 95, 59, 0.32)";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(86, 86, CARD_WIDTH - 172, CARD_HEIGHT - 172);
     ctx.fillStyle = "#a65f3b";
-    ctx.font = '31px "Lato", sans-serif';
-    fillTextBlock(ctx, ["Avant le coutumier :", "11h00 celebration du mariage", "13h00 benediction nuptiale & cocktail", "Lieu du 04 juillet communique d'ici peu"], 455, 1035, 43);
-    ctx.save();
-    ctx.translate(CARD_WIDTH - 250, 810);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillStyle = "#fff7ef";
-    ctx.font = '34px "Lato", sans-serif';
-    ctx.fillText("INVITATION COUTUMIER", 0, 0);
-    ctx.restore();
-  } else {
-    coverImage(ctx, eveningPhoto, 0, 0, CARD_WIDTH, 560);
-    coverImage(ctx, pagneGlodie, 0, CARD_HEIGHT - 360, CARD_WIDTH, 360);
-    ctx.fillStyle = "rgba(255, 250, 240, 0.93)";
-    ctx.fillRect(70, 470, CARD_WIDTH - 140, 850);
-    ctx.fillStyle = "rgba(107, 23, 51, 0.95)";
-    ctx.fillRect(70, 470, 28, 850);
-    ctx.fillStyle = "rgba(212, 175, 55, 0.95)";
-    ctx.fillRect(CARD_WIDTH - 98, 470, 28, 850);
-    ctx.strokeStyle = "#d4af37";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(112, 512, CARD_WIDTH - 224, 766);
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#24180a";
-    ctx.font = '62px "Playfair Display", serif';
-    ctx.fillText("Deux rendez-vous", CARD_WIDTH / 2, 615);
-    ctx.font = '31px "Lato", sans-serif';
-    ctx.fillStyle = "#6b1733";
-    ctx.fillText("LE MARIAGE DE GLODIE & SAMUEL", CARD_WIDTH / 2, 675);
+    ctx.fillRect(86, 86, 12, CARD_HEIGHT - 172);
+    ctx.fillStyle = "#d7a529";
+    ctx.fillRect(CARD_WIDTH - 98, 86, 12, CARD_HEIGHT - 172);
 
-    ctx.fillStyle = "#6b1733";
-    ctx.font = '35px "Lato", sans-serif';
-    ctx.fillText("SAMEDI 04 JUILLET 2026", CARD_WIDTH / 2, 790);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#6b3522";
+    ctx.font = '24px "Lato", sans-serif';
+    ctx.fillText("INVITATION AU MARIAGE", 142, 198);
     ctx.fillStyle = "#241017";
-    ctx.font = '43px "Playfair Display", serif';
-    ctx.fillText("Civil · benediction · coutumier", CARD_WIDTH / 2, 850);
-    ctx.font = '33px "Cormorant Garamond", serif';
-    fillTextBlock(ctx, ["11h00 celebration du mariage", "13h00 benediction nuptiale & cocktail", "20h00 mariage coutumier", "21h30 entree des maries"], CARD_WIDTH / 2, 910, 44);
+    ctx.font = '92px "Playfair Display", serif';
+    ctx.fillText("04 Juillet", 142, 310);
+    ctx.font = '58px "Playfair Display", serif';
+    ctx.fillText("Civil, benediction", 142, 392);
+    ctx.fillText("& coutumier", 142, 456);
 
-    ctx.fillStyle = "#b58b18";
-    ctx.font = '35px "Lato", sans-serif';
-    ctx.fillText("DIMANCHE 12 JUILLET 2026", CARD_WIDTH / 2, 1120);
-    ctx.fillStyle = "#24180a";
-    ctx.font = '43px "Playfair Display", serif';
-    ctx.fillText("Soiree dansante · blanc & doree", CARD_WIDTH / 2, 1180);
-    ctx.font = '31px "Cormorant Garamond", serif';
-    fillTextBlock(ctx, ["19h30 accueil des invites", "20h30 entree des maries", "Salle Exaudus Arena · Matonge · Kalamu"], CARD_WIDTH / 2, 1238, 42);
+    ctx.fillStyle = "rgba(107, 53, 34, 0.12)";
+    ctx.fillRect(142, 500, 420, 2);
+    ctx.fillStyle = "#6b1733";
+    ctx.font = '30px "Lato", sans-serif';
+    ctx.fillText("Glodie & Samuel", 142, 558);
+
+    drawInfoTile(ctx, 142, 660, 390, "Matinee", "11h00 · Mariage civil", [
+      "13h00 · Benediction",
+      "Cocktail au meme endroit",
+    ]);
+    drawInfoTile(ctx, 556, 660, 390, "Soiree", "20h00 · Coutumier", [
+      "21h30 · Entree des maries",
+      "Traditions & familles",
+    ]);
+
+    ctx.fillStyle = "#241017";
+    ctx.font = '34px "Playfair Display", serif';
+    ctx.textAlign = "center";
+    ctx.fillText("Informations pagnes", CARD_WIDTH / 2, 970);
+    drawSquareImageCard(ctx, pagneGlodie, 214, 1010, 220, "Pagne Glodie");
+    drawSquareImageCard(ctx, pagneSamuel, 646, 1010, 220, "Pagne Samuel");
+
+    ctx.fillStyle = "rgba(36, 16, 23, 0.68)";
+    ctx.font = '25px "Lato", sans-serif';
+    ctx.fillText("Lieu du 04 juillet communique d'ici peu", CARD_WIDTH / 2, 1398);
+  } else {
+    ctx.fillStyle = "#fff8ec";
+    ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+    coverImage(ctx, eveningPhoto, 0, 0, CARD_WIDTH, 510);
+    const topFade = ctx.createLinearGradient(0, 220, 0, 560);
+    topFade.addColorStop(0, "rgba(255,248,236,0)");
+    topFade.addColorStop(1, "#fff8ec");
+    ctx.fillStyle = topFade;
+    ctx.fillRect(0, 220, CARD_WIDTH, 340);
+
+    ctx.fillStyle = "#241017";
+    ctx.fillRect(74, 430, CARD_WIDTH - 148, 74);
+    ctx.fillStyle = "#fff8ec";
+    ctx.font = '24px "Lato", sans-serif';
+    ctx.textAlign = "center";
+    ctx.fillText("LE MARIAGE DE GLODIE & SAMUEL", CARD_WIDTH / 2, 478);
+
+    ctx.fillStyle = "#fffaf2";
+    ctx.fillRect(88, 560, CARD_WIDTH - 176, 760);
+    ctx.strokeStyle = "rgba(212, 175, 55, 0.52)";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(116, 588, CARD_WIDTH - 232, 704);
+
+    ctx.fillStyle = "#241017";
+    ctx.font = '64px "Playfair Display", serif';
+    ctx.fillText("Deux dates, une celebration", CARD_WIDTH / 2, 680);
+
+    drawInfoTile(ctx, 154, 770, 382, "04 Juillet", "Civil & coutumier", [
+      "11h00 mariage civil",
+      "13h00 benediction",
+    ]);
+    drawInfoTile(ctx, 556, 770, 382, "12 Juillet", "Soiree dansante", [
+      "19h30 accueil invites",
+      "20h30 entree maries",
+    ]);
+
+    ctx.fillStyle = "#6b3522";
+    ctx.font = '28px "Lato", sans-serif';
+    ctx.fillText("Pagnes du 04 juillet", CARD_WIDTH / 2, 1050);
+    drawSquareImageCard(ctx, pagneGlodie, 248, 1084, 190, "Glodie");
+    drawSquareImageCard(ctx, pagneSamuel, 642, 1084, 190, "Samuel");
   }
 
   ctx.fillStyle = kind === "civil" ? "#6b1733" : "#b58b18";
@@ -251,7 +337,7 @@ export default function CardGeneratorDialog({
   const [fontSize, setFontSize] = useState(42);
   const [fontColor, setFontColor] = useState("#333333");
   const [textX, setTextX] = useState(52); // En %
-  const [textY, setTextY] = useState(80); // En % — la table est affichée 10% en dessous
+  const [textY, setTextY] = useState(86); // En % — la table est affichée 4% en dessous
   const [tableNumber, setTableNumber] = useState<number | null>(null);
   const [textAlign, setTextAlign] = useState<"left" | "center" | "right">("center");
   const [isBold, setIsBold] = useState(false);
@@ -276,7 +362,7 @@ export default function CardGeneratorDialog({
 
       // Charger la configuration sauvegardée
       try {
-        const saved = localStorage.getItem("glodie_samuel_invitation_card_config");
+        const saved = localStorage.getItem(CARD_CONFIG_KEY);
         if (saved) {
           const config = JSON.parse(saved);
           if (config.fontFamily) setFontFamily(config.fontFamily);
@@ -308,7 +394,7 @@ export default function CardGeneratorDialog({
           isBold,
           isItalic,
         };
-        localStorage.setItem("glodie_samuel_invitation_card_config", JSON.stringify(config));
+        localStorage.setItem(CARD_CONFIG_KEY, JSON.stringify(config));
       } catch (e) {
         console.error(e);
       }
@@ -497,7 +583,7 @@ export default function CardGeneratorDialog({
   // Fonction de réinitialisation de la position
   const resetPosition = () => {
     setTextX(52);
-    setTextY(80);
+    setTextY(86);
     setFontSize(42);
     setFontFamily("Cormorant Garamond");
     setFontColor("#333333");
