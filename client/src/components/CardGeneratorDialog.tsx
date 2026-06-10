@@ -192,9 +192,9 @@ async function buildInvitationTemplate(kind: "civil" | "evening" | "both") {
     ctx.fillText("DIMANCHE 12 JUILLET 2026", CARD_WIDTH / 2, 1010);
     ctx.fillStyle = "#24180a";
     ctx.font = '82px "Playfair Display", serif';
-    ctx.fillText("Soiree dansante", CARD_WIDTH / 2, 1118);
+    ctx.fillText("Mariage religieux", CARD_WIDTH / 2, 1118);
     ctx.font = '44px "Cormorant Garamond", serif';
-    fillTextBlock(ctx, ["Accueil des invites · 19h30", "Entree des maries · 20h30", "Theme : blanc & doree"], CARD_WIDTH / 2, 1198, 58);
+    fillTextBlock(ctx, ["Mariage religieux · 19h30", "Entree des maries · 20h30", "Theme : blanc & doree"], CARD_WIDTH / 2, 1198, 58);
     ctx.font = '31px "Lato", sans-serif';
     fillTextBlock(ctx, ["Salle Exaudus Arena", "Avenue Bonga 23, croisement avenue du Stade", "En face du marche de Djakarta · Matonge · Kalamu"], CARD_WIDTH / 2, 1410, 42);
   } else if (kind === "civil") {
@@ -251,12 +251,12 @@ async function buildInvitationTemplate(kind: "civil" | "evening" | "both") {
     ctx.fillStyle = "rgba(36, 16, 23, 0.18)";
     ctx.fillRect(230, 682, 620, 2);
 
-    drawInfoTile(ctx, 142, 780, 390, "Matinee", "11h00 · Mariage civil", [
-      "13h00 · Benediction",
+    drawInfoTile(ctx, 142, 780, 390, "Matinee", "10h30 · Mariage civil", [
+      "Lieu communique d'ici peu",
       "Cocktail au meme endroit",
     ]);
-    drawInfoTile(ctx, 556, 780, 390, "Soiree", "20h00 · Coutumier", [
-      "21h30 · Entree des maries",
+    drawInfoTile(ctx, 556, 780, 390, "Soiree", "19h00 · Coutumier", [
+      "Celebration traditionnelle",
       "Traditions & familles",
     ]);
 
@@ -300,11 +300,11 @@ async function buildInvitationTemplate(kind: "civil" | "evening" | "both") {
     ctx.fillText("Deux dates, une celebration", CARD_WIDTH / 2, 680);
 
     drawInfoTile(ctx, 154, 770, 382, "04 Juillet", "Civil & coutumier", [
-      "11h00 mariage civil",
-      "13h00 benediction",
+      "10h30 mariage civil",
+      "19h00 coutumier",
     ]);
-    drawInfoTile(ctx, 556, 770, 382, "12 Juillet", "Soiree dansante", [
-      "19h30 accueil invites",
+    drawInfoTile(ctx, 556, 770, 382, "12 Juillet", "Mariage religieux", [
+      "19h30 celebration",
       "20h30 entree maries",
     ]);
 

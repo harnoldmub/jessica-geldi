@@ -443,12 +443,12 @@ export default function Invitation() {
                   const c = guest.ceremonyChoice || "both";
                   const items =
                     c === "civil"
-                      ? [{ label: "Mariage civil & Benediction", time: "11h00" }]
+                      ? [{ label: "Mariage civil & Coutumier", time: "10h30 / 19h00" }]
                       : c === "evening"
-                        ? [{ label: "Soiree dansante", time: "19h30" }]
+                        ? [{ label: "Mariage religieux", time: "19h30" }]
                         : [
-                            { label: "Mariage civil & Benediction", time: "11h00" },
-                            { label: "Soiree dansante", time: "19h30" },
+                            { label: "Mariage civil & Coutumier", time: "10h30 / 19h00" },
+                            { label: "Mariage religieux", time: "19h30" },
                           ];
                   return (
                     <div className="flex flex-col sm:flex-row items-center gap-3">

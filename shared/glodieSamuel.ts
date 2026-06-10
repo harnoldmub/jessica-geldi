@@ -28,33 +28,33 @@ export const glodieSamuel = {
   brand: "Glodie & Samuel",
   title: "Glodie & Samuel",
   tagline: "Une celebration lumineuse, familiale et pleine de grace.",
-  weddingDate: new Date("2026-07-04T11:00:00+01:00"),
+  weddingDate: new Date("2026-07-04T10:30:00+01:00"),
   date: {
     display: "Samedi 04 Juillet 2026",
     iso: "2026-07-04",
-    time: "Mariage civil 11h · Benediction nuptiale 13h · Coutumier 20h",
+    time: "Mariage civil 10h30 · Coutumier 19h",
   },
   secondDate: {
     display: "Dimanche 12 Juillet 2026",
     iso: "2026-07-12",
-    time: "Soiree dansante 19h30",
+    time: "Mariage religieux 19h30",
   },
   ceremony: {
     blessing: {
-      label: "Mariage civil & Benediction nuptiale",
-      time: "11h00",
+      label: "Mariage civil",
+      time: "10h30",
       theme: "Terra Cotta",
       themeNote: "Melange brun, beige et blanc.",
       dress: "Brun, beige et blanc.",
     },
     customary: {
       label: "Mariage coutumier",
-      time: "20h00",
+      time: "19h00",
       theme: "Celebration traditionnelle",
-      themeNote: "Entree des maries a 21h30.",
+      themeNote: "Celebration du mariage coutumier a 19h.",
     },
     evening: {
-      label: "Soiree dansante",
+      label: "Mariage religieux",
       time: "19h30",
       theme: "Blanc & doree",
       themeNote: "Theme de la soiree : blanc et doree.",
@@ -83,9 +83,9 @@ export const glodieSamuel = {
       image: "hero" as null | string,
     },
     {
-      period: "La benediction",
+      period: "Le religieux",
       title: "Foi, famille et amour",
-      body: "La celebration civile et la benediction nuptiale ouvriront ce chemin dans la priere, la joie et la reconnaissance.",
+      body: "Le mariage religieux prolongera ce chemin dans la priere, la joie et la reconnaissance.",
       image: null as null | string,
     },
     {
@@ -97,45 +97,33 @@ export const glodieSamuel = {
     {
       period: "La fete",
       title: "Danser la joie",
-      body: "La soiree dansante sera le moment de celebrer pleinement cette union, en blanc et doree, avec elegance et bonheur.",
+      body: "La fete sera le moment de celebrer pleinement cette union, en blanc et doree, avec elegance et bonheur.",
       image: null as null | string,
     },
   ],
   programme: [
     {
-      time: "11h00",
+      time: "10h30",
       title: "Celebration du mariage",
       body: "Le lieu sera communique d'ici peu.",
       theme: "blessing" as "blessing" | "evening",
     },
     {
-      time: "13h00",
-      title: "Benediction nuptiale & cocktail",
-      body: "La benediction nuptiale aura lieu au meme endroit, suivie du cocktail.",
-      theme: "blessing" as "blessing" | "evening",
-    },
-    {
-      time: "20h00",
+      time: "19h00",
       title: "Mariage coutumier",
       body: "Celebration du mariage coutumier.",
       theme: "blessing" as "blessing" | "evening",
     },
     {
-      time: "21h30",
-      title: "Entree des maries",
-      body: "Entree officielle de Glodie et Samuel.",
-      theme: "blessing" as "blessing" | "evening",
-    },
-    {
       time: "Dimanche 12 juillet · 19h30",
-      title: "Arrivee des invites",
-      body: "Accueil des invites a la salle Exaudus Arena.",
+      title: "Mariage religieux",
+      body: "Celebration du mariage religieux a la salle Exaudus Arena.",
       theme: "evening" as "blessing" | "evening",
     },
     {
       time: "20h30",
       title: "Entree des maries",
-      body: "Entree de Glodie et Samuel pour la soiree dansante.",
+      body: "Entree de Glodie et Samuel pour la fete.",
       theme: "evening" as "blessing" | "evening",
     },
   ],
@@ -151,7 +139,7 @@ export const glodieSamuel = {
     evening: {
       label: "Mariage religieux & fete",
       theme: "Blanc & doree",
-      description: "Pour la fete et la soiree dansante, le theme est blanc et doree.",
+      description: "Pour le mariage religieux et la fete, le theme est blanc et doree.",
       colors: ["#FFFFFF", "#F7F1DE", "#D4AF37", "#FFD700"],
       colorNames: ["Blanc", "Ivoire", "Doree", "Or brillant"],
       forbidden: "",
@@ -159,7 +147,7 @@ export const glodieSamuel = {
   },
   venues: [
     {
-      label: "Mariage civil & Benediction nuptiale",
+      label: "Mariage civil",
       name: "Lieu a communiquer",
       address: "Kinshasa",
       city: "Kinshasa",
@@ -168,7 +156,7 @@ export const glodieSamuel = {
       mapsUrl: "https://maps.google.com/?q=Kinshasa",
     },
     {
-      label: "Soiree dansante",
+      label: "Mariage religieux & fete",
       name: "Salle Exaudus Arena",
       address: "Avenue Bonga numero 23, croisement avenue du Stade",
       city: "Matonge, commune de Kalamu",
@@ -196,7 +184,7 @@ export const glodieSamuel = {
     },
     {
       q: "A quelle heure dois-je arriver ?",
-      a: "Le samedi 04 juillet 2026, le mariage commence a 11h, la benediction a 13h et le coutumier a 20h. Le dimanche 12 juillet 2026, l'arrivee des invites est prevue a 19h30.",
+      a: "Le samedi 04 juillet 2026, le mariage civil commence a 10h30 et le mariage coutumier a 19h. Le dimanche 12 juillet 2026, le mariage religieux est prevu a 19h30.",
     },
     {
       q: "Comment acceder au lieu ?",

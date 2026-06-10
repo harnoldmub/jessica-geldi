@@ -21,13 +21,13 @@ function CapacityBlocks() {
   const events = [
     {
       key: "civil",
-      title: "Mariage civil, benediction & coutumier",
+      title: "Mariage civil & coutumier",
       time: "Samedi 04 juillet 2026",
       theme: glodieSamuel.dresscode.blessing.theme,
     },
     {
       key: "evening",
-      title: "Soiree dansante",
+      title: "Mariage religieux & fete",
       time: "Dimanche 12 juillet 2026",
       theme: glodieSamuel.dresscode.evening.theme,
     },

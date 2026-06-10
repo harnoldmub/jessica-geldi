@@ -86,7 +86,7 @@ const invitationFilterOptions = [
 ];
 const ceremonyOptions = [
   { value: "both", label: "Les deux ceremonies" },
-  { value: "civil", label: "04 juillet seulement", detail: "11h00" },
+  { value: "civil", label: "04 juillet seulement", detail: "10h30" },
   { value: "evening", label: "12 juillet seulement", detail: "19h30" },
 ];
 const ceremonyFilterOptions = [
@@ -456,8 +456,8 @@ export default function Admin() {
     const message =
       `Bonjour ${guest.firstName},\n\n` +
       `Nous avons la joie de vous inviter au mariage de *Glodie & Samuel* a Kinshasa.\n\n` +
-      `Samedi 04 juillet 2026 : mariage civil, benediction nuptiale et mariage coutumier.\n` +
-      `Dimanche 12 juillet 2026 : soiree dansante a Exaudus Arena.\n\n` +
+      `Samedi 04 juillet 2026 : mariage civil a 10h30 et mariage coutumier a 19h.\n` +
+      `Dimanche 12 juillet 2026 : mariage religieux a 19h30 a Exaudus Arena.\n\n` +
       `Voici votre invitation personnelle :\n${url}\n\n` +
       `Avec joie de vous avoir parmi nous.`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");

@@ -586,7 +586,7 @@ export default function RsvpForm({
                             <span className="block font-medium">Mariage civil</span>
                             {civilFull
                               ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
-                              : <span className="block text-[10px] mt-0.5 opacity-70">04 juillet · 11h00</span>
+                              : <span className="block text-[10px] mt-0.5 opacity-70">04 juillet · 10h30</span>
                             }
                           </button>
                           <button
