@@ -72,7 +72,7 @@ const emptyGuestForm: GuestFormState = {
 const OTHER_BEVERAGE_VALUE = "__other_beverage__";
 const statusOptions = [
   { value: "pending", label: "En attente" },
-  { value: "confirmed", label: "Confirme" },
+  { value: "confirmed", label: "Confirmé" },
   { value: "declined", label: "Absent(e)" },
 ];
 const statusFilterOptions = [
@@ -82,15 +82,15 @@ const statusFilterOptions = [
 const invitationFilterOptions = [
   { value: "all", label: "Toutes les invitations" },
   { value: "draft", label: "Brouillons" },
-  { value: "sent", label: "Envoyees" },
+  { value: "sent", label: "Envoyées" },
 ];
 const ceremonyOptions = [
-  { value: "both", label: "Les deux ceremonies" },
+  { value: "both", label: "Les deux cérémonies" },
   { value: "civil", label: "04 juillet seulement", detail: "10h30" },
   { value: "evening", label: "12 juillet seulement", detail: "19h30" },
 ];
 const ceremonyFilterOptions = [
-  { value: "all", label: "Toutes les ceremonies" },
+  { value: "all", label: "Toutes les cérémonies" },
   { value: "civil", label: "04 juillet" },
   { value: "evening", label: "12 juillet" },
   { value: "both", label: "Les deux" },
@@ -112,10 +112,10 @@ const tableOptions = [
   }),
 ];
 const beverageSelectOptions = [
-  { value: "", label: "Aucune preference" },
-  ...beverageOptions.beers.map((drink) => ({ value: drink, label: drink, group: "Bieres" })),
-  ...beverageOptions.softDrinks.map((drink) => ({ value: drink, label: drink, group: "Boissons sucrees" })),
-  { value: OTHER_BEVERAGE_VALUE, label: "Autre boisson", detail: "Preciser le choix", group: "Autre" },
+  { value: "", label: "Aucune préférence" },
+  ...beverageOptions.beers.map((drink) => ({ value: drink, label: drink, group: "Bières" })),
+  ...beverageOptions.softDrinks.map((drink) => ({ value: drink, label: drink, group: "Boissons sucrées" })),
+  { value: OTHER_BEVERAGE_VALUE, label: "Autre boisson", detail: "Préciser le choix", group: "Autre" },
 ];
 
 function getBeverageSelectValue(value?: string | null) {
@@ -455,9 +455,9 @@ export default function Admin() {
       guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`;
     const message =
       `Bonjour ${guest.firstName},\n\n` +
-      `Nous avons la joie de vous inviter au mariage de *Glodie & Samuel* a Kinshasa.\n\n` +
-      `Samedi 04 juillet 2026 : mariage civil a 10h30 et mariage coutumier a 19h.\n` +
-      `Dimanche 12 juillet 2026 : mariage religieux a 19h30 a Exaudus Arena.\n\n` +
+      `Nous avons la joie de vous inviter au mariage de *Glodie & Samuel* à Kinshasa.\n\n` +
+      `Samedi 04 juillet 2026 : mariage civil à 10h30 et mariage coutumier à 19h.\n` +
+      `Dimanche 12 juillet 2026 : mariage religieux à 19h30 à la salle Exaudus Arena.\n\n` +
       `Voici votre invitation personnelle :\n${url}\n\n` +
       `Avec joie de vous avoir parmi nous.`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
@@ -763,7 +763,7 @@ export default function Admin() {
                     value={importCeremony}
                     onChange={(value) => setImportCeremony(value as "both" | "civil" | "evening")}
                     options={ceremonyOptions}
-                    placeholder="Ceremonie"
+                    placeholder="Cérémonie"
                   />
                 </div>
               </div>
@@ -890,7 +890,7 @@ export default function Admin() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Boisson souhaitee</label>
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Boisson souhaitée</label>
                   <PrettySelect
                     value={getBeverageSelectValue(guestForm.beverageChoice)}
                     onChange={(value) => setGuestForm((c) => ({ ...c, beverageChoice: value === OTHER_BEVERAGE_VALUE ? "Autre: " : value }))}
@@ -902,7 +902,7 @@ export default function Admin() {
                       value={getOtherBeverageValue(guestForm.beverageChoice)}
                       onChange={(e) => setGuestForm((c) => ({ ...c, beverageChoice: e.target.value ? `Autre: ${e.target.value}` : "Autre: " }))}
                       className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
-                      placeholder="Preciser la boisson"
+                      placeholder="Préciser la boisson"
                     />
                   )}
                 </div>
@@ -1175,7 +1175,11 @@ export default function Admin() {
                     </Button>
                     <Button
                       type="button" size="sm" variant="outline"
-                      onClick={() => deleteGuestMutation.mutate(guest.id)}
+                      onClick={() => {
+                        if (confirm(`Supprimer définitivement ${guest.firstName} ${guest.lastName} ? Son lien d'invitation ne fonctionnera plus.`)) {
+                          deleteGuestMutation.mutate(guest.id);
+                        }
+                      }}
                       className="rounded-none border-rose-200 text-[10px] uppercase tracking-[0.25em] text-rose-700 hover:bg-rose-50"
                     >
                       <Trash2 className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Download,
+  FileText,
   Loader2,
   Move,
   Check,
@@ -24,9 +25,12 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { type RsvpResponse } from "@shared/schema";
 import PrettySelect from "@/components/PrettySelect";
-import eveningPhotoUrl from "../../images/image-coutumier.png";
-import pagneGlodieUrl from "../../images/glodie.png";
-import pagneSamuelUrl from "../../images/samuel.png";
+import {
+  buildInvitationTemplate,
+  downloadCanvasAsPdf,
+  downloadCanvasAsPng,
+  sanitizeFileName,
+} from "@/lib/invitationCard";
 
 type GuestRecord = RsvpResponse & {
   invitationUrl?: string;
@@ -56,272 +60,7 @@ const FONT_PRESETS = [
   { value: "Lato", name: "Moderne (Lato)" },
 ];
 
-const CARD_WIDTH = 1080;
-const CARD_HEIGHT = 1620;
 const CARD_CONFIG_KEY = "glodie_samuel_invitation_card_config_v3";
-
-function loadCardImage(src: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = src;
-  });
-}
-
-function coverImage(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-) {
-  const ratio = Math.max(width / img.naturalWidth, height / img.naturalHeight);
-  const drawWidth = img.naturalWidth * ratio;
-  const drawHeight = img.naturalHeight * ratio;
-  ctx.drawImage(img, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
-}
-
-function containImage(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-) {
-  const ratio = Math.min(width / img.naturalWidth, height / img.naturalHeight);
-  const drawWidth = img.naturalWidth * ratio;
-  const drawHeight = img.naturalHeight * ratio;
-  ctx.drawImage(img, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
-}
-
-function fillTextBlock(
-  ctx: CanvasRenderingContext2D,
-  lines: string[],
-  x: number,
-  y: number,
-  lineHeight: number,
-) {
-  lines.forEach((line, index) => {
-    ctx.fillText(line, x, y + index * lineHeight);
-  });
-}
-
-function drawSquareImageCard(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  x: number,
-  y: number,
-  size: number,
-  label: string,
-) {
-  ctx.save();
-  ctx.fillStyle = "#fffaf2";
-  ctx.fillRect(x, y, size, size + 78);
-  ctx.strokeStyle = "rgba(105, 54, 32, 0.22)";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x, y, size, size + 78);
-  coverImage(ctx, img, x + 14, y + 14, size - 28, size - 28);
-  ctx.fillStyle = "#6b3522";
-  ctx.font = '22px "Lato", sans-serif';
-  ctx.textAlign = "center";
-  ctx.fillText(label, x + size / 2, y + size + 48);
-  ctx.restore();
-}
-
-function drawInfoTile(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  eyebrow: string,
-  title: string,
-  details: string[],
-) {
-  ctx.save();
-  ctx.fillStyle = "rgba(255, 250, 242, 0.92)";
-  ctx.fillRect(x, y, width, 170);
-  ctx.strokeStyle = "rgba(166, 95, 59, 0.34)";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x, y, width, 170);
-  ctx.fillStyle = "#a65f3b";
-  ctx.font = '18px "Lato", sans-serif';
-  ctx.textAlign = "left";
-  ctx.fillText(eyebrow.toUpperCase(), x + 26, y + 40);
-  ctx.fillStyle = "#241017";
-  ctx.font = '30px "Playfair Display", serif';
-  ctx.fillText(title, x + 26, y + 82);
-  ctx.fillStyle = "rgba(36, 16, 23, 0.72)";
-  ctx.font = '20px "Lato", sans-serif';
-  details.forEach((detail, index) => ctx.fillText(detail, x + 26, y + 118 + index * 28));
-  ctx.restore();
-}
-
-async function buildInvitationTemplate(kind: "civil" | "evening" | "both") {
-  const [eveningPhoto, pagneGlodie, pagneSamuel] = await Promise.all([
-    loadCardImage(eveningPhotoUrl),
-    loadCardImage(pagneGlodieUrl),
-    loadCardImage(pagneSamuelUrl),
-  ]);
-
-  const canvas = document.createElement("canvas");
-  canvas.width = CARD_WIDTH;
-  canvas.height = CARD_HEIGHT;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas indisponible");
-
-  ctx.fillStyle = "#fff8ec";
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-
-  if (kind === "evening") {
-    coverImage(ctx, eveningPhoto, 0, 0, CARD_WIDTH, 940);
-    const gradient = ctx.createLinearGradient(0, 450, 0, 1020);
-    gradient.addColorStop(0, "rgba(255,255,255,0)");
-    gradient.addColorStop(0.72, "rgba(255,248,236,0.92)");
-    gradient.addColorStop(1, "#fff8ec");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 450, CARD_WIDTH, 620);
-    ctx.strokeStyle = "#d4af37";
-    ctx.lineWidth = 5;
-    ctx.strokeRect(58, 58, CARD_WIDTH - 116, CARD_HEIGHT - 116);
-    ctx.fillStyle = "#b58b18";
-    ctx.font = '38px "Lato", sans-serif';
-    ctx.textAlign = "center";
-    ctx.fillText("DIMANCHE 12 JUILLET 2026", CARD_WIDTH / 2, 1010);
-    ctx.fillStyle = "#24180a";
-    ctx.font = '82px "Playfair Display", serif';
-    ctx.fillText("Mariage religieux", CARD_WIDTH / 2, 1118);
-    ctx.font = '44px "Cormorant Garamond", serif';
-    fillTextBlock(ctx, ["Mariage religieux · 19h30", "Entree des maries · 20h30", "Theme : blanc & doree"], CARD_WIDTH / 2, 1198, 58);
-    ctx.font = '31px "Lato", sans-serif';
-    fillTextBlock(ctx, ["Salle Exaudus Arena", "Avenue Bonga 23, croisement avenue du Stade", "En face du marche de Djakarta · Matonge · Kalamu"], CARD_WIDTH / 2, 1410, 42);
-  } else if (kind === "civil") {
-    const topGradient = ctx.createLinearGradient(0, 0, CARD_WIDTH, 0);
-    topGradient.addColorStop(0, "#7f3f29");
-    topGradient.addColorStop(0.46, "#f3dfcf");
-    topGradient.addColorStop(1, "#fff8ec");
-    ctx.fillStyle = topGradient;
-    ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-
-    ctx.fillStyle = "#fff8ec";
-    ctx.fillRect(62, 62, CARD_WIDTH - 124, CARD_HEIGHT - 124);
-    ctx.strokeStyle = "rgba(166, 95, 59, 0.32)";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(86, 86, CARD_WIDTH - 172, CARD_HEIGHT - 172);
-    ctx.fillStyle = "#a65f3b";
-    ctx.fillRect(86, 86, 12, CARD_HEIGHT - 172);
-    ctx.fillStyle = "#d7a529";
-    ctx.fillRect(CARD_WIDTH - 98, 86, 12, CARD_HEIGHT - 172);
-
-    ctx.fillStyle = "#f7eadc";
-    ctx.fillRect(620, 138, 312, 416);
-    containImage(ctx, eveningPhoto, 632, 150, 288, 392);
-    ctx.strokeStyle = "rgba(166, 95, 59, 0.4)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(620, 138, 312, 416);
-
-    ctx.textAlign = "left";
-    ctx.fillStyle = "#6b3522";
-    ctx.font = '24px "Lato", sans-serif';
-    ctx.fillText("INVITATION AU MARIAGE", 142, 198);
-    ctx.fillStyle = "#241017";
-    ctx.font = '92px "Playfair Display", serif';
-    ctx.fillText("04 Juillet", 142, 310);
-    ctx.font = '58px "Playfair Display", serif';
-    ctx.fillText("Civil, benediction", 142, 392);
-    ctx.fillText("& coutumier", 142, 456);
-
-    ctx.fillStyle = "rgba(107, 53, 34, 0.12)";
-    ctx.fillRect(142, 500, 420, 2);
-    ctx.fillStyle = "#6b1733";
-    ctx.font = '30px "Lato", sans-serif';
-    ctx.fillText("Glodie & Samuel", 142, 558);
-
-    ctx.fillStyle = "rgba(166, 95, 59, 0.08)";
-    ctx.fillRect(142, 620, 804, 92);
-    ctx.strokeStyle = "rgba(166, 95, 59, 0.28)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(142, 620, 804, 92);
-    ctx.fillStyle = "#a65f3b";
-    ctx.font = '18px "Lato", sans-serif';
-    ctx.textAlign = "center";
-    ctx.fillText("ESPACE NOM DE L'INVITE", CARD_WIDTH / 2, 652);
-    ctx.fillStyle = "rgba(36, 16, 23, 0.18)";
-    ctx.fillRect(230, 682, 620, 2);
-
-    drawInfoTile(ctx, 142, 780, 390, "Matinee", "10h30 · Mariage civil", [
-      "Lieu communique d'ici peu",
-      "Cocktail au meme endroit",
-    ]);
-    drawInfoTile(ctx, 556, 780, 390, "Soiree", "19h00 · Coutumier", [
-      "Celebration traditionnelle",
-      "Traditions & familles",
-    ]);
-
-    ctx.fillStyle = "#241017";
-    ctx.font = '34px "Playfair Display", serif';
-    ctx.textAlign = "center";
-    ctx.fillText("Informations pagnes", CARD_WIDTH / 2, 1088);
-    drawSquareImageCard(ctx, pagneGlodie, 214, 1130, 196, "Pagne Glodie");
-    drawSquareImageCard(ctx, pagneSamuel, 670, 1130, 196, "Pagne Samuel");
-
-    ctx.fillStyle = "rgba(36, 16, 23, 0.68)";
-    ctx.font = '25px "Lato", sans-serif';
-    ctx.fillText("Lieu du 04 juillet communique d'ici peu", CARD_WIDTH / 2, 1428);
-  } else {
-    ctx.fillStyle = "#fff8ec";
-    ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-    ctx.fillStyle = "#f7eadc";
-    ctx.fillRect(290, 40, 500, 390);
-    containImage(ctx, eveningPhoto, 310, 60, 460, 350);
-    const topFade = ctx.createLinearGradient(0, 220, 0, 560);
-    topFade.addColorStop(0, "rgba(255,248,236,0)");
-    topFade.addColorStop(1, "#fff8ec");
-    ctx.fillStyle = topFade;
-    ctx.fillRect(0, 220, CARD_WIDTH, 340);
-
-    ctx.fillStyle = "#241017";
-    ctx.fillRect(74, 430, CARD_WIDTH - 148, 74);
-    ctx.fillStyle = "#fff8ec";
-    ctx.font = '24px "Lato", sans-serif';
-    ctx.textAlign = "center";
-    ctx.fillText("LE MARIAGE DE GLODIE & SAMUEL", CARD_WIDTH / 2, 478);
-
-    ctx.fillStyle = "#fffaf2";
-    ctx.fillRect(88, 560, CARD_WIDTH - 176, 760);
-    ctx.strokeStyle = "rgba(212, 175, 55, 0.52)";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(116, 588, CARD_WIDTH - 232, 704);
-
-    ctx.fillStyle = "#241017";
-    ctx.font = '64px "Playfair Display", serif';
-    ctx.fillText("Deux dates, une celebration", CARD_WIDTH / 2, 680);
-
-    drawInfoTile(ctx, 154, 770, 382, "04 Juillet", "Civil & coutumier", [
-      "10h30 mariage civil",
-      "19h00 coutumier",
-    ]);
-    drawInfoTile(ctx, 556, 770, 382, "12 Juillet", "Mariage religieux", [
-      "19h30 celebration",
-      "20h30 entree maries",
-    ]);
-
-    ctx.fillStyle = "#6b3522";
-    ctx.font = '28px "Lato", sans-serif';
-    ctx.fillText("Pagnes du 04 juillet", CARD_WIDTH / 2, 1050);
-    drawSquareImageCard(ctx, pagneGlodie, 248, 1084, 190, "Glodie");
-    drawSquareImageCard(ctx, pagneSamuel, 642, 1084, 190, "Samuel");
-  }
-
-  ctx.fillStyle = kind === "civil" ? "#6b1733" : "#b58b18";
-  ctx.font = '72px "Great Vibes", cursive';
-  ctx.textAlign = "center";
-  ctx.fillText("Glodie & Samuel", CARD_WIDTH / 2, 1485);
-
-  return canvas.toDataURL("image/png");
-}
 
 export default function CardGeneratorDialog({
   guest,
@@ -413,7 +152,7 @@ export default function CardGeneratorDialog({
     isItalic,
   ]);
 
-  // Generer le fond selon la ceremonie du guest.
+  // Générer le fond selon la cérémonie de l'invité.
   useEffect(() => {
     if (isOpen && guest) {
       let cancelled = false;
@@ -439,7 +178,7 @@ export default function CardGeneratorDialog({
             setIsImageLoading(false);
             toast({
               title: "Erreur de chargement",
-              description: "Impossible de charger le modele de carte d'invitation.",
+              description: "Impossible de charger le modèle de carte d'invitation.",
               variant: "destructive",
             });
           };
@@ -450,7 +189,7 @@ export default function CardGeneratorDialog({
           setIsImageLoading(false);
           toast({
             title: "Erreur de chargement",
-            description: "Impossible de generer le modele de carte d'invitation.",
+            description: "Impossible de générer le modèle de carte d'invitation.",
             variant: "destructive",
           });
         });
@@ -581,32 +320,28 @@ export default function CardGeneratorDialog({
     setIsItalic(false);
   };
 
-  // Lancer le téléchargement de l'image
-  const handleDownload = () => {
+  // Lancer le téléchargement (PNG ou PDF)
+  const handleDownload = (format: "png" | "pdf") => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     try {
-      const formattedName = guestName.trim().replace(/\s+/g, "_");
-      const filename = `invitation_${formattedName}.png`;
-
-      // Déclencher le téléchargement
-      const link = document.createElement("a");
-      link.download = filename;
-      link.href = canvas.toDataURL("image/png");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const filename = `invitation_${sanitizeFileName(guestName)}`;
+      if (format === "pdf") {
+        downloadCanvasAsPdf(canvas, filename);
+      } else {
+        downloadCanvasAsPng(canvas, filename);
+      }
 
       toast({
         title: "Téléchargement réussi !",
-        description: `La carte d'invitation personnalisée pour ${guestName} a été enregistrée.`,
+        description: `La carte d'invitation ${format.toUpperCase()} pour ${guestName} a été enregistrée.`,
       });
     } catch (e) {
       console.error(e);
       toast({
         title: "Échec de l'export",
-        description: "Impossible d'exporter l'image. Vérifiez les autorisations de votre navigateur.",
+        description: "Impossible d'exporter la carte. Vérifiez les autorisations de votre navigateur.",
         variant: "destructive",
       });
     }
@@ -899,12 +634,22 @@ export default function CardGeneratorDialog({
                 
                 <Button
                   type="button"
-                  onClick={handleDownload}
+                  onClick={() => handleDownload("png")}
                   disabled={isImageLoading || !imageObj}
                   className="flex-1 rounded-none bg-primary h-11 text-[10px] uppercase tracking-[0.35em] text-primary-foreground hover:bg-foreground gap-2"
                 >
                   <Download className="h-4 w-4" />
-                  Télécharger la carte
+                  PNG
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={() => handleDownload("pdf")}
+                  disabled={isImageLoading || !imageObj}
+                  className="flex-1 rounded-none bg-foreground h-11 text-[10px] uppercase tracking-[0.35em] text-background hover:bg-primary gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  PDF
                 </Button>
               </div>
             </div>

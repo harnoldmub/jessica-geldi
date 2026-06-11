@@ -267,9 +267,9 @@ const FLAGS_BY_COUNTRY: Record<string, string> = {
 
 const OTHER_BEVERAGE_VALUE = "__other_beverage__";
 const beverageSelectOptions = [
-  ...beverageOptions.beers.map((drink) => ({ value: drink, label: drink, group: "Bieres" })),
-  ...beverageOptions.softDrinks.map((drink) => ({ value: drink, label: drink, group: "Boissons sucrees" })),
-  { value: OTHER_BEVERAGE_VALUE, label: "Autre boisson", detail: "Preciser votre choix", group: "Autre" },
+  ...beverageOptions.beers.map((drink) => ({ value: drink, label: drink, group: "Bières" })),
+  ...beverageOptions.softDrinks.map((drink) => ({ value: drink, label: drink, group: "Boissons sucrées" })),
+  { value: OTHER_BEVERAGE_VALUE, label: "Autre boisson", detail: "Préciser votre choix", group: "Autre" },
 ];
 
 function getBeverageSelectValue(value?: string | null) {
@@ -658,7 +658,7 @@ export default function RsvpForm({
                   name="beverageChoice"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel className={labelClassName}>Boisson souhaitee</FormLabel>
+                      <FormLabel className={labelClassName}>Boisson souhaitée</FormLabel>
                       <FormControl>
                         <div className="space-y-3">
                           <PrettySelect
@@ -675,7 +675,7 @@ export default function RsvpForm({
                               value={getOtherBeverageValue(field.value)}
                               onChange={(event) => field.onChange(event.target.value ? `Autre: ${event.target.value}` : "Autre: ")}
                               className={inputClassName}
-                              placeholder="Precisez la boisson souhaitee"
+                              placeholder="Précisez la boisson souhaitée"
                             />
                           )}
                         </div>

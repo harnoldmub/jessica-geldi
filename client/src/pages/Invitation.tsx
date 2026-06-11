@@ -1,11 +1,21 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { CalendarDays, Clock, MapPin, ChevronDown } from "lucide-react";
+import { CalendarDays, Clock, MapPin, ChevronDown, FileText, Loader2 } from "lucide-react";
 import { type RsvpResponse } from "@shared/schema";
 import { glodieSamuel } from "@shared/glodieSamuel";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import RsvpForm from "@/components/RsvpForm";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
+import {
+  buildInvitationCanvas,
+  downloadCanvasAsPdf,
+  sanitizeFileName,
+  type CardKind,
+} from "@/lib/invitationCard";
 import heroImg from "../../images/hero.png";
 
 type InvitationGuest = RsvpResponse & { invitationUrl: string };
@@ -112,11 +122,47 @@ export default function Invitation() {
   const [, params] = useRoute("/invitation/:token");
   const token = params?.token;
   const heroRef = useRef<HTMLElement | null>(null);
+  const { toast } = useToast();
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const { data: guest, isLoading, error } = useQuery<InvitationGuest>({
     queryKey: [`/api/invitation/${token}`],
     enabled: !!token,
   });
+
+  async function handleDownloadPdf() {
+    if (!guest) return;
+    setIsGeneratingPdf(true);
+    try {
+      const kind: CardKind =
+        guest.ceremonyChoice === "civil"
+          ? "civil"
+          : guest.ceremonyChoice === "evening"
+            ? "evening"
+            : "both";
+      const baseName = `${guest.firstName} ${guest.lastName}`;
+      const displayName =
+        (guest.guestCount ?? 1) >= 2 ? `${baseName} & +1` : baseName;
+      const canvas = await buildInvitationCanvas(kind, {
+        guestName: displayName,
+        tableNumber: guest.tableNumber,
+      });
+      downloadCanvasAsPdf(canvas, `invitation_${sanitizeFileName(baseName)}`);
+      toast({
+        title: "Invitation téléchargée",
+        description: "Votre invitation personnalisée a été enregistrée en PDF.",
+      });
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: "Échec du téléchargement",
+        description: "Impossible de générer le PDF. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  }
 
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -360,13 +406,13 @@ export default function Invitation() {
             className="mt-12 border-t border-border pt-10 text-center"
           >
             <p className="text-[9px] uppercase tracking-[0.58em] text-muted-foreground/60">
-              Soiree · 19h30
+              Soirée · 19h30
             </p>
             <p className="mt-3 font-serif text-2xl italic text-primary/80">
-              Blanc & doree
+              Blanc & doré
             </p>
             <p className="mt-4 mx-auto max-w-sm text-sm leading-7 text-muted-foreground">
-              Pour la fete, les invites sont attendus dans le theme blanc et doree.
+              Pour la fête, les invités sont attendus dans le thème blanc et doré.
             </p>
           </motion.div>
         </div>
@@ -487,6 +533,28 @@ export default function Invitation() {
                   ✓ Présence confirmée
                 </p>
               )}
+
+              {/* Téléchargement de l'invitation PDF */}
+              <div className="mt-8">
+                <Button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  disabled={isGeneratingPdf}
+                  className="rounded-none bg-primary px-8 py-6 text-[10px] uppercase tracking-[0.4em] text-primary-foreground hover:bg-foreground gap-2"
+                >
+                  {isGeneratingPdf ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <FileText className="h-4 w-4" />
+                  )}
+                  {isGeneratingPdf
+                    ? "Génération en cours..."
+                    : "Télécharger mon invitation (PDF)"}
+                </Button>
+                <p className="mt-3 text-[10px] tracking-wide text-muted-foreground/70">
+                  Votre carte d'invitation personnalisée, à présenter le jour J.
+                </p>
+              </div>
             </div>
 
             <p className="mx-auto max-w-md font-serif text-base italic leading-8 text-muted-foreground">
@@ -494,6 +562,51 @@ export default function Invitation() {
             </p>
 
             <OrnamentRule opacity={0.35} />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+          RSVP — Confirmer ou modifier sa réponse
+      ══════════════════════════════════════════════════════ */}
+      <section className="relative dark bg-background">
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_50%_0%,hsl(var(--primary)/0.12)_0%,transparent_55%)]" />
+        <div className="relative mx-auto max-w-3xl px-6 py-24 md:px-10 md:py-28">
+          <motion.div
+            initial={{ opacity: 0, y: 22 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={reveal}
+          >
+            <RsvpForm
+              variant="invitation"
+              submitEndpoint={`/api/invitation/${token}/rsvp`}
+              initialValues={{
+                firstName: guest.firstName,
+                lastName: guest.lastName,
+                email: guest.email || "",
+                phone: guest.phone || "",
+                status: guest.status as "pending" | "confirmed" | "declined",
+                guestCount: guest.guestCount || 1,
+                ceremonyChoice:
+                  (guest.ceremonyChoice as "civil" | "evening" | "both") || "both",
+                beverageChoice: guest.beverageChoice || "",
+                message: guest.message || "",
+              }}
+              title={
+                guest.status === "confirmed"
+                  ? "Modifier ma réponse"
+                  : "Confirmer ma présence"
+              }
+              description="Dites-nous simplement si vous serez là. Vous pouvez modifier votre réponse à tout moment."
+              submitLabel="Envoyer ma réponse"
+              successDescription="Merci ! Votre réponse a bien été enregistrée. Nous avons hâte de vous accueillir."
+              onSubmitted={() => {
+                queryClient.invalidateQueries({
+                  queryKey: [`/api/invitation/${token}`],
+                });
+              }}
+            />
           </motion.div>
         </div>
       </section>

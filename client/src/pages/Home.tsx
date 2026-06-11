@@ -27,7 +27,7 @@ function CapacityBlocks() {
     },
     {
       key: "evening",
-      title: "Mariage religieux & fete",
+      title: "Mariage religieux & fête",
       time: "Dimanche 12 juillet 2026",
       theme: glodieSamuel.dresscode.evening.theme,
     },
@@ -285,7 +285,7 @@ export default function Home() {
               <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,4.5vw,3rem)" }}>
                 Confirmez votre présence.
               </h2>
-              <p className="mt-5 text-base leading-8 text-muted-foreground">Une reponse simple suffit : dites-nous si vous serez la, puis choisissez seul(e) ou en couple et votre boisson souhaitee.</p>
+              <p className="mt-5 text-base leading-8 text-muted-foreground">Une réponse simple suffit : dites-nous si vous serez là, puis choisissez seul(e) ou en couple et votre boisson souhaitée.</p>
             </div>
 
             <CapacityBlocks />
@@ -296,7 +296,7 @@ export default function Home() {
             <RsvpForm
               variant="invitation"
               title="Répondre à l'invitation"
-              description="Dites-nous simplement si vous venez. Si oui, choisissez seul(e) ou en couple, puis votre boisson souhaitee."
+              description="Dites-nous simplement si vous venez. Si oui, choisissez seul(e) ou en couple, puis votre boisson souhaitée."
               submitLabel="Envoyer ma réponse"
               successDescription="Merci. Votre réponse a bien été enregistrée. Nous avons hâte de vous accueillir."
             />
@@ -435,7 +435,7 @@ export default function Home() {
               Lieux &amp; Accès
             </h2>
             <p className="mt-4 text-sm italic text-muted-foreground">
-              Le lieu du 04 juillet sera communique d'ici peu. La soiree dansante aura lieu a Exaudus Arena.
+              Le lieu du 04 juillet sera communiqué d'ici peu. La soirée dansante aura lieu à la salle Exaudus Arena.
             </p>
           </motion.div>
 
@@ -458,7 +458,7 @@ export default function Home() {
                   <div className="flex items-start gap-3">
                     <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.4} />
                     <p className="text-sm leading-6 text-muted-foreground">
-                      {venue.address} · {venue.city}, Republique Democratique du Congo
+                      {venue.address} · {venue.city}, République Démocratique du Congo
                     </p>
                   </div>
                   <div className="flex items-start gap-3">
@@ -544,7 +544,7 @@ export default function Home() {
                 {idx === 1 && (
                   <div className="mt-5 border-t border-border pt-4">
                     <p className="text-sm leading-7 text-muted-foreground italic">
-                      La soiree religieuse et festive se vit en blanc et doree.
+                      La soirée religieuse et festive se vit en blanc et doré.
                     </p>
                   </div>
                 )}

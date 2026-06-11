@@ -10,6 +10,16 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
 const rateLimitBuckets = new Map<string, number[]>();
 
+// Express 4 ne transmet pas les erreurs des handlers async au middleware
+// d'erreur : ce wrapper s'en charge.
+function asyncRoute(
+  handler: (req: Request, res: Response, next: NextFunction) => Promise<unknown>,
+) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    handler(req, res, next).catch(next);
+  };
+}
+
 function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Authentification requise" });
@@ -65,17 +75,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const CIVIL_MAX = 100;
   const EVENING_MAX = 350;
 
-  app.get("/api/capacity", async (_req, res) => {
+  async function getCapacity(excludeGuestId?: number) {
     const all = await storage.getAllRsvps();
-    const confirmed = all.filter((g) => g.status === "confirmed");
+    const confirmed = all.filter(
+      (g) => g.status === "confirmed" && g.id !== excludeGuestId,
+    );
     const civil = confirmed
       .filter((g) => !g.ceremonyChoice || g.ceremonyChoice === "civil" || g.ceremonyChoice === "both")
       .reduce((sum, g) => sum + (g.guestCount || 1), 0);
     const evening = confirmed
       .filter((g) => !g.ceremonyChoice || g.ceremonyChoice === "evening" || g.ceremonyChoice === "both")
       .reduce((sum, g) => sum + (g.guestCount || 1), 0);
-    res.json({ civil, civilMax: CIVIL_MAX, evening, eveningMax: EVENING_MAX });
-  });
+    return { civil, civilMax: CIVIL_MAX, evening, eveningMax: EVENING_MAX };
+  }
+
+  async function checkCapacity(
+    data: { status?: string | null; ceremonyChoice?: string | null; guestCount?: number | null },
+    excludeGuestId?: number,
+  ): Promise<string | null> {
+    if (data.status !== "confirmed") return null;
+    const cap = await getCapacity(excludeGuestId);
+    const count = data.guestCount || 1;
+    const choice = data.ceremonyChoice || "both";
+    if ((choice === "civil" || choice === "both") && cap.civil + count > cap.civilMax) {
+      return "Le mariage civil est malheureusement complet.";
+    }
+    if ((choice === "evening" || choice === "both") && cap.evening + count > cap.eveningMax) {
+      return "La soirée du 12 juillet est malheureusement complète.";
+    }
+    return null;
+  }
+
+  app.get("/api/capacity", asyncRoute(async (_req, res) => {
+    res.json(await getCapacity());
+  }));
 
   // Public RSVP Submission
   app.post("/api/rsvp", async (req, res) => {
@@ -85,7 +118,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const data = insertRsvpSchema.parse(req.body);
-      
+
+      const capacityError = await checkCapacity(data);
+      if (capacityError) {
+        return res.status(409).json({ message: capacityError });
+      }
+
       // Generate a unique token for the guest
       const token = nanoid(10);
       
@@ -109,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Fetch Guest by Token
-  app.get("/api/invitation/:token", async (req, res) => {
+  app.get("/api/invitation/:token", asyncRoute(async (req, res) => {
     const guest = await storage.getRsvpByToken(req.params.token);
     if (!guest) {
       return res.status(404).json({ message: "Invitation introuvable" });
@@ -119,7 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       invitationUrl: buildInvitationLink(req, guest.token),
       invitationStatus: getInvitationStatus(guest),
     });
-  });
+  }));
 
   app.patch("/api/invitation/:token/rsvp", async (req, res) => {
     try {
@@ -134,6 +172,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const data = insertRsvpSchema.parse(req.body);
+
+      const capacityError = await checkCapacity(data, guest.id);
+      if (capacityError) {
+        return res.status(409).json({ message: capacityError });
+      }
+
       const updatedGuest = await storage.updateGuest(guest.id, {
         ...data,
         ceremonyChoice: data.ceremonyChoice === null ? undefined : data.ceremonyChoice,
@@ -152,7 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin: Guest List
-  app.get("/api/admin/guests", requireAuth, async (req, res) => {
+  app.get("/api/admin/guests", requireAuth, asyncRoute(async (req, res) => {
     const guests = await storage.getAllRsvps();
     res.json(
       guests.map((guest) => ({
@@ -161,9 +205,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         invitationStatus: getInvitationStatus(guest),
       })),
     );
-  });
+  }));
 
-  app.get("/api/admin/guests/export", requireAuth, async (_req, res) => {
+  app.get("/api/admin/guests/export", requireAuth, asyncRoute(async (_req, res) => {
     const guests = await storage.getAllRsvps();
 
     const header = [
@@ -205,7 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "Content-Disposition": 'attachment; filename="glodie-samuel-rsvp.csv"',
       })
       .send([header.join(","), ...rows].join("\n"));
-  });
+  }));
 
   // Admin: Bulk import guests (name only)
   app.post("/api/admin/guests/import", requireAuth, async (req, res) => {
@@ -280,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admin/guests/:id/regenerate-link", requireAuth, async (req, res) => {
+  app.post("/api/admin/guests/:id/regenerate-link", requireAuth, asyncRoute(async (req, res) => {
     const id = Number.parseInt(req.params.id, 10);
     const guest = await storage.regenerateGuestToken(id, nanoid(10));
 
@@ -289,9 +333,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       invitationUrl: buildInvitationLink(req, guest.token),
       invitationStatus: getInvitationStatus(guest),
     });
-  });
+  }));
 
-  app.post("/api/admin/guests/:id/mark-sent", requireAuth, async (req, res) => {
+  app.post("/api/admin/guests/:id/mark-sent", requireAuth, asyncRoute(async (req, res) => {
     const id = Number.parseInt(req.params.id, 10);
     const guest = await storage.markInvitationSent(id);
 
@@ -300,20 +344,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       invitationUrl: buildInvitationLink(req, guest.token),
       invitationStatus: getInvitationStatus(guest),
     });
-  });
+  }));
 
-  app.delete("/api/admin/guests/:id", requireAuth, async (req, res) => {
+  app.delete("/api/admin/guests/:id", requireAuth, asyncRoute(async (req, res) => {
     const id = Number.parseInt(req.params.id, 10);
     await storage.deleteGuest(id);
     res.sendStatus(204);
-  });
+  }));
 
   // Admin: Check-in (requires full admin auth)
-  app.patch("/api/rsvp/:id/check-in", requireAuth, async (req, res) => {
+  app.patch("/api/rsvp/:id/check-in", requireAuth, asyncRoute(async (req, res) => {
     const id = parseInt(req.params.id);
     const guest = await storage.checkInGuest(id);
     res.json(guest);
-  });
+  }));
 
   // ── Check-in page endpoints (protected by a lighter code) ──────────────
   const CHECKIN_CODE = "GSCheckin2026";
@@ -327,30 +371,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Reset all check-ins (admin protected)
-  app.post("/api/admin/reset-checkins", requireAuth, async (_req, res) => {
+  app.post("/api/admin/reset-checkins", requireAuth, asyncRoute(async (_req, res) => {
     await storage.resetAllCheckIns();
     res.json({ message: "Tous les check-ins ont été réinitialisés." });
-  });
+  }));
 
   // Get confirmed guests only (for the check-in page)
-  app.get("/api/checkin/guests", requireCheckinCode, async (_req, res) => {
+  app.get("/api/checkin/guests", requireCheckinCode, asyncRoute(async (_req, res) => {
     const guests = await storage.getAllRsvps();
     res.json(guests.filter((g) => g.status === "confirmed"));
-  });
+  }));
 
   // Check-in a guest via the check-in page
-  app.patch("/api/checkin/:id/check-in", requireCheckinCode, async (req, res) => {
+  app.patch("/api/checkin/:id/check-in", requireCheckinCode, asyncRoute(async (req, res) => {
     const id = parseInt(req.params.id);
     const guest = await storage.checkInGuest(id);
     res.json(guest);
-  });
+  }));
 
   // Uncheck-in a guest via the check-in page
-  app.patch("/api/checkin/:id/uncheck", requireCheckinCode, async (req, res) => {
+  app.patch("/api/checkin/:id/uncheck", requireCheckinCode, asyncRoute(async (req, res) => {
     const id = parseInt(req.params.id);
     const guest = await storage.uncheckInGuest(id);
     res.json(guest);
-  });
+  }));
 
   const httpServer = createServer(app);
   return httpServer;

@@ -13,11 +13,19 @@ declare global {
 }
 
 export function setupAuth(app: Express) {
+  const isProduction = process.env.NODE_ENV === "production";
   app.use(session({
     secret: process.env.SESSION_SECRET || "glodie-samuel-secret-2026",
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
+    proxy: isProduction,
+    cookie: {
+      secure: isProduction,
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 jours
+    },
   }));
 
   app.use(passport.initialize());

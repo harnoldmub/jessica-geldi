@@ -55,13 +55,13 @@ export async function sendRsvpConfirmationEmail(rsvp: RsvpResponse) {
       </div>
 
       <div style="text-align: center; margin-top: 40px; font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 2px;">
-        ${glodieSamuel.venues[0]?.name} • ${glodieSamuel.date.display}
+        ${glodieSamuel.date.display} & ${glodieSamuel.secondDate.display} • Kinshasa
       </div>
     </div>
   `;
 
   await resend.emails.send({
-    from: "Glodie & Samuel <invitations@replit.app>",
+    from: process.env.EMAIL_FROM || "Glodie & Samuel <onboarding@resend.dev>",
     to: [rsvp.email],
     subject: "Confirmation de votre RSVP - Glodie & Samuel",
     html,
