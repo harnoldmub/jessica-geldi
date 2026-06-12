@@ -154,7 +154,7 @@ export const glodieSamuel = {
   venues: [
     {
       label: "Mariage civil",
-      name: "Résidence familiale",
+      name: "Espace Privé",
       address: "Av. Bégonias 608, 11e rue Limete résidentiel",
       city: "Limete, Kinshasa",
       note: "Réf. résidences Augustin Kabuya et WPM de la Justice. Entrée 10e rue.",
