@@ -406,7 +406,7 @@ export default function Invitation() {
             className="mt-12 border-t border-border pt-10 text-center"
           >
             <p className="text-[9px] uppercase tracking-[0.58em] text-muted-foreground/60">
-              Mariage religieux · 19h30
+              Mariage religieux · 19h
             </p>
             <p className="mt-3 font-serif text-2xl italic text-primary/80">
               Blanc & doré
@@ -489,12 +489,12 @@ export default function Invitation() {
                   const c = guest.ceremonyChoice || "both";
                   const items =
                     c === "civil"
-                      ? [{ label: "Mariage civil & Coutumier", time: "10h30 / 19h00" }]
+                      ? [{ label: "Mariage civil & Coutumier", time: "10h30 / 19h30" }]
                       : c === "evening"
-                        ? [{ label: "Mariage religieux", time: "19h30" }]
+                        ? [{ label: "Mariage religieux", time: "19h00" }]
                         : [
-                            { label: "Mariage civil & Coutumier", time: "10h30 / 19h00" },
-                            { label: "Mariage religieux", time: "19h30" },
+                            { label: "Mariage civil & Coutumier", time: "10h30 / 19h30" },
+                            { label: "Mariage religieux", time: "19h00" },
                           ];
                   return (
                     <div className="flex flex-col sm:flex-row items-center gap-3">

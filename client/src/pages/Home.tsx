@@ -435,7 +435,7 @@ export default function Home() {
               Lieux &amp; Accès
             </h2>
             <p className="mt-4 text-sm italic text-muted-foreground">
-              Le mariage civil aura lieu à Limete résidentiel. Le mariage religieux aura lieu à la paroisse Saint Augustin de Lemba.
+              Le mariage civil aura lieu à la paroisse Saint Augustin de Lemba. La bénédiction nuptiale ne sera pas à l'église Saint Augustin.
             </p>
           </motion.div>
 
@@ -465,7 +465,7 @@ export default function Home() {
                     <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.4} />
                     <p className="text-sm leading-6 text-muted-foreground">
                       {venue.label === "Fête"
-                        ? "19h30"
+                        ? "20h00"
                         : venue.theme === "blessing"
                           ? glodieSamuel.ceremony.blessing.time
                           : glodieSamuel.ceremony.evening.time} · {venue.theme === "blessing" ? glodieSamuel.date.display : glodieSamuel.secondDate.display}

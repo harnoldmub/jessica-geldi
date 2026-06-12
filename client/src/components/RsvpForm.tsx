@@ -599,7 +599,7 @@ export default function RsvpForm({
                             <span className="block font-medium">Mariage religieux</span>
                             {eveningFull
                               ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
-                              : <span className="block text-[10px] mt-0.5 opacity-70">12 juillet · 19h30</span>
+                              : <span className="block text-[10px] mt-0.5 opacity-70">12 juillet · 19h00</span>
                             }
                           </button>
                           <button

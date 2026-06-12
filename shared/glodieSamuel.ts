@@ -32,12 +32,12 @@ export const glodieSamuel = {
   date: {
     display: "Samedi 04 Juillet 2026",
     iso: "2026-07-04",
-    time: "Mariage civil 10h30 · Coutumier 19h",
+    time: "Mariage civil 10h30 · Coutumier 19h30",
   },
   secondDate: {
     display: "Dimanche 12 Juillet 2026",
     iso: "2026-07-12",
-    time: "Mariage religieux 19h30",
+    time: "Mariage religieux 19h",
   },
   ceremony: {
     blessing: {
@@ -49,15 +49,15 @@ export const glodieSamuel = {
     },
     customary: {
       label: "Mariage coutumier",
-      time: "19h00",
+      time: "19h30",
       theme: "Célébration traditionnelle",
-      themeNote: "Mariage coutumier à 19h, entrée des mariés à 20h30.",
+      themeNote: "Mariage coutumier à 19h30, entrée des mariés à 20h.",
     },
     evening: {
       label: "Mariage religieux",
-      time: "19h30",
+      time: "19h00",
       theme: "Blanc & doré",
-      themeNote: "Mariage religieux et entrée des mariés à 19h30.",
+      themeNote: "Mariage religieux à 19h, entrée des mariés à 20h.",
       dress: "Blanc et doré.",
     },
   },
@@ -105,29 +105,29 @@ export const glodieSamuel = {
     {
       time: "10h30",
       title: "Célébration du mariage civil",
-      body: "Av. Bégonias 608, 11e rue Limete résidentiel. Réf. résidences Augustin Kabuya et WPM de la Justice. Entrée 10e rue.",
+      body: "Paroisse Saint Augustin de Lemba, réf. maison communale.",
       theme: "blessing" as "blessing" | "evening",
     },
     {
-      time: "19h00",
+      time: "19h30",
       title: "Mariage coutumier",
       body: "Célébration du mariage coutumier.",
       theme: "blessing" as "blessing" | "evening",
     },
     {
-      time: "20h30",
+      time: "20h00",
       title: "Entrée des mariés",
       body: "Entrée de Glodie et Samuel pour le mariage coutumier.",
       theme: "blessing" as "blessing" | "evening",
     },
     {
-      time: "Dimanche 12 juillet · 19h30",
+      time: "Dimanche 12 juillet · 19h00",
       title: "Mariage religieux",
-      body: "Célébration du mariage religieux à la paroisse Saint Augustin de Lemba, réf. maison communale.",
+      body: "Célébration du mariage religieux.",
       theme: "evening" as "blessing" | "evening",
     },
     {
-      time: "19h30",
+      time: "20h00",
       title: "Entrée des mariés",
       body: "Entrée de Glodie et Samuel pour le mariage religieux.",
       theme: "evening" as "blessing" | "evening",
@@ -154,21 +154,21 @@ export const glodieSamuel = {
   venues: [
     {
       label: "Mariage civil",
-      name: "Espace Privé",
-      address: "Av. Bégonias 608, 11e rue Limete résidentiel",
-      city: "Limete, Kinshasa",
-      note: "Réf. résidences Augustin Kabuya et WPM de la Justice. Entrée 10e rue.",
-      theme: "blessing" as "blessing" | "evening",
-      mapsUrl: "https://maps.google.com/?q=Av+B%C3%A9gonias+608+11%C3%A8me+rue+Limete+r%C3%A9sidentiel+Kinshasa",
-    },
-    {
-      label: "Mariage religieux",
       name: "Paroisse Saint Augustin de Lemba",
       address: "Réf. maison communale",
       city: "Lemba, Kinshasa",
-      note: "Célébration du mariage religieux à 19h30.",
-      theme: "evening" as "blessing" | "evening",
+      note: "Lieu du mariage civil.",
+      theme: "blessing" as "blessing" | "evening",
       mapsUrl: "https://maps.google.com/?q=Paroisse+Saint+Augustin+de+Lemba+maison+communale+Kinshasa",
+    },
+    {
+      label: "Mariage religieux",
+      name: "Lieu à confirmer",
+      address: "Adresse à confirmer",
+      city: "Kinshasa",
+      note: "La bénédiction nuptiale ne sera pas à l'église Saint Augustin.",
+      theme: "evening" as "blessing" | "evening",
+      mapsUrl: "https://maps.google.com/?q=Kinshasa",
     },
     {
       label: "Fête",
@@ -199,11 +199,11 @@ export const glodieSamuel = {
     },
     {
       q: "À quelle heure dois-je arriver ?",
-      a: "Le samedi 04 juillet 2026, le mariage civil commence à 10h30, le mariage coutumier à 19h et l'entrée des mariés à 20h30. Le dimanche 12 juillet 2026, le mariage religieux et l'entrée des mariés sont prévus à 19h30.",
+      a: "Le samedi 04 juillet 2026, le mariage civil commence à 10h30, le mariage coutumier à 19h30 et l'entrée des mariés à 20h. Le dimanche 12 juillet 2026, le mariage religieux est prévu à 19h et l'entrée des mariés à 20h.",
     },
     {
       q: "Comment accéder au lieu ?",
-      a: "Le mariage civil aura lieu à l'Av. Bégonias 608, 11e rue Limete résidentiel, réf. résidences Augustin Kabuya et WPM de la Justice, entrée 10e rue. Le mariage religieux aura lieu à la paroisse Saint Augustin de Lemba, réf. maison communale.",
+      a: "Le mariage civil aura lieu à la paroisse Saint Augustin de Lemba, réf. maison communale. La bénédiction nuptiale ne sera pas à l'église Saint Augustin.",
     },
     {
       q: "Y a-t-il un espace pour les enfants ?",

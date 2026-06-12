@@ -209,7 +209,7 @@ export async function buildInvitationCanvas(
     ctx.font = '44px "Cormorant Garamond", serif';
     fillTextBlock(
       ctx,
-      ["Mariage religieux · 19h30", "Entrée des mariés · 19h30", "Thème : blanc & doré"],
+      ["Mariage religieux · 19h00", "Entrée des mariés · 20h00", "Thème : blanc & doré"],
       CARD_WIDTH / 2,
       1205,
       56,
@@ -218,9 +218,9 @@ export async function buildInvitationCanvas(
     fillTextBlock(
       ctx,
       [
-        "Paroisse Saint Augustin de Lemba",
-        "Réf. maison communale",
-        "Lemba · Kinshasa",
+        "Lieu à confirmer",
+        "La bénédiction nuptiale ne sera pas",
+        "à l'église Saint Augustin",
       ],
       CARD_WIDTH / 2,
       1390,
@@ -298,11 +298,11 @@ export async function buildInvitationCanvas(
     }
 
     drawInfoTile(ctx, 142, 780, 390, "Matinée", "10h30 · Mariage civil", [
-      "Av. Bégonias 608",
-      "11e rue Limete résidentiel",
+      "Paroisse Saint Augustin",
+      "Lemba · réf. maison communale",
     ]);
-    drawInfoTile(ctx, 556, 780, 390, "Soirée", "19h00 · Coutumier", [
-      "20h30 · Entrée des mariés",
+    drawInfoTile(ctx, 556, 780, 390, "Soirée", "19h30 · Coutumier", [
+      "20h00 · Entrée des mariés",
       "Traditions & familles",
     ]);
 
@@ -315,7 +315,7 @@ export async function buildInvitationCanvas(
 
     ctx.fillStyle = "rgba(36, 16, 23, 0.68)";
     ctx.font = '23px "Lato", sans-serif';
-    ctx.fillText("Entrée 10e rue · réf. résidences Augustin Kabuya et WPM de la Justice", CARD_WIDTH / 2, 1442);
+    ctx.fillText("Mariage civil à Saint Augustin Lemba", CARD_WIDTH / 2, 1442);
   } else {
     ctx.fillStyle = "#fff8ec";
     ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
@@ -359,12 +359,12 @@ export async function buildInvitationCanvas(
 
     drawInfoTile(ctx, 154, 810, 382, "04 Juillet", "Civil & coutumier", [
       "10h30 mariage civil",
-      "19h00 coutumier",
-      "20h30 entrée des mariés",
+      "19h30 coutumier",
+      "20h00 entrée des mariés",
     ]);
     drawInfoTile(ctx, 556, 810, 382, "12 Juillet", "Mariage religieux", [
-      "19h30 célébration",
-      "19h30 entrée des mariés",
+      "19h00 célébration",
+      "20h00 entrée des mariés",
     ]);
 
     ctx.fillStyle = "#6b3522";
