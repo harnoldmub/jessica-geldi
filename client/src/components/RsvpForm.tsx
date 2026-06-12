@@ -596,7 +596,7 @@ export default function RsvpForm({
                             disabled={eveningFull}
                             className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${eveningFull ? "opacity-40 cursor-not-allowed" : field.value === "evening" ? selectedChoiceClassName : unselectedChoiceClassName}`}
                           >
-                            <span className="block font-medium">Soirée dansante</span>
+                            <span className="block font-medium">Mariage religieux</span>
                             {eveningFull
                               ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
                               : <span className="block text-[10px] mt-0.5 opacity-70">12 juillet · 19h30</span>

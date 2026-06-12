@@ -397,7 +397,7 @@ export default function Invitation() {
             {glodieSamuel.venues[1].note}
           </motion.p>
 
-          {/* Theme de soiree */}
+          {/* Theme religieux et fête */}
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -406,7 +406,7 @@ export default function Invitation() {
             className="mt-12 border-t border-border pt-10 text-center"
           >
             <p className="text-[9px] uppercase tracking-[0.58em] text-muted-foreground/60">
-              Soirée · 19h30
+              Mariage religieux · 19h30
             </p>
             <p className="mt-3 font-serif text-2xl italic text-primary/80">
               Blanc & doré

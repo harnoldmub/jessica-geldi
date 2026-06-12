@@ -435,7 +435,7 @@ export default function Home() {
               Lieux &amp; Accès
             </h2>
             <p className="mt-4 text-sm italic text-muted-foreground">
-              Le lieu du 04 juillet sera communiqué d'ici peu. La soirée dansante aura lieu à la salle Exaudus Arena.
+              Le mariage civil aura lieu à Limete résidentiel. Le mariage religieux aura lieu à la paroisse Saint Augustin de Lemba.
             </p>
           </motion.div>
 
@@ -464,7 +464,11 @@ export default function Home() {
                   <div className="flex items-start gap-3">
                     <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.4} />
                     <p className="text-sm leading-6 text-muted-foreground">
-                      {venue.theme === "blessing" ? glodieSamuel.ceremony.blessing.time : glodieSamuel.ceremony.evening.time} · {venue.theme === "blessing" ? glodieSamuel.date.display : glodieSamuel.secondDate.display}
+                      {venue.label === "Fête"
+                        ? "20h30"
+                        : venue.theme === "blessing"
+                          ? glodieSamuel.ceremony.blessing.time
+                          : glodieSamuel.ceremony.evening.time} · {venue.theme === "blessing" ? glodieSamuel.date.display : glodieSamuel.secondDate.display}
                     </p>
                   </div>
                 </div>

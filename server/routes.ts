@@ -101,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return "Le mariage civil est malheureusement complet.";
     }
     if ((choice === "evening" || choice === "both") && cap.evening + count > cap.eveningMax) {
-      return "La soirée du 12 juillet est malheureusement complète.";
+      return "Le mariage religieux du 12 juillet est malheureusement complet.";
     }
     return null;
   }

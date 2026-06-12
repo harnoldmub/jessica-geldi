@@ -105,7 +105,7 @@ export const glodieSamuel = {
     {
       time: "10h30",
       title: "Célébration du mariage civil",
-      body: "Le lieu sera communiqué d'ici peu.",
+      body: "Av. Bégonias 608, 11ème rue Limete résidentiel. Réf. résidences Augustin Kabuya et WPM de la Justice. Entrée 10ème rue.",
       theme: "blessing" as "blessing" | "evening",
     },
     {
@@ -117,7 +117,7 @@ export const glodieSamuel = {
     {
       time: "Dimanche 12 juillet · 19h30",
       title: "Mariage religieux",
-      body: "Célébration du mariage religieux à la salle Exaudus Arena.",
+      body: "Célébration du mariage religieux à la paroisse Saint Augustin de Lemba, réf. maison communale.",
       theme: "evening" as "blessing" | "evening",
     },
     {
@@ -148,15 +148,24 @@ export const glodieSamuel = {
   venues: [
     {
       label: "Mariage civil",
-      name: "Lieu à communiquer",
-      address: "Kinshasa",
-      city: "Kinshasa",
-      note: "Le lieu sera communiqué d'ici peu.",
+      name: "Résidence familiale",
+      address: "Av. Bégonias 608, 11ème rue Limete résidentiel",
+      city: "Limete, Kinshasa",
+      note: "Réf. résidences Augustin Kabuya et WPM de la Justice. Entrée 10ème rue.",
       theme: "blessing" as "blessing" | "evening",
-      mapsUrl: "https://maps.google.com/?q=Kinshasa",
+      mapsUrl: "https://maps.google.com/?q=Av+B%C3%A9gonias+608+11%C3%A8me+rue+Limete+r%C3%A9sidentiel+Kinshasa",
     },
     {
-      label: "Mariage religieux & fête",
+      label: "Mariage religieux",
+      name: "Paroisse Saint Augustin de Lemba",
+      address: "Réf. maison communale",
+      city: "Lemba, Kinshasa",
+      note: "Célébration du mariage religieux à 19h30.",
+      theme: "evening" as "blessing" | "evening",
+      mapsUrl: "https://maps.google.com/?q=Paroisse+Saint+Augustin+de+Lemba+maison+communale+Kinshasa",
+    },
+    {
+      label: "Fête",
       name: "Salle Exaudus Arena",
       address: "Avenue Bonga numéro 23, croisement avenue du Stade",
       city: "Matonge, commune de Kalamu",
@@ -180,7 +189,7 @@ export const glodieSamuel = {
     },
     {
       q: "Le dress code est-il strict ?",
-      a: "Le mariage civil est sur le thème Terra Cotta : brun, beige et blanc. La fête et la soirée dansante sont sur le thème blanc et doré.",
+      a: "Le mariage civil est sur le thème Terra Cotta : brun, beige et blanc. Le mariage religieux et la fête sont sur le thème blanc et doré.",
     },
     {
       q: "À quelle heure dois-je arriver ?",
@@ -188,7 +197,7 @@ export const glodieSamuel = {
     },
     {
       q: "Comment accéder au lieu ?",
-      a: "Le lieu du 04 juillet sera communiqué d'ici peu. La soirée dansante aura lieu à la salle Exaudus Arena, Avenue Bonga numéro 23, croisement avenue du Stade, en face du marché de Djakarta, Matonge, commune de Kalamu.",
+      a: "Le mariage civil aura lieu à l'Av. Bégonias 608, 11ème rue Limete résidentiel, réf. résidences Augustin Kabuya et WPM de la Justice, entrée 10ème rue. Le mariage religieux aura lieu à la paroisse Saint Augustin de Lemba, réf. maison communale.",
     },
     {
       q: "Y a-t-il un espace pour les enfants ?",
