@@ -105,7 +105,7 @@ export const glodieSamuel = {
     {
       time: "10h30",
       title: "Célébration du mariage civil",
-      body: "Av. Bégonias 608, 11ème rue Limete résidentiel. Réf. résidences Augustin Kabuya et WPM de la Justice. Entrée 10ème rue.",
+      body: "Av. Bégonias 608, 11e rue Limete résidentiel. Réf. résidences Augustin Kabuya et WPM de la Justice. Entrée 10e rue.",
       theme: "blessing" as "blessing" | "evening",
     },
     {
@@ -155,9 +155,9 @@ export const glodieSamuel = {
     {
       label: "Mariage civil",
       name: "Résidence familiale",
-      address: "Av. Bégonias 608, 11ème rue Limete résidentiel",
+      address: "Av. Bégonias 608, 11e rue Limete résidentiel",
       city: "Limete, Kinshasa",
-      note: "Réf. résidences Augustin Kabuya et WPM de la Justice. Entrée 10ème rue.",
+      note: "Réf. résidences Augustin Kabuya et WPM de la Justice. Entrée 10e rue.",
       theme: "blessing" as "blessing" | "evening",
       mapsUrl: "https://maps.google.com/?q=Av+B%C3%A9gonias+608+11%C3%A8me+rue+Limete+r%C3%A9sidentiel+Kinshasa",
     },
@@ -203,7 +203,7 @@ export const glodieSamuel = {
     },
     {
       q: "Comment accéder au lieu ?",
-      a: "Le mariage civil aura lieu à l'Av. Bégonias 608, 11ème rue Limete résidentiel, réf. résidences Augustin Kabuya et WPM de la Justice, entrée 10ème rue. Le mariage religieux aura lieu à la paroisse Saint Augustin de Lemba, réf. maison communale.",
+      a: "Le mariage civil aura lieu à l'Av. Bégonias 608, 11e rue Limete résidentiel, réf. résidences Augustin Kabuya et WPM de la Justice, entrée 10e rue. Le mariage religieux aura lieu à la paroisse Saint Augustin de Lemba, réf. maison communale.",
     },
     {
       q: "Y a-t-il un espace pour les enfants ?",

@@ -299,7 +299,7 @@ export async function buildInvitationCanvas(
 
     drawInfoTile(ctx, 142, 780, 390, "Matinée", "10h30 · Mariage civil", [
       "Av. Bégonias 608",
-      "11ème rue Limete résidentiel",
+      "11e rue Limete résidentiel",
     ]);
     drawInfoTile(ctx, 556, 780, 390, "Soirée", "19h00 · Coutumier", [
       "20h30 · Entrée des mariés",
@@ -315,7 +315,7 @@ export async function buildInvitationCanvas(
 
     ctx.fillStyle = "rgba(36, 16, 23, 0.68)";
     ctx.font = '23px "Lato", sans-serif';
-    ctx.fillText("Entrée 10ème rue · réf. résidences Augustin Kabuya et WPM de la Justice", CARD_WIDTH / 2, 1442);
+    ctx.fillText("Entrée 10e rue · réf. résidences Augustin Kabuya et WPM de la Justice", CARD_WIDTH / 2, 1442);
   } else {
     ctx.fillStyle = "#fff8ec";
     ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);

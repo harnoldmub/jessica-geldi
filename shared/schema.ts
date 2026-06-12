@@ -84,7 +84,7 @@ export const insertRsvpSchema = createInsertSchema(rsvpResponses, {
     z
       .string()
       .trim()
-      .max(100, "La boisson doit faire moins de 100 caracteres")
+      .max(100, "La boisson doit faire moins de 100 caractères")
       .or(z.literal(""))
       .optional()
       .transform((value) => (value ? value : null)),

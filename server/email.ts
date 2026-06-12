@@ -38,7 +38,7 @@ export async function sendRsvpConfirmationEmail(rsvp: RsvpResponse) {
             ${
               rsvp.beverageChoice
                 ? `<tr>
-                    <td style="padding: 5px 0; color: #999;">Boisson souhaitee</td>
+                    <td style="padding: 5px 0; color: #999;">Boisson souhaitée</td>
                     <td style="padding: 5px 0; text-align: right; font-style: italic;">${rsvp.beverageChoice}</td>
                   </tr>`
                 : ""

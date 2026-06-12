@@ -501,7 +501,7 @@ export default function Admin() {
               Espace admin
             </p>
             <h1 className="mt-6 font-serif text-4xl leading-tight md:text-6xl">
-              Gerer les invites de Glodie & Samuel avec precision.
+              Gérez les invités de Glodie & Samuel avec précision.
             </h1>
             <p className="mt-6 max-w-lg text-sm leading-8 text-white/72">
               Créez les invités, générez leurs liens d'invitation individuels,
