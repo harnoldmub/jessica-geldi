@@ -389,7 +389,7 @@ export default function CardGeneratorDialog({
                   
                   {/* Indication visuelle temporaire au survol */}
                   <div className="absolute inset-x-0 top-4 pointer-events-none flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <span className="bg-[#101011]/85 text-white text-[10px] uppercase tracking-[0.25em] px-3 py-1.5 flex items-center gap-1.5">
+                    <span className="bg-[#5f4828]/90 text-white text-[10px] uppercase tracking-[0.25em] px-3 py-1.5 flex items-center gap-1.5">
                       <Move className="h-3 w-3" />
                       Glissez ou cliquez pour positionner le texte
                     </span>

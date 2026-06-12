@@ -377,8 +377,8 @@ export default function RsvpForm({
   const labelClassName = "text-[10px] uppercase tracking-[0.26em] text-[#111111]/70";
   const inputClassName = "h-12 rounded-none border-[#d7d7d7] bg-white text-[#111111] placeholder:text-[#777777] focus-visible:ring-[#111111]/20";
   const choiceClassName = "border p-4 text-left text-sm font-medium transition-colors";
-  const selectedChoiceClassName = "border-[#111111] bg-[#111111] text-white";
-  const unselectedChoiceClassName = "border-[#d7d7d7] bg-white text-[#111111] hover:border-[#111111]/40";
+  const selectedChoiceClassName = "border-[#6f5427] bg-[#6f5427] text-white";
+  const unselectedChoiceClassName = "border-[#d7d7d7] bg-white text-[#111111] hover:border-[#6f5427]/50";
   const selectedCountry = COUNTRY_CODES.find((item) => item.key === selectedCountryKey) || COUNTRY_CODES.find((item) => item.key === "RDC-+243") || COUNTRY_CODES[0];
   const countrySearch = countryQuery.trim().toLowerCase();
   const filteredCountryCodes = COUNTRY_CODES.filter((item) => {
@@ -505,7 +505,7 @@ export default function RsvpForm({
                                     setCountryOpen(false);
                                     setCountryQuery("");
                                   }}
-                                  className={`flex w-full items-center justify-between gap-4 px-3 py-2 text-left text-sm transition-colors hover:bg-[#f3f3f3] ${item.key === selectedCountryKey ? "bg-[#111111] text-white hover:bg-[#111111]" : "text-[#111111]"}`}
+                                  className={`flex w-full items-center justify-between gap-4 px-3 py-2 text-left text-sm transition-colors hover:bg-[#f3f3f3] ${item.key === selectedCountryKey ? "bg-[#6f5427] text-white hover:bg-[#6f5427]" : "text-[#111111]"}`}
                                 >
                                   <span className="truncate">{getFlag(item.country)} {item.country}</span>
                                   <span className="shrink-0 font-medium">{item.code}</span>
@@ -711,7 +711,7 @@ export default function RsvpForm({
           <Button
             type="submit"
             disabled={mutation.isPending}
-            className="w-full rounded-none bg-[#111111] py-7 uppercase tracking-[0.32em] text-[10px] text-white hover:bg-[#333333]"
+            className="w-full rounded-none bg-[#6f5427] py-7 uppercase tracking-[0.32em] text-[10px] text-white hover:bg-[#5a421f]"
           >
             {mutation.isPending ? "Envoi en cours..." : submitLabel}
           </Button>

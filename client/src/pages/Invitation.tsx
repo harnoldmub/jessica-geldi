@@ -216,7 +216,7 @@ export default function Invitation() {
             alt="Glodie & Samuel"
             className="h-full w-full object-cover object-center scale-110"
           />
-          <div className="absolute inset-0 bg-black/52" />
+          <div className="absolute inset-0 bg-[#5f4828]/55" />
         </motion.div>
 
         <motion.div

@@ -36,7 +36,7 @@ export default function Countdown({
   ];
 
   return (
-    <div className={`flex items-center gap-1 ${dark ? "border border-white/25 bg-black/40 px-3 py-3 text-white shadow-xl backdrop-blur-sm" : ""}`}>
+    <div className={`flex items-center gap-1 ${dark ? "border border-white/25 bg-[#5f4828]/50 px-3 py-3 text-white shadow-xl backdrop-blur-sm" : ""}`}>
       {units.map((unit, i) => (
         <div key={unit.label} className="flex items-center">
           <div className="px-2 text-center sm:px-3">

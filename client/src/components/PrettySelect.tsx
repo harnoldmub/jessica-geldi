@@ -102,7 +102,7 @@ export default function PrettySelect({
                     }}
                     className={cn(
                       "flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition-colors",
-                      isSelected ? "bg-[#111111] text-white" : "bg-white text-[#111111] hover:bg-[#f3f3f3]",
+                      isSelected ? "bg-[#6f5427] text-white" : "bg-white text-[#111111] hover:bg-[#f3f3f3]",
                       option.disabled && "cursor-not-allowed opacity-40",
                     )}
                   >

@@ -496,7 +496,7 @@ export default function Admin() {
     return (
       <main className="min-h-screen bg-[#F7F7F5] px-6 py-10 md:px-10 md:py-16">
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.85fr_1.15fr]">
-          <section className="overflow-hidden bg-[#101011] p-8 text-white md:p-12">
+          <section className="overflow-hidden bg-[#5f4828] p-8 text-[#fff8ec] md:p-12">
             <p className="text-[11px] uppercase tracking-[0.45em] text-white/55">
               Espace admin
             </p>

@@ -257,7 +257,7 @@ export default function Home() {
           <p className="mt-5 font-script text-white leading-none" style={{ fontSize: "clamp(3.5rem,14vw,5.5rem)" }}>
             {glodieSamuel.title}
           </p>
-          <p className="mt-4 border border-white/25 bg-black/35 px-4 py-2 font-serif text-base text-white shadow-xl backdrop-blur-sm">
+          <p className="mt-4 border border-white/25 bg-[#5f4828]/55 px-4 py-2 font-serif text-base text-white shadow-xl backdrop-blur-sm">
             {glodieSamuel.date.display}
           </p>
           <div className="mt-6">
