@@ -465,7 +465,7 @@ export default function Home() {
                     <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.4} />
                     <p className="text-sm leading-6 text-muted-foreground">
                       {venue.label === "Fête"
-                        ? "20h30"
+                        ? "19h30"
                         : venue.theme === "blessing"
                           ? glodieSamuel.ceremony.blessing.time
                           : glodieSamuel.ceremony.evening.time} · {venue.theme === "blessing" ? glodieSamuel.date.display : glodieSamuel.secondDate.display}

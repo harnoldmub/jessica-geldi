@@ -51,13 +51,13 @@ export const glodieSamuel = {
       label: "Mariage coutumier",
       time: "19h00",
       theme: "Célébration traditionnelle",
-      themeNote: "Célébration du mariage coutumier à 19h.",
+      themeNote: "Mariage coutumier à 19h, entrée des mariés à 20h30.",
     },
     evening: {
       label: "Mariage religieux",
       time: "19h30",
       theme: "Blanc & doré",
-      themeNote: "Thème de la soirée : blanc et doré.",
+      themeNote: "Mariage religieux et entrée des mariés à 19h30.",
       dress: "Blanc et doré.",
     },
   },
@@ -115,15 +115,21 @@ export const glodieSamuel = {
       theme: "blessing" as "blessing" | "evening",
     },
     {
+      time: "20h30",
+      title: "Entrée des mariés",
+      body: "Entrée de Glodie et Samuel pour le mariage coutumier.",
+      theme: "blessing" as "blessing" | "evening",
+    },
+    {
       time: "Dimanche 12 juillet · 19h30",
       title: "Mariage religieux",
       body: "Célébration du mariage religieux à la paroisse Saint Augustin de Lemba, réf. maison communale.",
       theme: "evening" as "blessing" | "evening",
     },
     {
-      time: "20h30",
+      time: "19h30",
       title: "Entrée des mariés",
-      body: "Entrée de Glodie et Samuel pour la fête.",
+      body: "Entrée de Glodie et Samuel pour le mariage religieux.",
       theme: "evening" as "blessing" | "evening",
     },
   ],
@@ -193,7 +199,7 @@ export const glodieSamuel = {
     },
     {
       q: "À quelle heure dois-je arriver ?",
-      a: "Le samedi 04 juillet 2026, le mariage civil commence à 10h30 et le mariage coutumier à 19h. Le dimanche 12 juillet 2026, le mariage religieux est prévu à 19h30.",
+      a: "Le samedi 04 juillet 2026, le mariage civil commence à 10h30, le mariage coutumier à 19h et l'entrée des mariés à 20h30. Le dimanche 12 juillet 2026, le mariage religieux et l'entrée des mariés sont prévus à 19h30.",
     },
     {
       q: "Comment accéder au lieu ?",

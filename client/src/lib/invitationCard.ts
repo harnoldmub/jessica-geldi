@@ -116,10 +116,10 @@ function drawInfoTile(
 ) {
   ctx.save();
   ctx.fillStyle = "rgba(255, 250, 242, 0.92)";
-  ctx.fillRect(x, y, width, 170);
+  ctx.fillRect(x, y, width, 198);
   ctx.strokeStyle = "rgba(166, 95, 59, 0.34)";
   ctx.lineWidth = 2;
-  ctx.strokeRect(x, y, width, 170);
+  ctx.strokeRect(x, y, width, 198);
   ctx.fillStyle = "#a65f3b";
   ctx.font = '18px "Lato", sans-serif';
   ctx.textAlign = "left";
@@ -209,7 +209,7 @@ export async function buildInvitationCanvas(
     ctx.font = '44px "Cormorant Garamond", serif';
     fillTextBlock(
       ctx,
-      ["Mariage religieux · 19h30", "Entrée des mariés · 20h30", "Thème : blanc & doré"],
+      ["Mariage religieux · 19h30", "Entrée des mariés · 19h30", "Thème : blanc & doré"],
       CARD_WIDTH / 2,
       1205,
       56,
@@ -302,7 +302,7 @@ export async function buildInvitationCanvas(
       "11ème rue Limete résidentiel",
     ]);
     drawInfoTile(ctx, 556, 780, 390, "Soirée", "19h00 · Coutumier", [
-      "Célébration traditionnelle",
+      "20h30 · Entrée des mariés",
       "Traditions & familles",
     ]);
 
@@ -360,10 +360,11 @@ export async function buildInvitationCanvas(
     drawInfoTile(ctx, 154, 810, 382, "04 Juillet", "Civil & coutumier", [
       "10h30 mariage civil",
       "19h00 coutumier",
+      "20h30 entrée des mariés",
     ]);
     drawInfoTile(ctx, 556, 810, 382, "12 Juillet", "Mariage religieux", [
       "19h30 célébration",
-      "20h30 entrée des mariés",
+      "19h30 entrée des mariés",
     ]);
 
     ctx.fillStyle = "#6b3522";

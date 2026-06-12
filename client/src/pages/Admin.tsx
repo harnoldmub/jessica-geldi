@@ -456,8 +456,8 @@ export default function Admin() {
     const message =
       `Bonjour ${guest.firstName},\n\n` +
       `Nous avons la joie de vous inviter au mariage de *Glodie & Samuel* à Kinshasa.\n\n` +
-      `Samedi 04 juillet 2026 : mariage civil à 10h30 et mariage coutumier à 19h.\n` +
-      `Dimanche 12 juillet 2026 : mariage religieux à 19h30 à la paroisse Saint Augustin de Lemba, réf. maison communale.\n\n` +
+      `Samedi 04 juillet 2026 : mariage civil à 10h30, mariage coutumier à 19h et entrée des mariés à 20h30.\n` +
+      `Dimanche 12 juillet 2026 : mariage religieux et entrée des mariés à 19h30 à la paroisse Saint Augustin de Lemba, réf. maison communale.\n\n` +
       `Voici votre invitation personnelle :\n${url}\n\n` +
       `Avec joie de vous avoir parmi nous.`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
