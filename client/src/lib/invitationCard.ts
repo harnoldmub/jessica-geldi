@@ -310,8 +310,8 @@ export async function buildInvitationCanvas(
     ctx.font = '34px "Playfair Display", serif';
     ctx.textAlign = "center";
     ctx.fillText("Informations pagnes", CARD_WIDTH / 2, 1088);
-    drawSquareImageCard(ctx, pagneSamuel, 214, 1130, 196, "Famille Samuel");
-    drawSquareImageCard(ctx, pagneGlodie, 670, 1130, 196, "Famille Glodie");
+    drawSquareImageCard(ctx, pagneGlodie, 214, 1130, 196, "Famille Samuel");
+    drawSquareImageCard(ctx, pagneSamuel, 670, 1130, 196, "Famille Glodie");
 
     ctx.fillStyle = "rgba(36, 16, 23, 0.68)";
     ctx.font = '23px "Lato", sans-serif';
@@ -370,8 +370,8 @@ export async function buildInvitationCanvas(
     ctx.fillStyle = "#6b3522";
     ctx.font = '28px "Lato", sans-serif';
     ctx.fillText("Pagnes du 04 juillet", CARD_WIDTH / 2, 1068);
-    drawSquareImageCard(ctx, pagneSamuel, 258, 1090, 170, "Samuel");
-    drawSquareImageCard(ctx, pagneGlodie, 652, 1090, 170, "Glodie");
+    drawSquareImageCard(ctx, pagneGlodie, 258, 1090, 170, "Samuel");
+    drawSquareImageCard(ctx, pagneSamuel, 652, 1090, 170, "Glodie");
   }
 
   ctx.fillStyle = kind === "civil" ? "#6b1733" : "#b58b18";
