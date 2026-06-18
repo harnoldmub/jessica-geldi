@@ -4,7 +4,7 @@ import { useRoute } from "wouter";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { CalendarDays, Clock, MapPin, ChevronDown, FileText, Loader2 } from "lucide-react";
 import { type RsvpResponse } from "@shared/schema";
-import { glodieSamuel } from "@shared/glodieSamuel";
+import { glodieSamuel, coutumierTables } from "@shared/glodieSamuel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import RsvpForm from "@/components/RsvpForm";
@@ -17,6 +17,9 @@ import {
   type CardKind,
 } from "@/lib/invitationCard";
 import heroImg from "../../images/hero.png";
+import coutumierImg from "../../images/image-coutumier.png";
+import pagneGlodieImg from "../../images/glodie.png";
+import pagneSamuelImg from "../../images/samuel.png";
 
 type InvitationGuest = RsvpResponse & { invitationUrl: string };
 
@@ -196,12 +199,20 @@ export default function Invitation() {
     );
   }
 
+  const tableVerse =
+    guest.tableNumber != null ? coutumierTables[guest.tableNumber] : null;
+
+  // Invité du coutumier (journée du samedi) : invitation épurée, centrée sur
+  // le coutumier (pas de prélude générique, pas de carte PDF, pas de RSVP).
+  const isCoutumierOnly = guest.ceremonyChoice === "civil";
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-background text-foreground">
 
       {/* ══════════════════════════════════════════════════════
-          PRÉLUDE — Invitation
+          PRÉLUDE — Invitation (masqué pour l'invitation coutumier épurée)
       ══════════════════════════════════════════════════════ */}
+      {!isCoutumierOnly && (
       <section
         ref={heroRef}
         className="relative isolate overflow-hidden min-h-[100svh]"
@@ -279,59 +290,162 @@ export default function Invitation() {
           </motion.div>
         </motion.div>
       </section>
+      )}
 
       {/* ══════════════════════════════════════════════════════
           MARIAGE CIVIL & BÉNÉDICTION
       ══════════════════════════════════════════════════════ */}
       {(guest.ceremonyChoice === "civil" || guest.ceremonyChoice === "both" || !guest.ceremonyChoice) && (
-      <section className="relative overflow-hidden bg-background">
-        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      <section className="relative overflow-hidden" style={{ backgroundColor: "#f8f1e8" }}>
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#a65f3b]/30 to-transparent" />
 
-        <div className="mx-auto max-w-5xl px-6 py-24 md:px-10 md:py-32">
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
+        {/* Colonne pensée pour le mobile (invitation coutumier) */}
+        <div className="mx-auto w-full max-w-md px-6 py-16">
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
+            viewport={{ once: true, amount: 0.5 }}
             transition={reveal}
-            className="text-center"
+            className="text-center text-[9px] uppercase tracking-[0.6em] text-[#a65f3b]"
           >
-            <p className="text-[9px] uppercase tracking-[0.68em] text-primary">
-              ✦ &nbsp; Première partie &nbsp; ✦
-            </p>
-            <h2
-              className="mt-5 font-serif leading-tight text-foreground"
-              style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
-            >
-              {glodieSamuel.ceremony.blessing.label}
-            </h2>
-            <ThemeBadge
-              theme={glodieSamuel.ceremony.blessing.theme}
-              note={glodieSamuel.ceremony.blessing.themeNote}
-              colors={glodieSamuel.dresscode.blessing.colors}
-              colorNames={glodieSamuel.dresscode.blessing.colorNames}
-            />
-          </motion.div>
+            ✦ &nbsp; {isCoutumierOnly ? "Vous êtes convié(e)" : "Première partie"} &nbsp; ✦
+          </motion.p>
 
-          <div className="mt-14 grid gap-5 md:grid-cols-3">
-            <InfoCard icon={CalendarDays} label="Date" value={glodieSamuel.date.display} delay={0} />
-            <InfoCard icon={Clock} label="Heure" value={glodieSamuel.ceremony.blessing.time} delay={0.08} />
-            <InfoCard
-              icon={MapPin}
-              label="Lieu"
-              value={`${glodieSamuel.venues[0].name} · ${glodieSamuel.venues[0].city}`}
-              delay={0.16}
+          {/* Photo coutumier + titre */}
+          <motion.figure
+            initial={{ opacity: 0, scale: 0.97 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={reveal}
+            className="relative mt-6 overflow-hidden rounded-[1.75rem] shadow-xl ring-1 ring-[#a65f3b]/15"
+          >
+            <img
+              src={coutumierImg}
+              alt="Mariage coutumier"
+              className="aspect-[4/5] w-full object-cover"
             />
-          </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-[#2e1b10]/85 via-[#2e1b10]/10 to-transparent" />
+            <figcaption className="absolute inset-x-0 bottom-0 p-6 text-center text-white">
+              <p className="text-[10px] uppercase tracking-[0.46em] text-white/75">
+                {glodieSamuel.date.display}
+              </p>
+              <h2 className="mt-2 font-serif text-4xl leading-[0.95]">
+                Mariage
+                <br />
+                coutumier
+              </h2>
+            </figcaption>
+          </motion.figure>
 
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            viewport={{ once: true, amount: 0.9 }}
-            transition={{ ...reveal, delay: 0.28 }}
-            className="mt-7 text-center text-sm italic text-muted-foreground"
+            viewport={{ once: true, amount: 0.6 }}
+            transition={{ ...reveal, delay: 0.2 }}
+            className="mt-7 text-center font-serif text-lg italic text-[#6f3f2a]"
           >
-            {glodieSamuel.venues[0].note}
+            Cher(e) {guest.firstName} {guest.lastName}
           </motion.p>
+
+          <p className="mt-2 text-center text-[10px] uppercase tracking-[0.42em] text-[#a65f3b]/80">
+            {(guest.guestCount || 1) === 1
+              ? "Seul(e) · 1 personne"
+              : `En couple · ${guest.guestCount} personnes`}
+          </p>
+
+          {/* Détails coutumier */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ ...reveal, delay: 0.1 }}
+            className="mt-6 divide-y divide-[#a65f3b]/15 overflow-hidden rounded-2xl border border-[#a65f3b]/20 bg-white/70"
+          >
+            <div className="flex items-center gap-4 px-5 py-4">
+              <Clock className="h-5 w-5 shrink-0 text-[#a65f3b]" strokeWidth={1.4} />
+              <div>
+                <p className="text-[9px] uppercase tracking-[0.4em] text-[#6f3f2a]/60">Heure</p>
+                <p className="mt-1 font-serif text-base text-[#3a2418]">
+                  {glodieSamuel.ceremony.customary.time} · entrée des mariés à 20h
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 px-5 py-4">
+              <MapPin className="h-5 w-5 shrink-0 text-[#a65f3b]" strokeWidth={1.4} />
+              <div>
+                <p className="text-[9px] uppercase tracking-[0.4em] text-[#6f3f2a]/60">Lieu</p>
+                <p className="mt-1 font-serif text-base text-[#3a2418]">
+                  {glodieSamuel.venues[1].name}
+                </p>
+                <p className="text-xs text-[#6f3f2a]/70">{glodieSamuel.venues[1].city}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 px-5 py-4">
+              <CalendarDays className="h-5 w-5 shrink-0 text-[#a65f3b]" strokeWidth={1.4} />
+              <div>
+                <p className="text-[9px] uppercase tracking-[0.4em] text-[#6f3f2a]/60">Le même jour</p>
+                <p className="mt-1 font-serif text-base text-[#3a2418]">
+                  10h30 · Mariage civil à la 11ème rue
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Table personnelle (verset) */}
+          {tableVerse && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ ...reveal, delay: 0.15 }}
+              className="mt-7 rounded-2xl border border-[#a65f3b]/25 bg-white/80 p-7 text-center shadow-sm"
+            >
+              <p className="text-[9px] uppercase tracking-[0.5em] text-[#a65f3b]">Votre table</p>
+              <p className="mt-2 font-serif text-5xl leading-none text-[#6f3f2a]">
+                {guest.tableNumber}
+              </p>
+              <div className="mx-auto my-4 h-px w-12 bg-[#a65f3b]/30" />
+              <p className="font-serif text-xl italic text-[#a65f3b]">« {tableVerse} »</p>
+            </motion.div>
+          )}
+
+          {/* Les pagnes */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ ...reveal, delay: 0.1 }}
+            className="mt-11"
+          >
+            <OrnamentRule opacity={0.55} />
+            <h3 className="mt-6 text-center font-serif text-2xl text-[#6f3f2a]">Les pagnes</h3>
+            <p className="mx-auto mt-3 max-w-xs text-center text-sm leading-6 text-[#6f3f2a]/75">
+              Chaque famille porte son pagne. Voici les motifs à arborer pour honorer
+              la tradition lors du coutumier.
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <figure className="overflow-hidden rounded-2xl shadow-md ring-1 ring-[#a65f3b]/15">
+                <img
+                  src={pagneGlodieImg}
+                  alt="Pagne de la famille de Glodie"
+                  className="aspect-square w-full object-cover"
+                />
+                <figcaption className="bg-white/85 py-2.5 text-center text-[10px] uppercase tracking-[0.34em] text-[#6f3f2a]">
+                  Famille Glodie
+                </figcaption>
+              </figure>
+              <figure className="overflow-hidden rounded-2xl shadow-md ring-1 ring-[#a65f3b]/15">
+                <img
+                  src={pagneSamuelImg}
+                  alt="Pagne de la famille de Samuel"
+                  className="aspect-square w-full object-cover"
+                />
+                <figcaption className="bg-white/85 py-2.5 text-center text-[10px] uppercase tracking-[0.34em] text-[#6f3f2a]">
+                  Famille Samuel
+                </figcaption>
+              </figure>
+            </div>
+          </motion.div>
         </div>
       </section>
       )}
@@ -381,7 +495,7 @@ export default function Invitation() {
             <InfoCard
               icon={MapPin}
               label="Lieu"
-              value={`${glodieSamuel.venues[1].name} · ${glodieSamuel.venues[1].city}`}
+              value={`${glodieSamuel.venues[2].name} · ${glodieSamuel.venues[2].city}`}
               dark
               delay={0.16}
             />
@@ -394,7 +508,7 @@ export default function Invitation() {
             transition={{ ...reveal, delay: 0.28 }}
             className="mt-7 text-center text-sm italic text-muted-foreground"
           >
-            {glodieSamuel.venues[1].note}
+            {glodieSamuel.venues[2].note}
           </motion.p>
 
           {/* Theme religieux et fête */}
@@ -456,8 +570,9 @@ export default function Invitation() {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          INFOS INVITÉ — Places réservées
+          INFOS INVITÉ — Places réservées (masqué pour le coutumier)
       ══════════════════════════════════════════════════════ */}
+      {!isCoutumierOnly && (
       <section className="relative bg-background">
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
@@ -565,10 +680,12 @@ export default function Invitation() {
           </motion.div>
         </div>
       </section>
+      )}
 
       {/* ══════════════════════════════════════════════════════
-          RSVP — Confirmer ou modifier sa réponse
+          RSVP — Confirmer ou modifier sa réponse (masqué pour le coutumier)
       ══════════════════════════════════════════════════════ */}
+      {!isCoutumierOnly && (
       <section className="relative dark bg-background">
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_50%_0%,hsl(var(--primary)/0.12)_0%,transparent_55%)]" />
         <div className="relative mx-auto max-w-3xl px-6 py-24 md:px-10 md:py-28">
@@ -610,6 +727,7 @@ export default function Invitation() {
           </motion.div>
         </div>
       </section>
+      )}
 
       {/* ══════════════════════════════════════════════════════
           ÉPILOGUE

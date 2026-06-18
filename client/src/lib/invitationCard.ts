@@ -218,9 +218,9 @@ export async function buildInvitationCanvas(
     fillTextBlock(
       ctx,
       [
-        "Lieu à confirmer",
-        "La bénédiction nuptiale ne sera pas",
-        "à l'église Saint Augustin",
+        "Bénédiction nuptiale · 8h00",
+        "Église évangélique Patmos · 18 Movenda",
+        "C/ Ngiri-Ngiri · entrée d'Elengesa",
       ],
       CARD_WIDTH / 2,
       1390,
@@ -298,12 +298,12 @@ export async function buildInvitationCanvas(
     }
 
     drawInfoTile(ctx, 142, 780, 390, "Matinée", "10h30 · Mariage civil", [
-      "Paroisse Saint Augustin",
-      "Lemba · réf. maison communale",
+      "11ème rue",
+      "Kinshasa",
     ]);
     drawInfoTile(ctx, 556, 780, 390, "Soirée", "19h30 · Coutumier", [
+      "Paroisse Saint Augustin · Lemba",
       "20h00 · Entrée des mariés",
-      "Traditions & familles",
     ]);
 
     ctx.fillStyle = "#241017";
@@ -315,7 +315,7 @@ export async function buildInvitationCanvas(
 
     ctx.fillStyle = "rgba(36, 16, 23, 0.68)";
     ctx.font = '23px "Lato", sans-serif';
-    ctx.fillText("Mariage civil à Saint Augustin Lemba", CARD_WIDTH / 2, 1442);
+    ctx.fillText("Civil à la 11ème rue · Coutumier à Saint Augustin Lemba", CARD_WIDTH / 2, 1442);
   } else {
     ctx.fillStyle = "#fff8ec";
     ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
@@ -363,6 +363,7 @@ export async function buildInvitationCanvas(
       "20h00 entrée des mariés",
     ]);
     drawInfoTile(ctx, 556, 810, 382, "12 Juillet", "Mariage religieux", [
+      "8h00 bénédiction nuptiale",
       "19h00 célébration",
       "20h00 entrée des mariés",
     ]);

@@ -24,6 +24,26 @@ export const allBeverageOptions = [
   ...beverageOptions.softDrinks,
 ] as const;
 
+// Noms (versets) des tables du mariage coutumier, indexés par numéro de table.
+export const coutumierTables: Record<number, string> = {
+  1: "Genèse 1:1",
+  2: "Matthieu 12:5",
+  3: "Jean 3:16",
+  4: "Psaumes 64",
+  5: "Marc 6:2",
+  6: "Psaumes 124",
+  7: "Romains 12:3",
+  8: "Jérémie 33:3",
+  9: "1 Thessaloniciens 8:22",
+  10: "Galates 4:6",
+  11: "Hébreux 13:8",
+  12: "Jean 14:6",
+  13: "Philippiens 4:13",
+  14: "Luc 2:11",
+  15: "Colossiens 2:6",
+  16: "Psaumes 2:11",
+};
+
 export const glodieSamuel = {
   brand: "Glodie & Samuel",
   title: "Glodie & Samuel",
@@ -105,13 +125,13 @@ export const glodieSamuel = {
     {
       time: "10h30",
       title: "Célébration du mariage civil",
-      body: "Paroisse Saint Augustin de Lemba, réf. maison communale.",
+      body: "11ème rue, Kinshasa.",
       theme: "blessing" as "blessing" | "evening",
     },
     {
       time: "19h30",
       title: "Mariage coutumier",
-      body: "Célébration du mariage coutumier.",
+      body: "Paroisse Saint Augustin de Lemba, réf. maison communale.",
       theme: "blessing" as "blessing" | "evening",
     },
     {
@@ -119,6 +139,12 @@ export const glodieSamuel = {
       title: "Entrée des mariés",
       body: "Entrée de Glodie et Samuel pour le mariage coutumier.",
       theme: "blessing" as "blessing" | "evening",
+    },
+    {
+      time: "Dimanche 12 juillet · 8h00",
+      title: "Bénédiction nuptiale",
+      body: "Église évangélique Patmos, 18 Movenda (C/ Ngiri-Ngiri) · prendre l'entrée d'Elengesa.",
+      theme: "evening" as "blessing" | "evening",
     },
     {
       time: "Dimanche 12 juillet · 19h00",
@@ -154,27 +180,40 @@ export const glodieSamuel = {
   venues: [
     {
       label: "Mariage civil",
+      name: "11ème rue",
+      address: "11ème rue",
+      city: "Kinshasa",
+      time: "10h30",
+      note: "Lieu du mariage civil.",
+      theme: "blessing" as "blessing" | "evening",
+      mapsUrl: "https://maps.google.com/?q=11eme+rue+Kinshasa",
+    },
+    {
+      label: "Mariage coutumier",
       name: "Paroisse Saint Augustin de Lemba",
       address: "Réf. maison communale",
       city: "Lemba, Kinshasa",
-      note: "Lieu du mariage civil.",
+      time: "19h30",
+      note: "Lieu du mariage coutumier.",
       theme: "blessing" as "blessing" | "evening",
       mapsUrl: "https://maps.google.com/?q=Paroisse+Saint+Augustin+de+Lemba+maison+communale+Kinshasa",
     },
     {
-      label: "Mariage religieux",
-      name: "Lieu à confirmer",
-      address: "Adresse à confirmer",
-      city: "Kinshasa",
-      note: "La bénédiction nuptiale ne sera pas à l'église Saint Augustin.",
+      label: "Bénédiction nuptiale",
+      name: "Église évangélique Patmos",
+      address: "18, Movenda · croisement Elengesa et Khartoum",
+      city: "Commune de Ngiri-Ngiri, Kinshasa",
+      time: "8h00",
+      note: "Prière de prendre l'entrée d'Elengesa.",
       theme: "evening" as "blessing" | "evening",
-      mapsUrl: "https://maps.google.com/?q=Kinshasa",
+      mapsUrl: "https://maps.google.com/?q=Eglise+evangelique+Patmos+Elengesa+Khartoum+Ngiri+Ngiri+Kinshasa",
     },
     {
       label: "Fête",
       name: "Salle Exaudus Arena",
       address: "Avenue Bonga numéro 23, croisement avenue du Stade",
       city: "Matonge, commune de Kalamu",
+      time: "20h00",
       note: "Référence : en face du marché de Djakarta.",
       theme: "evening" as "blessing" | "evening",
       mapsUrl: "https://maps.google.com/?q=Avenue+Bonga+23+avenue+du+Stade+Matonge+Kalamu+Kinshasa",
@@ -199,11 +238,11 @@ export const glodieSamuel = {
     },
     {
       q: "À quelle heure dois-je arriver ?",
-      a: "Le samedi 04 juillet 2026, le mariage civil commence à 10h30, le mariage coutumier à 19h30 et l'entrée des mariés à 20h. Le dimanche 12 juillet 2026, le mariage religieux est prévu à 19h et l'entrée des mariés à 20h.",
+      a: "Le samedi 04 juillet 2026, le mariage civil commence à 10h30, le mariage coutumier à 19h30 et l'entrée des mariés à 20h. Le dimanche 12 juillet 2026, la bénédiction nuptiale est à 8h, le mariage religieux à 19h et l'entrée des mariés à 20h.",
     },
     {
       q: "Comment accéder au lieu ?",
-      a: "Le mariage civil aura lieu à la paroisse Saint Augustin de Lemba, réf. maison communale. La bénédiction nuptiale ne sera pas à l'église Saint Augustin.",
+      a: "Le mariage civil aura lieu à la 11ème rue, à Kinshasa. Le mariage coutumier se tiendra à la paroisse Saint Augustin de Lemba (réf. maison communale). La bénédiction nuptiale aura lieu à l'église évangélique Patmos, 18 Movenda (C/ Ngiri-Ngiri, croisement Elengesa et Khartoum) : prière de prendre l'entrée d'Elengesa.",
     },
     {
       q: "Y a-t-il un espace pour les enfants ?",
