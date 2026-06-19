@@ -33,8 +33,17 @@ function escapeCsvValue(value: unknown) {
   return `"${stringValue.replaceAll(`"`, `""`)}"`;
 }
 
+function isLocalUrl(url?: string | null) {
+  return !url || /localhost|127\.0\.0\.1|0\.0\.0\.0/.test(url);
+}
+
 function buildInvitationLink(req: Request, token: string) {
-  const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+  const envUrl = process.env.APP_URL?.trim();
+  // Origine réelle de la requête (https en prod grâce à "trust proxy").
+  const requestUrl = `${req.protocol}://${req.get("host")}`;
+  // On privilégie une APP_URL publique explicite ; sinon on retombe sur
+  // l'origine de la requête (évite que les liens pointent vers localhost).
+  const baseUrl = !isLocalUrl(envUrl) ? (envUrl as string) : requestUrl;
   return `${baseUrl.replace(/\/$/, "")}/invitation/${token}`;
 }
 

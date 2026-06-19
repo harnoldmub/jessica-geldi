@@ -116,7 +116,7 @@ export const insertRsvpSchema = createInsertSchema(rsvpResponses, {
 export const adminGuestSchema = insertRsvpSchema.extend({
   status: z.enum(["pending", "confirmed", "declined"]).default("pending"),
   ceremonyChoice: z.enum(["civil", "evening", "both"]).default("both"),
-  tableNumber: z.number().int().min(1).max(25).nullable().optional(),
+  tableNumber: z.number().int().min(1).max(200).nullable().optional(),
 });
 
 export const updateGuestSchema = adminGuestSchema.partial();

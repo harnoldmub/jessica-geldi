@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useRoute } from "wouter";
+import { useRoute, Link } from "wouter";
 import { motion } from "framer-motion";
-import { CalendarDays, Clock, MapPin, Check, X, Loader2 } from "lucide-react";
+import { CalendarDays, Clock, MapPin, Check, X, Loader2, ChevronRight, ArrowLeft } from "lucide-react";
 import { type RsvpResponse } from "@shared/schema";
 import { glodieSamuel, coutumierTables } from "@shared/glodieSamuel";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -336,16 +336,149 @@ function InvitationHero({
   );
 }
 
+/* ─── Retour vers la page de choix ────────────────────────── */
+function BackToChoice({ token, theme }: { token: string; theme: Theme }) {
+  return (
+    <div className="px-6 pt-6">
+      <Link
+        href={`/invitation/${token}`}
+        className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.34em]"
+        style={{ color: theme.accent }}
+      >
+        <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.6} />
+        Choisir une autre date
+      </Link>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════
+   PAGE DE TRANSIT — choix de la date
+   ════════════════════════════════════════════════════════════ */
+function DateCard({
+  href,
+  image,
+  dateLabel,
+  title,
+  subtitle,
+  theme,
+  past,
+}: {
+  href: string;
+  image: string;
+  dateLabel: string;
+  title: string;
+  subtitle: string;
+  theme: Theme;
+  past?: boolean;
+}) {
+  return (
+    <Link href={href} className="group block">
+      <motion.figure
+        initial={{ opacity: 0, y: 18 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={reveal}
+        className="relative cursor-pointer overflow-hidden rounded-[1.75rem] shadow-xl transition-transform duration-500 group-hover:scale-[1.015]"
+        style={{ border: `1px solid ${theme.line}` }}
+      >
+        <img src={image} alt={title} className="aspect-[5/4] w-full object-cover" />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(20,12,6,0.82) 0%, rgba(20,12,6,0.15) 55%, rgba(20,12,6,0.05) 100%)" }} />
+        {past && (
+          <span className="absolute right-4 top-4 rounded-full bg-black/45 px-3 py-1 text-[8px] uppercase tracking-[0.3em] text-white/90">
+            Passé
+          </span>
+        )}
+        <figcaption className="absolute inset-x-0 bottom-0 p-6 text-white">
+          <p className="text-[10px] uppercase tracking-[0.46em] text-white/75">{dateLabel}</p>
+          <p className="mt-1.5 font-serif text-2xl leading-tight">{title}</p>
+          <p className="mt-2 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.32em]" style={{ color: "#fff" }}>
+            {subtitle}
+            <ChevronRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" strokeWidth={1.8} />
+          </p>
+        </figcaption>
+      </motion.figure>
+    </Link>
+  );
+}
+
+function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: string; dates: ("samedi" | "dimanche")[] }) {
+  const theme = SAT;
+  const saturdayOver = Date.now() >= SAT_OVER.getTime();
+  return (
+    <main className="min-h-screen overflow-x-hidden" style={{ background: theme.bg, color: theme.ink }}>
+      <div className="mx-auto w-full max-w-md px-6 py-12">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={reveal} className="text-center">
+          <p className="text-[9px] uppercase tracking-[0.6em]" style={{ color: theme.accent }}>
+            Invitation officielle
+          </p>
+          <p className="mt-6 font-script text-6xl leading-none" style={{ color: theme.ink }}>
+            {glodieSamuel.title}
+          </p>
+          <p className="mt-5 font-serif text-base italic" style={{ color: theme.sub }}>
+            À l'attention de
+          </p>
+          <p className="mt-1 font-serif text-2xl" style={{ color: theme.ink }}>
+            {guest.firstName} {guest.lastName}
+          </p>
+        </motion.div>
+
+        <div className="mt-9">
+          <RingsMotif color={theme.accent} />
+        </div>
+
+        <p className="mt-6 text-center text-sm leading-7" style={{ color: theme.sub }}>
+          {dates.length > 1
+            ? "Vous êtes convié(e) aux deux célébrations. Choisissez la date à découvrir."
+            : "Découvrez votre invitation."}
+        </p>
+
+        <div className="mt-8 space-y-5">
+          {dates.includes("samedi") && (
+            <DateCard
+              href={`/invitation/${token}/samedi`}
+              image={heroImg}
+              dateLabel={glodieSamuel.date.display}
+              title="Civil & coutumier"
+              subtitle="Voir l'invitation"
+              theme={SAT}
+              past={saturdayOver}
+            />
+          )}
+          {dates.includes("dimanche") && (
+            <DateCard
+              href={`/invitation/${token}/dimanche`}
+              image={coutumierImg}
+              dateLabel={glodieSamuel.secondDate.display}
+              title="Religieux & fête"
+              subtitle="Voir l'invitation"
+              theme={SUN}
+            />
+          )}
+        </div>
+
+        <footer className="pt-12 text-center">
+          <OrnamentRule color={theme.accent} opacity={0.45} />
+          <p className="mt-5 text-[10px] uppercase tracking-[0.5em]" style={{ color: theme.sub }}>
+            Avec joie, nous vous attendons
+          </p>
+        </footer>
+      </div>
+    </main>
+  );
+}
+
 /* ════════════════════════════════════════════════════════════
    INVITATION — SAMEDI 04 (Civil & Coutumier) · Terracotta
    ════════════════════════════════════════════════════════════ */
-function SaturdayInvitation({ guest, token }: { guest: InvitationGuest; token: string }) {
+function SaturdayInvitation({ guest, token, showBack }: { guest: InvitationGuest; token: string; showBack?: boolean }) {
   const theme = SAT;
   const tableVerse = guest.tableNumber != null ? coutumierTables[guest.tableNumber] : null;
 
   return (
     <main className="min-h-screen overflow-x-hidden" style={{ background: theme.bg, color: theme.ink }}>
       <div className="mx-auto w-full max-w-md pb-20">
+        {showBack && <BackToChoice token={token} theme={theme} />}
         <InvitationHero
           guest={guest}
           image={heroImg}
@@ -452,12 +585,13 @@ function SaturdayInvitation({ guest, token }: { guest: InvitationGuest; token: s
 /* ════════════════════════════════════════════════════════════
    INVITATION — DIMANCHE 12 (Religieux & Fête) · Ivoire & doré
    ════════════════════════════════════════════════════════════ */
-function SundayInvitation({ guest, token }: { guest: InvitationGuest; token: string }) {
+function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; token: string; showBack?: boolean }) {
   const theme = SUN;
 
   return (
     <main className="min-h-screen overflow-x-hidden" style={{ background: theme.bg, color: theme.ink }}>
       <div className="mx-auto w-full max-w-md pb-20">
+        {showBack && <BackToChoice token={token} theme={theme} />}
         <InvitationHero
           guest={guest}
           image={coutumierImg}
@@ -541,8 +675,10 @@ function SundayInvitation({ guest, token }: { guest: InvitationGuest; token: str
 
 /* ─── Composant principal ─────────────────────────────────── */
 export default function Invitation() {
-  const [, params] = useRoute("/invitation/:token");
-  const token = params?.token;
+  const [, dateParams] = useRoute("/invitation/:token/:date");
+  const [, baseParams] = useRoute("/invitation/:token");
+  const token = dateParams?.token ?? baseParams?.token;
+  const dateParam = dateParams?.date;
 
   const { data: guest, isLoading, error } = useQuery<InvitationGuest>({
     queryKey: [`/api/invitation/${token}`],
@@ -572,16 +708,34 @@ export default function Invitation() {
     );
   }
 
-  // Choix de l'invitation selon la date / le type d'invité.
+  // Dates auxquelles l'invité est convié.
   const isSundayGuest = guest.ceremonyChoice === "evening";
   const isSaturdayGuest = guest.ceremonyChoice === "civil";
-  const isBoth = !isSundayGuest && !isSaturdayGuest; // both ou non défini
-  const saturdayOver = Date.now() >= SAT_OVER.getTime();
-  const showSunday = isSundayGuest || (isBoth && saturdayOver);
+  const dates: ("samedi" | "dimanche")[] = isSaturdayGuest
+    ? ["samedi"]
+    : isSundayGuest
+      ? ["dimanche"]
+      : ["samedi", "dimanche"]; // both ou non défini
 
-  return showSunday ? (
-    <SundayInvitation guest={guest} token={token} />
+  const multiple = dates.length > 1;
+  const requested = dateParam === "samedi" || dateParam === "dimanche" ? dateParam : null;
+
+  // Page de transit : choix de la date. Affichée quand aucune date valide n'est
+  // demandée. Pour un invité d'une seule date, on l'envoie directement à la sienne.
+  if (!requested || !dates.includes(requested)) {
+    if (!multiple) {
+      return dates[0] === "dimanche" ? (
+        <SundayInvitation guest={guest} token={token} />
+      ) : (
+        <SaturdayInvitation guest={guest} token={token} />
+      );
+    }
+    return <TransitPage guest={guest} token={token} dates={dates} />;
+  }
+
+  return requested === "dimanche" ? (
+    <SundayInvitation guest={guest} token={token} showBack={multiple} />
   ) : (
-    <SaturdayInvitation guest={guest} token={token} />
+    <SaturdayInvitation guest={guest} token={token} showBack={multiple} />
   );
 }

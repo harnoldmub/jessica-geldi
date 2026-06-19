@@ -17,6 +17,7 @@ import {
   Pencil,
   RefreshCw,
   RotateCcw,
+  Plus,
   Search,
   ShieldCheck,
   Trash2,
@@ -46,7 +47,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import CardGeneratorDialog from "@/components/CardGeneratorDialog";
 
 type GuestRecord = RsvpResponse & {
   invitationUrl?: string;
@@ -104,13 +104,8 @@ const pageSizeOptions = [
   { value: "20", label: "20 / page" },
   { value: "50", label: "50 / page" },
 ];
-const tableOptions = [
-  { value: "", label: "Aucune table" },
-  ...Array.from({ length: 25 }, (_, i) => {
-    const table = i + 1;
-    return { value: String(table), label: `Table ${table}` };
-  }),
-];
+const TABLES_STORAGE_KEY = "gs-admin-table-count";
+const DEFAULT_TABLE_COUNT = 16;
 const beverageSelectOptions = [
   { value: "", label: "Aucune préférence" },
   ...beverageOptions.beers.map((drink) => ({ value: drink, label: drink, group: "Bières" })),
@@ -126,6 +121,11 @@ function getBeverageSelectValue(value?: string | null) {
 function getOtherBeverageValue(value?: string | null) {
   if (!value || getBeverageSelectValue(value) !== OTHER_BEVERAGE_VALUE) return "";
   return value.startsWith("Autre: ") ? value.slice(7) : value;
+}
+
+function getTransitInvitationUrl(guest: GuestRecord) {
+  const url = guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`;
+  return url.replace(/\/(samedi|dimanche)\/?$/, "");
 }
 
 async function getCurrentUser() {
@@ -171,7 +171,6 @@ export default function Admin() {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [msgPage, setMsgPage] = useState(0);
-  const [cardGeneratorGuest, setCardGeneratorGuest] = useState<GuestRecord | null>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
   const [importGuestCount, setImportGuestCount] = useState(1);
@@ -192,6 +191,42 @@ export default function Admin() {
     queryKey: ["/api/admin/guests"],
     enabled: Boolean(user),
   });
+
+  // Tables dynamiques : le nombre de tables disponibles est le maximum entre
+  // les tables déjà utilisées par des invités et le nombre ajouté manuellement
+  // (mémorisé localement). « Ajouter une table » crée la table suivante.
+  const [manualTableCount, setManualTableCount] = useState<number>(() => {
+    const stored = Number(localStorage.getItem(TABLES_STORAGE_KEY));
+    return Number.isFinite(stored) && stored > 0 ? stored : DEFAULT_TABLE_COUNT;
+  });
+
+  const usedTableMax = useMemo(
+    () => guests.reduce((max, g) => Math.max(max, g.tableNumber ?? 0), 0),
+    [guests],
+  );
+  const tableCount = Math.min(200, Math.max(manualTableCount, usedTableMax));
+
+  const tableOptions = useMemo(
+    () => [
+      { value: "", label: "Aucune table" },
+      ...Array.from({ length: tableCount }, (_, i) => ({
+        value: String(i + 1),
+        label: `Table ${i + 1}`,
+      })),
+    ],
+    [tableCount],
+  );
+
+  function addTable() {
+    const next = Math.min(200, tableCount + 1);
+    if (next === tableCount) {
+      toast({ title: "Limite atteinte", description: "Maximum 200 tables.", variant: "destructive" });
+      return;
+    }
+    setManualTableCount(next);
+    localStorage.setItem(TABLES_STORAGE_KEY, String(next));
+    toast({ title: `Table ${next} ajoutée`, description: "Elle est désormais disponible pour l'attribution des invités." });
+  }
 
   const loginMutation = useMutation({
     mutationFn: async () => {
@@ -282,12 +317,10 @@ export default function Admin() {
     },
     onSuccess: async (guest) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
-      if (guest.invitationUrl) {
-        await navigator.clipboard.writeText(guest.invitationUrl);
-      }
+      await navigator.clipboard.writeText(getTransitInvitationUrl(guest));
       toast({
         title: "Lien régénéré",
-        description: "Le nouveau lien d'invitation a été copié.",
+        description: "Le nouveau lien de transit a été copié.",
       });
     },
   });
@@ -439,26 +472,31 @@ export default function Admin() {
   );
 
   async function copyInvitationLink(guest: GuestRecord) {
-    const invitationUrl =
-      guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`;
+    const invitationUrl = getTransitInvitationUrl(guest);
     await navigator.clipboard.writeText(invitationUrl);
     await apiRequest("POST", `/api/admin/guests/${guest.id}/mark-sent`);
     await queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
     toast({
       title: "Lien copié",
-      description: "Le lien d'invitation est prêt à être partagé et l'envoi a été enregistré.",
+      description: "Le lien de transit est prêt à être partagé et l'envoi a été enregistré.",
     });
   }
 
   function shareViaWhatsApp(guest: GuestRecord) {
-    const url =
-      guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`;
+    const url = getTransitInvitationUrl(guest);
+    const choice = guest.ceremonyChoice || "both";
+    const dateLines =
+      choice === "civil"
+        ? "Samedi 04 juillet 2026 : mariage civil (10h30) & coutumier (19h30)."
+        : choice === "evening"
+          ? "Dimanche 12 juillet 2026 : bénédiction nuptiale (8h), mariage religieux (19h) & fête."
+          : "Samedi 04 juillet 2026 : civil & coutumier.\nDimanche 12 juillet 2026 : religieux & fête.";
+    const linkIntro = "Ouvrez votre invitation et choisissez la date selon votre confirmation :";
     const message =
       `Bonjour ${guest.firstName},\n\n` +
       `Nous avons la joie de vous inviter au mariage de *Glodie & Samuel* à Kinshasa.\n\n` +
-      `Samedi 04 juillet 2026 : mariage civil à 10h30, mariage coutumier à 19h30 et entrée des mariés à 20h.\n` +
-      `Dimanche 12 juillet 2026 : mariage religieux à 19h et entrée des mariés à 20h.\n\n` +
-      `Voici votre invitation personnelle :\n${url}\n\n` +
+      `${dateLines}\n\n` +
+      `${linkIntro}\n${url}\n\n` +
       `Avec joie de vous avoir parmi nous.`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
     apiRequest("POST", `/api/admin/guests/${guest.id}/mark-sent`).then(() => {
@@ -650,6 +688,15 @@ export default function Admin() {
             <Button
               type="button"
               variant="outline"
+              onClick={addTable}
+              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
+            >
+              <Plus className="mr-2 h-4 w-4" strokeWidth={1.6} />
+              Ajouter une table ({tableCount})
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => setIsImportOpen(true)}
               className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
             >
@@ -700,10 +747,10 @@ export default function Admin() {
               <p className="text-[9px] uppercase tracking-[0.4em] text-yellow-700/60 mb-2">04 juillet · civil</p>
               <p className="font-serif text-2xl text-yellow-700">
                 {stats.civilAttendees}
-                <span className="text-sm font-sans font-normal text-yellow-600/50"> / 100</span>
+                <span className="text-sm font-sans font-normal text-yellow-600/50"> / 250</span>
               </p>
               <p className="mt-1 text-[9px] text-foreground/35">
-                {stats.civilAttendees >= 100 ? "🔴 Complet" : `${100 - stats.civilAttendees} places restantes`}
+                {stats.civilAttendees >= 250 ? "🔴 Complet" : `${250 - stats.civilAttendees} places restantes`}
               </p>
             </div>
             <div className="p-5 text-center bg-violet-50/50">
@@ -1013,7 +1060,7 @@ export default function Admin() {
             />
           </div>
 
-          {/* Cartes */}
+          {/* Liste des invités */}
           {isLoadingGuests ? (
             <div className="flex min-h-[280px] items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-primary" strokeWidth={1.5} />
@@ -1112,7 +1159,7 @@ export default function Admin() {
                       </span>
                     )}
                     <span className="ml-auto text-[10px] text-foreground/30 truncate max-w-[200px] hidden md:block">
-                      {guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`}
+                      {getTransitInvitationUrl(guest)}
                     </span>
                   </div>
 
@@ -1143,16 +1190,6 @@ export default function Admin() {
                       >
                         <MessageCircle className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
                         WhatsApp
-                      </Button>
-                    )}
-                    {guest.status !== "declined" && (
-                      <Button
-                        type="button" size="sm" variant="outline"
-                        onClick={() => setCardGeneratorGuest(guest)}
-                        className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
-                      >
-                        <Download className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
-                        Carte
                       </Button>
                     )}
                     {guest.status !== "declined" && (
@@ -1356,12 +1393,6 @@ export default function Admin() {
             </section>
           );
         })()}
-        
-        <CardGeneratorDialog
-          guest={cardGeneratorGuest}
-          isOpen={!!cardGeneratorGuest}
-          onClose={() => setCardGeneratorGuest(null)}
-        />
       </div>
     </main>
   );

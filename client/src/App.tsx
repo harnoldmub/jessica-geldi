@@ -89,6 +89,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/rsvp" component={RSVP} />
+      <Route path="/invitation/:token/:date" component={Invitation} />
       <Route path="/invitation/:token" component={Invitation} />
       <Route path="/admin" component={Admin} />
       <Route path="/accueil" component={Admin} />
