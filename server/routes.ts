@@ -72,7 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await ensureAdminUser();
   
   // Public capacity endpoint
-  const CIVIL_MAX = 100;
+  const CIVIL_MAX = 250;
   const EVENING_MAX = 350;
 
   async function getCapacity(excludeGuestId?: number) {
@@ -192,6 +192,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(updatedGuest);
     } catch (error: any) {
       return res.status(400).json({ message: error.message || "Impossible de mettre à jour le RSVP" });
+    }
+  });
+
+  // RSVP simplifié : confirmer / décliner sa présence (modifiable à tout moment)
+  app.patch("/api/invitation/:token/status", async (req, res) => {
+    try {
+      if (isRateLimited(`${rsvpRateLimitKey(req)}:${req.params.token}:status`)) {
+        return res.status(429).json({ message: "Trop de tentatives. Merci de réessayer dans un instant." });
+      }
+
+      const guest = await storage.getRsvpByToken(req.params.token);
+      if (!guest) {
+        return res.status(404).json({ message: "Invitation introuvable" });
+      }
+
+      const status = (req.body?.status ?? "") as string;
+      if (status !== "confirmed" && status !== "declined" && status !== "pending") {
+        return res.status(400).json({ message: "Statut invalide" });
+      }
+
+      const capacityError = await checkCapacity(
+        { status, ceremonyChoice: guest.ceremonyChoice, guestCount: guest.guestCount },
+        guest.id,
+      );
+      if (capacityError) {
+        return res.status(409).json({ message: capacityError });
+      }
+
+      const updatedGuest = await storage.updateGuest(guest.id, { status });
+
+      if (status === "confirmed" && updatedGuest.email) {
+        sendRsvpConfirmationEmail(updatedGuest).catch((err) => {
+          console.error("Failed to send confirmation email:", err);
+        });
+      }
+
+      return res.json(updatedGuest);
+    } catch (error: any) {
+      return res.status(400).json({ message: error.message || "Impossible de mettre à jour la présence" });
     }
   });
 

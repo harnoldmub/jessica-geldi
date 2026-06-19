@@ -1,21 +1,13 @@
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { CalendarDays, Clock, MapPin, ChevronDown, FileText, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { CalendarDays, Clock, MapPin, Check, X, Loader2 } from "lucide-react";
 import { type RsvpResponse } from "@shared/schema";
 import { glodieSamuel, coutumierTables } from "@shared/glodieSamuel";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import RsvpForm from "@/components/RsvpForm";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import {
-  buildInvitationCanvas,
-  downloadCanvasAsPdf,
-  sanitizeFileName,
-  type CardKind,
-} from "@/lib/invitationCard";
 import heroImg from "../../images/hero.png";
 import coutumierImg from "../../images/image-coutumier.png";
 import pagneGlodieImg from "../../images/glodie.png";
@@ -25,728 +17,571 @@ type InvitationGuest = RsvpResponse & { invitationUrl: string };
 
 const reveal = { duration: 1.0, ease: [0.22, 1, 0.36, 1] as const };
 
-/* ─── Ornamental rule ─────────────────────────────────────── */
-function OrnamentRule({ opacity = 0.5 }: { opacity?: number }) {
+/* Dates clés */
+const SAT_DATE = new Date("2026-07-04T10:30:00+01:00");
+const SUN_DATE = new Date("2026-07-12T08:00:00+01:00");
+// Une fois le samedi terminé, les invités des 2 dates basculent sur le dimanche.
+const SAT_OVER = new Date("2026-07-05T00:00:00+01:00");
+
+/* Palettes — deux ambiances distinctes */
+const SAT = {
+  bg: "#f8f1e8",
+  panel: "rgba(255,255,255,0.72)",
+  ink: "#3a2418",
+  sub: "#6f3f2a",
+  accent: "#a65f3b",
+  line: "rgba(166,95,59,0.22)",
+};
+const SUN = {
+  bg: "#fbf8f1",
+  panel: "rgba(255,255,255,0.8)",
+  ink: "#2c2620",
+  sub: "#8a6f33",
+  accent: "#c19a3e",
+  line: "rgba(193,154,62,0.34)",
+  dark: "#2c2620",
+};
+type Theme = typeof SAT;
+
+/* ─── Ornement ────────────────────────────────────────────── */
+function OrnamentRule({ color, opacity = 0.6 }: { color: string; opacity?: number }) {
   return (
-    <div className="flex items-center justify-center gap-5" style={{ opacity }}>
-      <div className="h-px w-16 flex-1 bg-gradient-to-r from-transparent to-primary/40" />
-      <span className="text-xs text-primary">✦</span>
-      <div className="h-px w-16 flex-1 bg-gradient-to-r from-primary/40 to-transparent" />
+    <div className="flex items-center justify-center gap-4" style={{ opacity }}>
+      <span className="h-px w-16 flex-1" style={{ background: `linear-gradient(to right, transparent, ${color})` }} />
+      <span className="text-xs" style={{ color }}>✦</span>
+      <span className="h-px w-16 flex-1" style={{ background: `linear-gradient(to left, transparent, ${color})` }} />
     </div>
   );
 }
 
-/* ─── Ceremony info card ──────────────────────────────────── */
-function InfoCard({
+/* ─── Motif alliances (anneaux entrelacés animés) ─────────── */
+function RingsMotif({ color }: { color: string }) {
+  return (
+    <motion.svg
+      viewBox="0 0 130 90"
+      className="mx-auto h-16 w-28"
+      fill="none"
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.6 }}
+      transition={reveal}
+      aria-hidden
+    >
+      <motion.g
+        animate={{ rotate: [0, 3.5, 0, -3.5, 0] }}
+        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+        style={{ transformOrigin: "65px 50px" }}
+      >
+        <circle cx="52" cy="52" r="24" stroke={color} strokeWidth="2.4" />
+        <circle cx="80" cy="52" r="24" stroke={color} strokeWidth="2.4" opacity="0.85" />
+        {/* diamant sur l'anneau */}
+        <path d="M80 12 l7 9 -7 10 -7 -10 z" fill={color} />
+        <motion.circle
+          cx="80" cy="17" r="1.6" fill="#fff"
+          animate={{ opacity: [0.2, 1, 0.2] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </motion.g>
+    </motion.svg>
+  );
+}
+
+/* ─── Compte à rebours ────────────────────────────────────── */
+function Countdown({ target, theme }: { target: Date; theme: Theme }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const diff = Math.max(0, target.getTime() - now);
+  const cells: [string, number][] = [
+    ["Jours", Math.floor(diff / 86400000)],
+    ["Heures", Math.floor(diff / 3600000) % 24],
+    ["Min", Math.floor(diff / 60000) % 60],
+    ["Sec", Math.floor(diff / 1000) % 60],
+  ];
+  return (
+    <div className="flex justify-center gap-2.5">
+      {cells.map(([label, value]) => (
+        <div
+          key={label}
+          className="flex w-16 flex-col items-center rounded-xl py-3"
+          style={{ background: theme.panel, border: `1px solid ${theme.line}` }}
+        >
+          <span className="font-serif text-2xl leading-none" style={{ color: theme.ink }}>
+            {String(value).padStart(2, "0")}
+          </span>
+          <span className="mt-1.5 text-[8px] uppercase tracking-[0.28em]" style={{ color: theme.sub }}>
+            {label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Ligne d'info (programme) ────────────────────────────── */
+function TimeRow({
   icon: Icon,
-  label,
-  value,
-  dark = false,
+  time,
+  title,
+  place,
+  theme,
   delay = 0,
 }: {
   icon: React.ElementType;
-  label: string;
-  value: string;
-  dark?: boolean;
+  time: string;
+  title: string;
+  place?: string;
+  theme: Theme;
   delay?: number;
 }) {
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
+    <motion.div
+      initial={{ opacity: 0, x: -12 }}
+      whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, amount: 0.5 }}
       transition={{ ...reveal, delay }}
-      className={`p-8 text-center editorial-shadow border ${dark ? "dark bg-background border-border" : "bg-background border-border"}`}
+      className="flex items-start gap-4 px-5 py-4"
     >
-      <Icon className="mx-auto h-5 w-5 text-muted-foreground" strokeWidth={1.4} />
-      <p className="mt-5 text-[9px] uppercase tracking-[0.5em] text-muted-foreground/80">
-        {label}
-      </p>
-      <p className="mt-3 font-serif text-xl leading-snug text-foreground">
-        {value}
-      </p>
-    </motion.article>
+      <Icon className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={1.4} style={{ color: theme.accent }} />
+      <div>
+        <p className="text-[9px] uppercase tracking-[0.4em]" style={{ color: theme.sub }}>
+          {time}
+        </p>
+        <p className="mt-1 font-serif text-base" style={{ color: theme.ink }}>
+          {title}
+        </p>
+        {place && (
+          <p className="text-xs" style={{ color: `${theme.sub}` }}>
+            {place}
+          </p>
+        )}
+      </div>
+    </motion.div>
   );
 }
 
-/* ─── Theme badge + color swatches ───────────────────────── */
-function ThemeBadge({
-  theme,
-  note,
-  colors,
-  colorNames,
-  dark = false,
-}: {
-  theme: string;
-  note: string;
-  colors: string[];
-  colorNames: string[];
-  dark?: boolean;
-}) {
+/* ─── Pastilles dress code ────────────────────────────────── */
+function DressSwatches({ colors, names, theme }: { colors: string[]; names: string[]; theme: Theme }) {
   return (
-    <div className="mt-7 space-y-5">
-      <div
-        className={`inline-flex items-center gap-3 px-6 py-3 border ${
-          dark ? "border-border bg-background/50" : "border-border bg-background"
-        }`}
-      >
-        <span className="text-[9px] uppercase tracking-[0.52em] text-muted-foreground">
-          Thème vestimentaire
-        </span>
-        <span className="h-4 w-px bg-border" />
-        <span className="font-serif text-sm italic text-foreground">{theme}</span>
-      </div>
-
-      {/* Color swatches */}
-      <div className="flex flex-wrap items-start justify-center gap-5">
-        {colors.map((color, i) => {
-          const isGold = color === "#FFD700";
-          return (
-            <div key={i} className="flex flex-col items-center gap-2">
-              <div
-                className={`h-10 w-10 rounded-full shadow-md ring-1 ring-white/20 ${isGold ? "gold-shimmer-swatch" : ""}`}
-                style={isGold ? {} : { backgroundColor: color }}
-              />
-              <p className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground/70">
-                {colorNames[i]}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-
-      <p className="text-[10px] tracking-wide text-muted-foreground/80">{note}</p>
+    <div className="mt-5 flex flex-wrap items-start justify-center gap-4">
+      {colors.map((color, i) => (
+        <div key={i} className="flex flex-col items-center gap-2">
+          <span
+            className="h-9 w-9 rounded-full shadow-md"
+            style={{ backgroundColor: color, boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.06)" }}
+          />
+          <span className="text-[8px] uppercase tracking-[0.24em]" style={{ color: theme.sub }}>
+            {names[i]}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
 
-/* ─── Main component ──────────────────────────────────────── */
+/* ─── RSVP simplifié : confirmer / décliner ───────────────── */
+function SimpleRsvp({ token, status, theme }: { token: string; status: string; theme: Theme }) {
+  const { toast } = useToast();
+  const [current, setCurrent] = useState(status);
+  const [saving, setSaving] = useState<null | "confirmed" | "declined">(null);
+
+  async function setStatus(next: "confirmed" | "declined") {
+    if (saving) return;
+    setSaving(next);
+    try {
+      const res = await fetch(`/api/invitation/${token}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Une erreur est survenue.");
+      }
+      setCurrent(next);
+      queryClient.invalidateQueries({ queryKey: [`/api/invitation/${token}`] });
+      toast({
+        title: next === "confirmed" ? "Présence confirmée" : "Réponse enregistrée",
+        description:
+          next === "confirmed"
+            ? "Merci, nous avons hâte de vous accueillir."
+            : "Votre réponse a bien été prise en compte. Vous pouvez la modifier à tout moment.",
+      });
+    } catch (e: any) {
+      toast({ title: "Oups", description: e.message, variant: "destructive" });
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  const confirmed = current === "confirmed";
+  const declined = current === "declined";
+
+  return (
+    <div className="text-center">
+      <p className="text-[9px] uppercase tracking-[0.5em]" style={{ color: theme.accent }}>
+        Votre réponse
+      </p>
+      <h3 className="mt-3 font-serif text-2xl" style={{ color: theme.ink }}>
+        Serez-vous des nôtres ?
+      </h3>
+
+      <div className="mt-6 flex flex-col gap-3">
+        <button
+          type="button"
+          onClick={() => setStatus("confirmed")}
+          disabled={!!saving}
+          className="flex items-center justify-center gap-2 rounded-full py-4 text-[11px] uppercase tracking-[0.34em] transition-all disabled:opacity-60"
+          style={
+            confirmed
+              ? { background: theme.accent, color: "#fff" }
+              : { background: "transparent", color: theme.ink, border: `1px solid ${theme.accent}` }
+          }
+        >
+          {saving === "confirmed" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          {confirmed ? "Je serai présent(e) ✓" : "Je serai présent(e)"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatus("declined")}
+          disabled={!!saving}
+          className="flex items-center justify-center gap-2 rounded-full py-4 text-[11px] uppercase tracking-[0.34em] transition-all disabled:opacity-60"
+          style={
+            declined
+              ? { background: theme.ink, color: "#fff" }
+              : { background: "transparent", color: theme.sub, border: `1px solid ${theme.line}` }
+          }
+        >
+          {saving === "declined" ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+          {declined ? "Je ne pourrai pas venir ✓" : "Je ne pourrai pas venir"}
+        </button>
+      </div>
+
+      <p className="mt-4 text-[10px] tracking-wide" style={{ color: `${theme.sub}` }}>
+        {confirmed
+          ? "Présence confirmée — merci ! Vous pouvez modifier votre réponse ci-dessus."
+          : declined
+            ? "Réponse enregistrée. Vous pouvez la modifier ci-dessus si cela change."
+            : "Un simple clic suffit. Vous pourrez modifier votre réponse à tout moment."}
+      </p>
+    </div>
+  );
+}
+
+/* ─── Hero commun (photo + noms + date + rebours) ─────────── */
+function InvitationHero({
+  guest,
+  image,
+  dateLabel,
+  target,
+  theme,
+}: {
+  guest: InvitationGuest;
+  image: string;
+  dateLabel: string;
+  target: Date;
+  theme: Theme;
+}) {
+  return (
+    <header className="px-6 pt-10">
+      <motion.p
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={reveal}
+        className="text-center text-[9px] uppercase tracking-[0.6em]"
+        style={{ color: theme.accent }}
+      >
+        Save the date
+      </motion.p>
+
+      <motion.figure
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ ...reveal, delay: 0.1 }}
+        className="relative mt-5 overflow-hidden rounded-[2rem] shadow-xl"
+        style={{ border: `1px solid ${theme.line}` }}
+      >
+        <img src={image} alt={glodieSamuel.title} className="aspect-[3/4] w-full object-cover" />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(20,12,6,0.78) 0%, rgba(20,12,6,0.05) 45%, transparent 70%)" }} />
+        <figcaption className="absolute inset-x-0 bottom-0 p-7 text-center text-white">
+          <p className="text-[10px] uppercase tracking-[0.48em] text-white/75">{dateLabel}</p>
+          <p className="mt-3 font-script text-6xl leading-none">{glodieSamuel.title}</p>
+        </figcaption>
+      </motion.figure>
+
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...reveal, delay: 0.25 }}
+        className="mt-6"
+      >
+        <p className="text-center font-serif text-base italic" style={{ color: theme.sub }}>
+          À l'attention de
+        </p>
+        <p className="mt-1 text-center font-serif text-2xl" style={{ color: theme.ink }}>
+          {guest.firstName} {guest.lastName}
+        </p>
+        <p className="mt-1 text-center text-[10px] uppercase tracking-[0.4em]" style={{ color: theme.accent }}>
+          {(guest.guestCount || 1) === 1 ? "Seul(e) · 1 personne" : `En couple · ${guest.guestCount} personnes`}
+        </p>
+      </motion.div>
+
+      <div className="mt-8">
+        <Countdown target={target} theme={theme} />
+      </div>
+    </header>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════
+   INVITATION — SAMEDI 04 (Civil & Coutumier) · Terracotta
+   ════════════════════════════════════════════════════════════ */
+function SaturdayInvitation({ guest, token }: { guest: InvitationGuest; token: string }) {
+  const theme = SAT;
+  const tableVerse = guest.tableNumber != null ? coutumierTables[guest.tableNumber] : null;
+
+  return (
+    <main className="min-h-screen overflow-x-hidden" style={{ background: theme.bg, color: theme.ink }}>
+      <div className="mx-auto w-full max-w-md pb-20">
+        <InvitationHero
+          guest={guest}
+          image={heroImg}
+          dateLabel={glodieSamuel.date.display}
+          target={SAT_DATE}
+          theme={theme}
+        />
+
+        {/* Intro */}
+        <section className="px-7 pt-14 text-center">
+          <RingsMotif color={theme.accent} />
+          <h2 className="mt-5 font-serif text-3xl" style={{ color: theme.ink }}>
+            Civil &amp; coutumier
+          </h2>
+          <p className="mx-auto mt-4 max-w-xs text-sm leading-7" style={{ color: theme.sub }}>
+            Une journée de tradition et de joie, en famille. Nous serions honorés de
+            votre présence.
+          </p>
+        </section>
+
+        {/* Programme */}
+        <section className="px-6 pt-12">
+          <p className="text-center text-[9px] uppercase tracking-[0.5em]" style={{ color: theme.accent }}>
+            Le programme
+          </p>
+          <div
+            className="mt-5 divide-y overflow-hidden rounded-2xl"
+            style={{ background: theme.panel, border: `1px solid ${theme.line}`, borderColor: theme.line }}
+          >
+            <TimeRow icon={Clock} time="10h30" title="Mariage civil" place="11ème rue, Kinshasa" theme={theme} />
+            <TimeRow icon={Clock} time="19h30" title="Mariage coutumier" place="Paroisse Saint Augustin de Lemba" theme={theme} delay={0.06} />
+            <TimeRow icon={MapPin} time="20h00" title="Entrée des mariés" place="Glodie & Samuel" theme={theme} delay={0.12} />
+          </div>
+        </section>
+
+        {/* Table personnelle */}
+        {tableVerse && (
+          <section className="px-6 pt-10">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={reveal}
+              className="rounded-2xl p-7 text-center shadow-sm"
+              style={{ background: theme.panel, border: `1px solid ${theme.line}` }}
+            >
+              <p className="text-[9px] uppercase tracking-[0.5em]" style={{ color: theme.accent }}>Votre table</p>
+              <p className="mt-2 font-serif text-5xl leading-none" style={{ color: theme.sub }}>{guest.tableNumber}</p>
+              <div className="mx-auto my-4 h-px w-12" style={{ background: theme.line }} />
+              <p className="font-serif text-xl italic" style={{ color: theme.accent }}>« {tableVerse} »</p>
+            </motion.div>
+          </section>
+        )}
+
+        {/* Pagnes */}
+        <section className="px-6 pt-12">
+          <OrnamentRule color={theme.accent} opacity={0.6} />
+          <h3 className="mt-6 text-center font-serif text-2xl" style={{ color: theme.ink }}>Les pagnes</h3>
+          <p className="mx-auto mt-3 max-w-xs text-center text-sm leading-6" style={{ color: theme.sub }}>
+            Chaque famille porte son pagne. Voici les motifs à arborer pour honorer la tradition.
+          </p>
+          <div className="mt-6 grid grid-cols-2 gap-4">
+            {[
+              { img: pagneGlodieImg, label: "Famille Glodie" },
+              { img: pagneSamuelImg, label: "Famille Samuel" },
+            ].map((p) => (
+              <figure key={p.label} className="overflow-hidden rounded-2xl shadow-md" style={{ border: `1px solid ${theme.line}` }}>
+                <img src={p.img} alt={`Pagne ${p.label}`} className="aspect-square w-full object-cover" />
+                <figcaption className="py-2.5 text-center text-[10px] uppercase tracking-[0.3em]" style={{ background: "rgba(255,255,255,0.85)", color: theme.sub }}>
+                  {p.label}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
+
+        {/* Dress code */}
+        <section className="px-6 pt-12 text-center">
+          <p className="text-[9px] uppercase tracking-[0.5em]" style={{ color: theme.accent }}>Dress code</p>
+          <h3 className="mt-3 font-serif text-2xl italic" style={{ color: theme.ink }}>{glodieSamuel.dresscode.blessing.theme}</h3>
+          <DressSwatches colors={glodieSamuel.dresscode.blessing.colors} names={glodieSamuel.dresscode.blessing.colorNames} theme={theme} />
+        </section>
+
+        {/* RSVP */}
+        <section className="px-6 pt-14">
+          <div className="rounded-2xl p-8" style={{ background: theme.panel, border: `1px solid ${theme.line}` }}>
+            <SimpleRsvp token={token} status={guest.status} theme={theme} />
+          </div>
+        </section>
+
+        {/* Closing */}
+        <footer className="px-6 pt-14 text-center">
+          <OrnamentRule color={theme.accent} opacity={0.5} />
+          <p className="mt-7 font-script text-5xl" style={{ color: theme.ink }}>{glodieSamuel.brand}</p>
+          <p className="mt-4 text-[10px] uppercase tracking-[0.5em]" style={{ color: theme.sub }}>
+            Avec joie, nous vous attendons
+          </p>
+        </footer>
+      </div>
+    </main>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════
+   INVITATION — DIMANCHE 12 (Religieux & Fête) · Ivoire & doré
+   ════════════════════════════════════════════════════════════ */
+function SundayInvitation({ guest, token }: { guest: InvitationGuest; token: string }) {
+  const theme = SUN;
+
+  return (
+    <main className="min-h-screen overflow-x-hidden" style={{ background: theme.bg, color: theme.ink }}>
+      <div className="mx-auto w-full max-w-md pb-20">
+        <InvitationHero
+          guest={guest}
+          image={coutumierImg}
+          dateLabel={glodieSamuel.secondDate.display}
+          target={SUN_DATE}
+          theme={theme}
+        />
+
+        {/* Intro — style symétrique, double filet doré */}
+        <section className="px-7 pt-14 text-center">
+          <RingsMotif color={theme.accent} />
+          <div className="mx-auto mt-5 max-w-[16rem]">
+            <div className="h-px w-full" style={{ background: theme.line }} />
+            <h2 className="my-3 font-serif text-3xl tracking-wide" style={{ color: theme.ink }}>
+              Religieux &amp; fête
+            </h2>
+            <div className="h-px w-full" style={{ background: theme.line }} />
+          </div>
+          <p className="mx-auto mt-5 max-w-xs text-sm leading-7" style={{ color: theme.sub }}>
+            Le jour de notre union devant Dieu. Partageons ensemble ce moment de grâce,
+            puis la fête, en blanc et doré.
+          </p>
+        </section>
+
+        {/* Programme */}
+        <section className="px-6 pt-12">
+          <p className="text-center text-[9px] uppercase tracking-[0.5em]" style={{ color: theme.accent }}>
+            Le déroulé
+          </p>
+          <div
+            className="mt-5 divide-y overflow-hidden rounded-2xl"
+            style={{ background: theme.panel, border: `1px solid ${theme.line}`, borderColor: theme.line }}
+          >
+            <TimeRow icon={Clock} time="08h00" title="Bénédiction nuptiale" place="Église évangélique Patmos · entrée d'Elengesa" theme={theme} />
+            <TimeRow icon={Clock} time="19h00" title="Mariage religieux" theme={theme} delay={0.06} />
+            <TimeRow icon={Clock} time="20h00" title="Entrée des mariés" theme={theme} delay={0.12} />
+            <TimeRow icon={MapPin} time="Fête" title="Salle Exaudus Arena" place="Matonge, commune de Kalamu" theme={theme} delay={0.18} />
+          </div>
+        </section>
+
+        {/* Dress code */}
+        <section className="px-6 pt-12 text-center">
+          <p className="text-[9px] uppercase tracking-[0.5em]" style={{ color: theme.accent }}>Dress code</p>
+          <h3 className="mt-3 font-serif text-2xl italic" style={{ color: theme.ink }}>{glodieSamuel.dresscode.evening.theme}</h3>
+          <DressSwatches colors={glodieSamuel.dresscode.evening.colors} names={glodieSamuel.dresscode.evening.colorNames} theme={theme} />
+        </section>
+
+        {/* Versets */}
+        <section className="px-8 pt-14 text-center">
+          <p className="font-serif text-lg italic leading-8" style={{ color: `${theme.ink}cc` }}>
+            « Ainsi ils ne sont plus deux, mais ils ne font qu'une seule chair. »
+          </p>
+          <p className="mt-4 text-[10px] uppercase tracking-[0.45em]" style={{ color: theme.sub }}>
+            — Matthieu 19 : 6
+          </p>
+        </section>
+
+        {/* RSVP — bloc sombre doré pour contraster avec le samedi */}
+        <section className="px-6 pt-14">
+          <div className="rounded-2xl p-8" style={{ background: theme.dark }}>
+            <SimpleRsvp
+              token={token}
+              status={guest.status}
+              theme={{ ...theme, ink: "#f4ecd8", sub: "#cdb98a", panel: "transparent" }}
+            />
+          </div>
+        </section>
+
+        {/* Closing */}
+        <footer className="px-6 pt-14 text-center">
+          <OrnamentRule color={theme.accent} opacity={0.5} />
+          <p className="mt-7 font-script text-5xl" style={{ color: theme.ink }}>{glodieSamuel.brand}</p>
+          <p className="mt-4 text-[10px] uppercase tracking-[0.5em]" style={{ color: theme.sub }}>
+            Avec amour, nous vous attendons
+          </p>
+        </footer>
+      </div>
+    </main>
+  );
+}
+
+/* ─── Composant principal ─────────────────────────────────── */
 export default function Invitation() {
   const [, params] = useRoute("/invitation/:token");
   const token = params?.token;
-  const heroRef = useRef<HTMLElement | null>(null);
-  const { toast } = useToast();
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const { data: guest, isLoading, error } = useQuery<InvitationGuest>({
     queryKey: [`/api/invitation/${token}`],
     enabled: !!token,
   });
 
-  async function handleDownloadPdf() {
-    if (!guest) return;
-    setIsGeneratingPdf(true);
-    try {
-      const kind: CardKind =
-        guest.ceremonyChoice === "civil"
-          ? "civil"
-          : guest.ceremonyChoice === "evening"
-            ? "evening"
-            : "both";
-      const baseName = `${guest.firstName} ${guest.lastName}`;
-      const displayName =
-        (guest.guestCount ?? 1) >= 2 ? `${baseName} & +1` : baseName;
-      const canvas = await buildInvitationCanvas(kind, {
-        guestName: displayName,
-        tableNumber: guest.tableNumber,
-      });
-      downloadCanvasAsPdf(canvas, `invitation_${sanitizeFileName(baseName)}`);
-      toast({
-        title: "Invitation téléchargée",
-        description: "Votre invitation personnalisée a été enregistrée en PDF.",
-      });
-    } catch (e) {
-      console.error(e);
-      toast({
-        title: "Échec du téléchargement",
-        description: "Impossible de générer le PDF. Veuillez réessayer.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGeneratingPdf(false);
-    }
-  }
-
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
-  const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "18%"]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.72], [1, 0]);
-
-  /* ── Loading ── */
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-8 p-6 bg-background">
-        <Skeleton className="h-10 w-64 rounded-none bg-secondary" />
-        <Skeleton className="h-[480px] w-full max-w-4xl rounded-none bg-secondary" />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-8 p-6" style={{ background: SAT.bg }}>
+        <Skeleton className="h-10 w-64 rounded-none" />
+        <Skeleton className="h-[460px] w-full max-w-md rounded-2xl" />
       </div>
     );
   }
 
-  /* ── Not found ── */
   if (error || !guest || !token) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-7 p-6 text-center bg-background">
-        <OrnamentRule opacity={0.2} />
-        <p className="font-script text-6xl text-foreground/80">{glodieSamuel.brand}</p>
-        <h1 className="font-serif text-2xl text-foreground">Invitation introuvable</h1>
-        <p className="text-[10px] uppercase tracking-[0.42em] max-w-xs text-muted-foreground">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-7 p-6 text-center" style={{ background: SAT.bg, color: SAT.ink }}>
+        <OrnamentRule color={SAT.accent} opacity={0.4} />
+        <p className="font-script text-6xl" style={{ color: SAT.ink }}>{glodieSamuel.brand}</p>
+        <h1 className="font-serif text-2xl">Invitation introuvable</h1>
+        <p className="text-[10px] uppercase tracking-[0.42em] max-w-xs" style={{ color: SAT.sub }}>
           Ce lien semble invalide ou a expiré. Veuillez contacter les mariés directement.
         </p>
-        <OrnamentRule opacity={0.2} />
+        <OrnamentRule color={SAT.accent} opacity={0.4} />
       </div>
     );
   }
 
-  const tableVerse =
-    guest.tableNumber != null ? coutumierTables[guest.tableNumber] : null;
+  // Choix de l'invitation selon la date / le type d'invité.
+  const isSundayGuest = guest.ceremonyChoice === "evening";
+  const isSaturdayGuest = guest.ceremonyChoice === "civil";
+  const isBoth = !isSundayGuest && !isSaturdayGuest; // both ou non défini
+  const saturdayOver = Date.now() >= SAT_OVER.getTime();
+  const showSunday = isSundayGuest || (isBoth && saturdayOver);
 
-  // Invité du coutumier (journée du samedi) : invitation épurée, centrée sur
-  // le coutumier (pas de prélude générique, pas de carte PDF, pas de RSVP).
-  const isCoutumierOnly = guest.ceremonyChoice === "civil";
-
-  return (
-    <main className="min-h-screen overflow-x-hidden bg-background text-foreground">
-
-      {/* ══════════════════════════════════════════════════════
-          PRÉLUDE — Invitation (masqué pour l'invitation coutumier épurée)
-      ══════════════════════════════════════════════════════ */}
-      {!isCoutumierOnly && (
-      <section
-        ref={heroRef}
-        className="relative isolate overflow-hidden min-h-[100svh]"
-      >
-        {/* Hero photo en fond parallax */}
-        <motion.div
-          style={{ y: heroY }}
-          className="absolute inset-0 -z-10"
-        >
-          <img
-            src={heroImg}
-            alt="Glodie & Samuel"
-            className="h-full w-full object-cover object-center scale-110"
-          />
-          <div className="absolute inset-0 bg-[#5f4828]/55" />
-        </motion.div>
-
-        <motion.div
-          style={{ opacity: heroOpacity }}
-          className="relative mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-8 py-20 text-center"
-        >
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            className="text-[10px] uppercase tracking-[0.62em] text-white/70"
-          >
-            {glodieSamuel.hero.eyebrow}
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-12"
-          >
-            <p className="font-serif text-base italic text-white/60">
-              À l'attention de
-            </p>
-            <h1
-              className="mt-2 font-serif leading-tight text-white"
-              style={{ fontSize: "clamp(2rem, 6vw, 3.75rem)" }}
-            >
-              {guest.firstName} {guest.lastName}
-            </h1>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2, delay: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-10"
-          >
-            <p
-              className="font-script leading-tight text-white/90"
-              style={{ fontSize: "clamp(3.5rem, 10vw, 6rem)" }}
-            >
-              {glodieSamuel.title}
-            </p>
-            <p className="mt-3 font-serif text-xl md:text-2xl text-white/70">
-              vous invitent à leur mariage
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5, duration: 1 }}
-            className="mt-16 flex flex-col items-center gap-2"
-          >
-            <p className="text-[9px] uppercase tracking-[0.58em] text-white/50">
-              Découvrir
-            </p>
-            <ChevronDown className="h-4 w-4 animate-bounce text-white/70" strokeWidth={1.4} />
-          </motion.div>
-        </motion.div>
-      </section>
-      )}
-
-      {/* ══════════════════════════════════════════════════════
-          MARIAGE CIVIL & BÉNÉDICTION
-      ══════════════════════════════════════════════════════ */}
-      {(guest.ceremonyChoice === "civil" || guest.ceremonyChoice === "both" || !guest.ceremonyChoice) && (
-      <section className="relative overflow-hidden" style={{ backgroundColor: "#f8f1e8" }}>
-        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#a65f3b]/30 to-transparent" />
-
-        {/* Colonne pensée pour le mobile (invitation coutumier) */}
-        <div className="mx-auto w-full max-w-md px-6 py-16">
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.5 }}
-            transition={reveal}
-            className="text-center text-[9px] uppercase tracking-[0.6em] text-[#a65f3b]"
-          >
-            ✦ &nbsp; {isCoutumierOnly ? "Vous êtes convié(e)" : "Première partie"} &nbsp; ✦
-          </motion.p>
-
-          {/* Photo coutumier + titre */}
-          <motion.figure
-            initial={{ opacity: 0, scale: 0.97 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={reveal}
-            className="relative mt-6 overflow-hidden rounded-[1.75rem] shadow-xl ring-1 ring-[#a65f3b]/15"
-          >
-            <img
-              src={coutumierImg}
-              alt="Mariage coutumier"
-              className="aspect-[4/5] w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#2e1b10]/85 via-[#2e1b10]/10 to-transparent" />
-            <figcaption className="absolute inset-x-0 bottom-0 p-6 text-center text-white">
-              <p className="text-[10px] uppercase tracking-[0.46em] text-white/75">
-                {glodieSamuel.date.display}
-              </p>
-              <h2 className="mt-2 font-serif text-4xl leading-[0.95]">
-                Mariage
-                <br />
-                coutumier
-              </h2>
-            </figcaption>
-          </motion.figure>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, amount: 0.6 }}
-            transition={{ ...reveal, delay: 0.2 }}
-            className="mt-7 text-center font-serif text-lg italic text-[#6f3f2a]"
-          >
-            Cher(e) {guest.firstName} {guest.lastName}
-          </motion.p>
-
-          <p className="mt-2 text-center text-[10px] uppercase tracking-[0.42em] text-[#a65f3b]/80">
-            {(guest.guestCount || 1) === 1
-              ? "Seul(e) · 1 personne"
-              : `En couple · ${guest.guestCount} personnes`}
-          </p>
-
-          {/* Détails coutumier */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ ...reveal, delay: 0.1 }}
-            className="mt-6 divide-y divide-[#a65f3b]/15 overflow-hidden rounded-2xl border border-[#a65f3b]/20 bg-white/70"
-          >
-            <div className="flex items-center gap-4 px-5 py-4">
-              <Clock className="h-5 w-5 shrink-0 text-[#a65f3b]" strokeWidth={1.4} />
-              <div>
-                <p className="text-[9px] uppercase tracking-[0.4em] text-[#6f3f2a]/60">Heure</p>
-                <p className="mt-1 font-serif text-base text-[#3a2418]">
-                  {glodieSamuel.ceremony.customary.time} · entrée des mariés à 20h
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 px-5 py-4">
-              <MapPin className="h-5 w-5 shrink-0 text-[#a65f3b]" strokeWidth={1.4} />
-              <div>
-                <p className="text-[9px] uppercase tracking-[0.4em] text-[#6f3f2a]/60">Lieu</p>
-                <p className="mt-1 font-serif text-base text-[#3a2418]">
-                  {glodieSamuel.venues[1].name}
-                </p>
-                <p className="text-xs text-[#6f3f2a]/70">{glodieSamuel.venues[1].city}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 px-5 py-4">
-              <CalendarDays className="h-5 w-5 shrink-0 text-[#a65f3b]" strokeWidth={1.4} />
-              <div>
-                <p className="text-[9px] uppercase tracking-[0.4em] text-[#6f3f2a]/60">Le même jour</p>
-                <p className="mt-1 font-serif text-base text-[#3a2418]">
-                  10h30 · Mariage civil à la 11ème rue
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Table personnelle (verset) */}
-          {tableVerse && (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ ...reveal, delay: 0.15 }}
-              className="mt-7 rounded-2xl border border-[#a65f3b]/25 bg-white/80 p-7 text-center shadow-sm"
-            >
-              <p className="text-[9px] uppercase tracking-[0.5em] text-[#a65f3b]">Votre table</p>
-              <p className="mt-2 font-serif text-5xl leading-none text-[#6f3f2a]">
-                {guest.tableNumber}
-              </p>
-              <div className="mx-auto my-4 h-px w-12 bg-[#a65f3b]/30" />
-              <p className="font-serif text-xl italic text-[#a65f3b]">« {tableVerse} »</p>
-            </motion.div>
-          )}
-
-          {/* Les pagnes */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ ...reveal, delay: 0.1 }}
-            className="mt-11"
-          >
-            <OrnamentRule opacity={0.55} />
-            <h3 className="mt-6 text-center font-serif text-2xl text-[#6f3f2a]">Les pagnes</h3>
-            <p className="mx-auto mt-3 max-w-xs text-center text-sm leading-6 text-[#6f3f2a]/75">
-              Chaque famille porte son pagne. Voici les motifs à arborer pour honorer
-              la tradition lors du coutumier.
-            </p>
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <figure className="overflow-hidden rounded-2xl shadow-md ring-1 ring-[#a65f3b]/15">
-                <img
-                  src={pagneGlodieImg}
-                  alt="Pagne de la famille de Glodie"
-                  className="aspect-square w-full object-cover"
-                />
-                <figcaption className="bg-white/85 py-2.5 text-center text-[10px] uppercase tracking-[0.34em] text-[#6f3f2a]">
-                  Famille Glodie
-                </figcaption>
-              </figure>
-              <figure className="overflow-hidden rounded-2xl shadow-md ring-1 ring-[#a65f3b]/15">
-                <img
-                  src={pagneSamuelImg}
-                  alt="Pagne de la famille de Samuel"
-                  className="aspect-square w-full object-cover"
-                />
-                <figcaption className="bg-white/85 py-2.5 text-center text-[10px] uppercase tracking-[0.34em] text-[#6f3f2a]">
-                  Famille Samuel
-                </figcaption>
-              </figure>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-      )}
-
-      {/* ══════════════════════════════════════════════════════
-          SOIRÉE DANSANTE
-      ══════════════════════════════════════════════════════ */}
-      {(guest.ceremonyChoice === "evening" || guest.ceremonyChoice === "both" || !guest.ceremonyChoice) && (
-      <section className="relative overflow-hidden dark bg-background">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage:
-              "radial-gradient(ellipse at 50% 110%, hsl(var(--primary)/0.1) 0%, transparent 55%), radial-gradient(ellipse at 15% 45%, hsl(var(--primary)/0.05) 0%, transparent 38%)",
-          }}
-        />
-
-        <div className="relative mx-auto max-w-5xl px-6 py-24 md:px-10 md:py-32">
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={reveal}
-            className="text-center"
-          >
-            <p className="text-[9px] uppercase tracking-[0.68em] text-primary">
-              ✦ &nbsp; Deuxième partie &nbsp; ✦
-            </p>
-            <h2
-              className="mt-5 font-serif leading-tight text-foreground"
-              style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
-            >
-              {glodieSamuel.ceremony.evening.label}
-            </h2>
-            <ThemeBadge
-              theme={glodieSamuel.ceremony.evening.theme}
-              note={glodieSamuel.ceremony.evening.themeNote}
-              colors={glodieSamuel.dresscode.evening.colors}
-              colorNames={glodieSamuel.dresscode.evening.colorNames}
-              dark
-            />
-          </motion.div>
-
-          <div className="mt-14 grid gap-5 md:grid-cols-3">
-            <InfoCard icon={CalendarDays} label="Date" value={glodieSamuel.secondDate.display} dark delay={0} />
-            <InfoCard icon={Clock} label="Heure" value={glodieSamuel.ceremony.evening.time} dark delay={0.08} />
-            <InfoCard
-              icon={MapPin}
-              label="Lieu"
-              value={`${glodieSamuel.venues[2].name} · ${glodieSamuel.venues[2].city}`}
-              dark
-              delay={0.16}
-            />
-          </div>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, amount: 0.9 }}
-            transition={{ ...reveal, delay: 0.28 }}
-            className="mt-7 text-center text-sm italic text-muted-foreground"
-          >
-            {glodieSamuel.venues[2].note}
-          </motion.p>
-
-          {/* Theme religieux et fête */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.5 }}
-            transition={{ ...reveal, delay: 0.38 }}
-            className="mt-12 border-t border-border pt-10 text-center"
-          >
-            <p className="text-[9px] uppercase tracking-[0.58em] text-muted-foreground/60">
-              Mariage religieux · 19h
-            </p>
-            <p className="mt-3 font-serif text-2xl italic text-primary/80">
-              Blanc & doré
-            </p>
-            <p className="mt-4 mx-auto max-w-sm text-sm leading-7 text-muted-foreground">
-              Pour la fête, les invités sont attendus dans le thème blanc et doré.
-            </p>
-          </motion.div>
-        </div>
-      </section>
-      )}
-
-      {/* ══════════════════════════════════════════════════════
-          VERSETS BIBLIQUES
-      ══════════════════════════════════════════════════════ */}
-      <section className="relative bg-background">
-        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-        <div className="mx-auto max-w-3xl px-6 py-20 md:px-10 md:py-28 space-y-12">
-          {[
-            {
-              text: "Deux valent mieux qu'un, parce qu'ils retirent un meilleur salaire de leur travail. Car s'ils tombent, l'un relève l'autre ; mais malheur à celui qui est seul et qui tombe, sans avoir un second pour le relever.",
-              ref: "Ecclésiaste 4 : 9–10",
-            },
-            {
-              text: "Ainsi ils ne sont plus deux, mais ils ne font qu'une seule chair. Que l'homme donc ne sépare pas ce que Dieu a joint.",
-              ref: "Matthieu 19 : 6",
-            },
-          ].map((verse, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ ...reveal, delay: i * 0.12 }}
-              className="relative pl-6 border-l-0"
-            >
-              <span className="absolute -top-3 left-0 font-serif text-5xl leading-none text-primary/15 select-none">"</span>
-              <blockquote className="font-serif text-lg md:text-xl leading-9 italic text-foreground/75">
-                « {verse.text} »
-              </blockquote>
-              <p className="mt-5 text-[10px] uppercase tracking-[0.45em] text-muted-foreground/50">
-                — {verse.ref}
-              </p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════════
-          INFOS INVITÉ — Places réservées (masqué pour le coutumier)
-      ══════════════════════════════════════════════════════ */}
-      {!isCoutumierOnly && (
-      <section className="relative bg-background">
-        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-
-        <div className="mx-auto max-w-3xl px-6 py-24 md:px-10 md:py-28 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={reveal}
-            className="space-y-8"
-          >
-            <OrnamentRule opacity={0.35} />
-
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.55em] text-primary">
-                Votre place
-              </p>
-              <h2
-                className="mt-5 font-serif leading-tight text-foreground"
-                style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}
-              >
-                {guest.firstName} {guest.lastName}
-              </h2>
-
-              {/* Infos de participation */}
-              <div className="mt-6 flex flex-col items-center gap-3">
-                {/* Cérémonie(s) */}
-                {(() => {
-                  const c = guest.ceremonyChoice || "both";
-                  const items =
-                    c === "civil"
-                      ? [{ label: "Mariage civil & Coutumier", time: "10h30 / 19h30" }]
-                      : c === "evening"
-                        ? [{ label: "Mariage religieux", time: "19h00" }]
-                        : [
-                            { label: "Mariage civil & Coutumier", time: "10h30 / 19h30" },
-                            { label: "Mariage religieux", time: "19h00" },
-                          ];
-                  return (
-                    <div className="flex flex-col sm:flex-row items-center gap-3">
-                      {items.map((item) => (
-                        <div
-                          key={item.label}
-                          className="inline-flex items-center gap-3 border border-border px-5 py-3"
-                        >
-                          <span className="text-[9px] uppercase tracking-[0.4em] text-muted-foreground">
-                            {item.label}
-                          </span>
-                          <span className="h-4 w-px bg-border" />
-                          <span className="font-serif text-lg text-foreground">
-                            {item.time}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-
-                {/* Nombre de personnes */}
-                <div className="inline-flex items-center gap-3 border border-border px-5 py-3">
-                  <span className="text-[9px] uppercase tracking-[0.45em] text-muted-foreground">
-                    {(guest.guestCount || 1) === 1 ? "Seul(e)" : "En couple"}
-                  </span>
-                  <span className="h-4 w-px bg-border" />
-                  <span className="font-serif text-lg text-foreground">
-                    {guest.guestCount || 1} personne{(guest.guestCount || 1) > 1 ? "s" : ""}
-                  </span>
-                </div>
-              </div>
-
-              {guest.status === "confirmed" && (
-                <p className="mt-5 text-[10px] uppercase tracking-[0.45em] text-emerald-600">
-                  ✓ Présence confirmée
-                </p>
-              )}
-
-              {/* Téléchargement de l'invitation PDF */}
-              <div className="mt-8">
-                <Button
-                  type="button"
-                  onClick={handleDownloadPdf}
-                  disabled={isGeneratingPdf}
-                  className="rounded-none bg-primary px-8 py-6 text-[10px] uppercase tracking-[0.4em] text-primary-foreground hover:bg-foreground gap-2"
-                >
-                  {isGeneratingPdf ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <FileText className="h-4 w-4" />
-                  )}
-                  {isGeneratingPdf
-                    ? "Génération en cours..."
-                    : "Télécharger mon invitation (PDF)"}
-                </Button>
-                <p className="mt-3 text-[10px] tracking-wide text-muted-foreground/70">
-                  Votre carte d'invitation personnalisée, à présenter le jour J.
-                </p>
-              </div>
-            </div>
-
-            <p className="mx-auto max-w-md font-serif text-base italic leading-8 text-muted-foreground">
-              {glodieSamuel.couple.statement}
-            </p>
-
-            <OrnamentRule opacity={0.35} />
-          </motion.div>
-        </div>
-      </section>
-      )}
-
-      {/* ══════════════════════════════════════════════════════
-          RSVP — Confirmer ou modifier sa réponse (masqué pour le coutumier)
-      ══════════════════════════════════════════════════════ */}
-      {!isCoutumierOnly && (
-      <section className="relative dark bg-background">
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_50%_0%,hsl(var(--primary)/0.12)_0%,transparent_55%)]" />
-        <div className="relative mx-auto max-w-3xl px-6 py-24 md:px-10 md:py-28">
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={reveal}
-          >
-            <RsvpForm
-              variant="invitation"
-              submitEndpoint={`/api/invitation/${token}/rsvp`}
-              initialValues={{
-                firstName: guest.firstName,
-                lastName: guest.lastName,
-                email: guest.email || "",
-                phone: guest.phone || "",
-                status: guest.status as "pending" | "confirmed" | "declined",
-                guestCount: guest.guestCount || 1,
-                ceremonyChoice:
-                  (guest.ceremonyChoice as "civil" | "evening" | "both") || "both",
-                beverageChoice: guest.beverageChoice || "",
-                message: guest.message || "",
-              }}
-              title={
-                guest.status === "confirmed"
-                  ? "Modifier ma réponse"
-                  : "Confirmer ma présence"
-              }
-              description="Dites-nous simplement si vous serez là. Vous pouvez modifier votre réponse à tout moment."
-              submitLabel="Envoyer ma réponse"
-              successDescription="Merci ! Votre réponse a bien été enregistrée. Nous avons hâte de vous accueillir."
-              onSubmitted={() => {
-                queryClient.invalidateQueries({
-                  queryKey: [`/api/invitation/${token}`],
-                });
-              }}
-            />
-          </motion.div>
-        </div>
-      </section>
-      )}
-
-      {/* ══════════════════════════════════════════════════════
-          ÉPILOGUE
-      ══════════════════════════════════════════════════════ */}
-      <footer className="px-6 py-16 text-center bg-secondary border-t border-border">
-        <OrnamentRule opacity={0.5} />
-        <div className="mt-10 mb-10">
-          <p className="font-script text-6xl leading-none text-foreground">
-            {glodieSamuel.brand}
-          </p>
-          <p className="mt-5 text-[10px] uppercase tracking-[0.55em] text-muted-foreground">
-            {glodieSamuel.title} · 04 Juillet & 12 Juillet 2026 · Kinshasa
-          </p>
-          <p className="mt-7 mx-auto max-w-sm font-serif text-sm italic leading-7 text-muted-foreground/80">
-            Avec joie, nous vous attendons.
-          </p>
-        </div>
-        <OrnamentRule opacity={0.5} />
-      </footer>
-    </main>
+  return showSunday ? (
+    <SundayInvitation guest={guest} token={token} />
+  ) : (
+    <SaturdayInvitation guest={guest} token={token} />
   );
 }
