@@ -10,10 +10,8 @@ import heroVideo from "../../images/hero-video.mp4";
 import gardenFormalImg from "../../images/couple-garden-formal.jpeg";
 import gardenCloseImg from "../../images/couple-garden-embrace-close.jpeg";
 import gardenWideImg from "../../images/couple-garden-embrace-wide.jpeg";
-import blackSeatedImg from "../../images/couple-black-seated-portrait.jpeg";
 import blackWalkwaySeatedImg from "../../images/couple-black-walkway-seated.jpeg";
 import blackStandingImg from "../../images/couple-black-walkway-standing.jpeg";
-import redFullImg from "../../images/couple-red-salon-full.jpeg";
 import redPortraitImg from "../../images/couple-red-salon-portrait.jpeg";
 import redStaircaseImg from "../../images/couple-red-staircase.jpeg";
 
@@ -24,13 +22,6 @@ const storyImages = [
   { main: gardenFormalImg, accent: blackStandingImg, alt: "Laeticia et Maxime en tenue elegante" },
   { main: redPortraitImg, accent: redStaircaseImg, alt: "Laeticia et Maxime dans le decor rouge" },
   { main: blackStandingImg, accent: blackWalkwaySeatedImg, alt: "Laeticia et Maxime en ambiance noire" },
-];
-const galleryImages = [
-  { src: redFullImg, alt: "Laeticia et Maxime dans un salon rouge", tall: true },
-  { src: blackSeatedImg, alt: "Laeticia et Maxime assis en tenue noire", tall: false },
-  { src: gardenWideImg, alt: "Laeticia et Maxime au jardin", tall: false },
-  { src: blackWalkwaySeatedImg, alt: "Laeticia et Maxime sur une allee", tall: false },
-  { src: redStaircaseImg, alt: "Laeticia et Maxime sur un escalier rouge", tall: true },
 ];
 
 /* ─── Capacity blocks ─────────────────────────────────────── */
@@ -143,20 +134,6 @@ function HeroVideo() {
     >
       <source src={heroVideo} type="video/mp4" />
     </video>
-  );
-}
-
-function PhotoFrame({ src, alt, tall = false }: { src: string; alt: string; tall?: boolean }) {
-  return (
-    <div className={`group relative overflow-hidden bg-[#120b0d] editorial-shadow ${tall ? "min-h-[520px]" : "min-h-[340px]"}`}>
-      <img
-        src={src}
-        alt={alt}
-        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/58 via-black/8 to-transparent" />
-      <div className="absolute inset-5 border border-white/16" />
-    </div>
   );
 }
 
@@ -342,17 +319,18 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════
           2 · RSVP — Ultra important
       ══════════════════════════════════════════════════════ */}
-      <section id="rsvp" className="relative overflow-hidden dark bg-background">
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_50%_0%,hsl(var(--primary)/0.15)_0%,transparent_55%)]" />
+      <section id="rsvp" className="relative overflow-hidden bg-[#f8f1e8]">
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_18%_0%,rgba(125,31,48,0.16),transparent_42%),radial-gradient(ellipse_at_88%_88%,rgba(199,185,154,0.32),transparent_46%)]" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c7b99a] to-transparent" />
         <div className="relative mx-auto grid max-w-6xl gap-14 px-6 py-24 md:px-10 md:py-28 lg:grid-cols-[1fr_1.5fr]">
 
-          <motion.div initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={rv} className="space-y-8 text-foreground">
+          <motion.div initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={rv} className="space-y-8 text-[#281118]">
             <div>
               <Label>RSVP</Label>
-              <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,4.5vw,3rem)" }}>
+              <h2 className="mt-5 font-serif leading-tight text-[#281118]" style={{ fontSize: "clamp(2rem,4.5vw,3rem)" }}>
                 Confirmez votre présence.
               </h2>
-              <p className="mt-5 text-base leading-8 text-muted-foreground">Une réponse simple suffit : dites-nous si vous serez là, choisissez la célébration et ajoutez vos préférences.</p>
+              <p className="mt-5 text-base leading-8 text-[#7b4d4f]">Une réponse simple suffit : dites-nous si vous serez là, choisissez la célébration et ajoutez vos préférences.</p>
             </div>
 
             <CapacityBlocks />
@@ -413,39 +391,6 @@ export default function Home() {
                 </motion.div>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════════
-          3b · GALERIE — Ambiances photo
-      ══════════════════════════════════════════════════════ */}
-      <section id="galerie" className="relative overflow-hidden bg-[#13090d]">
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_18%_0%,rgba(125,31,48,0.34),transparent_42%),radial-gradient(ellipse_at_85%_100%,rgba(199,185,154,0.18),transparent_42%)]" />
-        <div className="relative mx-auto max-w-6xl px-6 py-24 md:px-10 md:py-28">
-          <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={rv} className="mb-14 text-center">
-            <p className="text-[9px] uppercase tracking-[0.68em] text-[#c7b99a]">Ambiances</p>
-            <h2 className="mt-5 font-serif leading-tight text-white" style={{ fontSize: "clamp(2rem,5vw,3.25rem)" }}>
-              Élégance en trois actes
-            </h2>
-            <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-white/55">
-              Le jardin pour la douceur, le rouge pour l'éclat, le noir pour la soirée.
-            </p>
-          </motion.div>
-
-          <div className="grid gap-4 md:grid-cols-4 md:items-end">
-            {galleryImages.map((image, i) => (
-              <motion.div
-                key={image.src}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ ...rv, delay: i * 0.08 }}
-                className={image.tall ? "md:row-span-2" : ""}
-              >
-                <PhotoFrame src={image.src} alt={image.alt} tall={image.tall} />
-              </motion.div>
-            ))}
           </div>
         </div>
       </section>

@@ -370,15 +370,15 @@ export default function RsvpForm({
 
   const cardClassName =
     variant === "page"
-      ? "border border-[#dedede] bg-white p-6 text-[#111111] editorial-shadow md:p-10"
+      ? "border border-[#c7b99a]/70 bg-[#fffaf4] p-6 text-[#281118] editorial-shadow md:p-10"
       : variant === "invitation"
-        ? "border border-[#dedede] bg-white p-6 text-[#111111] editorial-shadow md:p-10"
-        : "border border-[#dedede] bg-white p-6 text-[#111111] editorial-shadow md:p-10";
-  const labelClassName = "text-[10px] uppercase tracking-[0.26em] text-[#111111]/70";
-  const inputClassName = "h-12 rounded-none border-[#d7d7d7] bg-white text-[#111111] placeholder:text-[#777777] focus-visible:ring-[#111111]/20";
+        ? "border border-[#c7b99a]/70 bg-[#fffaf4] p-6 text-[#281118] editorial-shadow md:p-10"
+        : "border border-[#c7b99a]/70 bg-[#fffaf4] p-6 text-[#281118] editorial-shadow md:p-10";
+  const labelClassName = "text-[10px] uppercase tracking-[0.26em] text-[#7b4d4f]";
+  const inputClassName = "h-12 rounded-none border-[#d8c8a7] bg-white/85 text-[#281118] placeholder:text-[#9a7778] focus-visible:ring-[#7d1f30]/25";
   const choiceClassName = "group border p-4 text-left text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg";
-  const selectedChoiceClassName = "border-[#111111] bg-[#111111] text-white shadow-lg";
-  const unselectedChoiceClassName = "border-[#d7d7d7] bg-white text-[#111111] hover:border-[#111111]/50";
+  const selectedChoiceClassName = "border-[#7d1f30] bg-[#7d1f30] text-white shadow-lg";
+  const unselectedChoiceClassName = "border-[#d8c8a7] bg-white/85 text-[#281118] hover:border-[#7d1f30]/60";
   const selectedCountry = COUNTRY_CODES.find((item) => item.key === selectedCountryKey) || COUNTRY_CODES.find((item) => item.key === "RDC-+243") || COUNTRY_CODES[0];
   const countrySearch = countryQuery.trim().toLowerCase();
   const filteredCountryCodes = COUNTRY_CODES.filter((item) => {
@@ -393,8 +393,8 @@ export default function RsvpForm({
           <CheckCircle2 className="h-10 w-10 text-primary" strokeWidth={1.6} />
         </div>
         <p className="text-[11px] uppercase tracking-[0.45em] text-primary/60">Merci</p>
-        <h3 className="mt-4 text-3xl font-serif text-[#111111] md:text-4xl">{successTitle}</h3>
-        <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-[#111111]/70">{successDescription}</p>
+        <h3 className="mt-4 text-3xl font-serif text-[#281118] md:text-4xl">{successTitle}</h3>
+        <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-[#7b4d4f]">{successDescription}</p>
         <Button
           type="button"
           variant="outline"
@@ -411,8 +411,8 @@ export default function RsvpForm({
     <div className={cardClassName}>
       <div className="mb-10 space-y-4">
         <p className="text-[11px] uppercase tracking-[0.45em] text-primary/60">RSVP</p>
-        <h3 className="text-3xl font-serif text-[#111111] md:text-4xl">{title}</h3>
-        <p className="max-w-2xl text-sm leading-7 text-[#111111]/70">{description}</p>
+        <h3 className="text-3xl font-serif text-[#281118] md:text-4xl">{title}</h3>
+        <p className="max-w-2xl text-sm leading-7 text-[#7b4d4f]">{description}</p>
       </div>
 
       <Form {...form}>
@@ -475,22 +475,22 @@ export default function RsvpForm({
                             setCountryOpen((open) => !open);
                             setCountryQuery("");
                           }}
-                          className="flex h-12 w-full items-center justify-between gap-1 border border-[#d7d7d7] bg-white px-2 text-left text-xs text-[#111111] focus:outline-none focus:ring-2 focus:ring-[#111111]/20 md:px-3 md:text-sm"
+                          className="flex h-12 w-full items-center justify-between gap-1 border border-[#d8c8a7] bg-white/85 px-2 text-left text-xs text-[#281118] focus:outline-none focus:ring-2 focus:ring-[#7d1f30]/25 md:px-3 md:text-sm"
                         >
                           <span className="min-w-0 truncate">
                             <span className="md:hidden">{getFlag(selectedCountry.country)} {selectedCountry.code}</span>
                             <span className="hidden md:inline">{getFlag(selectedCountry.country)} {selectedCountry.country} ({selectedCountry.code})</span>
                           </span>
-                          <ChevronDown className="h-4 w-4 shrink-0 text-[#111111]/60" strokeWidth={1.6} />
+                          <ChevronDown className="h-4 w-4 shrink-0 text-[#7b4d4f]" strokeWidth={1.6} />
                         </button>
 
                         {countryOpen && (
-                          <div className="absolute left-0 top-[calc(100%+6px)] z-30 w-[min(82vw,320px)] border border-[#d7d7d7] bg-white shadow-xl">
+                          <div className="absolute left-0 top-[calc(100%+6px)] z-30 w-[min(82vw,320px)] border border-[#d8c8a7] bg-[#fffaf4] shadow-xl">
                             <Input
                               autoFocus
                               value={countryQuery}
                               onChange={(event) => setCountryQuery(event.target.value)}
-                              className="h-11 rounded-none border-0 border-b border-[#e4e4e4] bg-white text-sm text-[#111111] placeholder:text-[#777777] focus-visible:ring-0"
+                              className="h-11 rounded-none border-0 border-b border-[#d8c8a7] bg-white/85 text-sm text-[#281118] placeholder:text-[#9a7778] focus-visible:ring-0"
                               placeholder="Rechercher pays ou indicatif"
                             />
                             <div className="max-h-64 overflow-y-auto py-1">
@@ -505,7 +505,7 @@ export default function RsvpForm({
                                     setCountryOpen(false);
                                     setCountryQuery("");
                                   }}
-                                  className={`flex w-full items-center justify-between gap-4 px-3 py-2 text-left text-sm transition-colors hover:bg-[#f3f3f3] ${item.key === selectedCountryKey ? "bg-[#6f5427] text-white hover:bg-[#6f5427]" : "text-[#111111]"}`}
+                                  className={`flex w-full items-center justify-between gap-4 px-3 py-2 text-left text-sm transition-colors hover:bg-[#f3eadc] ${item.key === selectedCountryKey ? "bg-[#7d1f30] text-white hover:bg-[#7d1f30]" : "text-[#281118]"}`}
                                 >
                                   <span className="truncate">{getFlag(item.country)} {item.country}</span>
                                   <span className="shrink-0 font-medium">{item.code}</span>
