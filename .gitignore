@@ -15,6 +15,9 @@ build/
 .DS_Store
 Thumbs.db
 
+# Local source media
+client/images/hero-video-original.mp4
+
 # Logs
 *.log
 npm-debug.log*

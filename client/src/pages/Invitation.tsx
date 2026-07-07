@@ -4,42 +4,43 @@ import { useRoute, Link } from "wouter";
 import { motion } from "framer-motion";
 import { CalendarDays, Clock, MapPin, Check, X, Loader2, ChevronRight, ArrowLeft } from "lucide-react";
 import { type RsvpResponse } from "@shared/schema";
-import { glodieSamuel, coutumierTables } from "@shared/glodieSamuel";
+import { laeticiaMaxime } from "@shared/laeticiaMaxime";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import heroImg from "../../images/hero.png";
-import coutumierImg from "../../images/image-coutumier.png";
-import pagneGlodieImg from "../../images/glodie.png";
-import pagneSamuelImg from "../../images/samuel.png";
+import gardenFormalImg from "../../images/couple-garden-formal.jpeg";
+import gardenWideImg from "../../images/couple-garden-embrace-wide.jpeg";
+import blackSeatedImg from "../../images/couple-black-seated-portrait.jpeg";
+import redPortraitImg from "../../images/couple-red-salon-portrait.jpeg";
+import redStaircaseImg from "../../images/couple-red-staircase.jpeg";
 
 type InvitationGuest = RsvpResponse & { invitationUrl: string };
 
 const reveal = { duration: 1.0, ease: [0.22, 1, 0.36, 1] as const };
 
 /* Dates clés */
-const SAT_DATE = new Date("2026-07-04T10:30:00+01:00");
-const SUN_DATE = new Date("2026-07-12T08:00:00+01:00");
-// Une fois le samedi terminé, les invités des 2 dates basculent sur le dimanche.
-const SAT_OVER = new Date("2026-07-05T00:00:00+01:00");
+const SAT_DATE = new Date("2026-08-27T10:00:00+02:00");
+const SUN_DATE = new Date("2026-08-29T18:00:00+02:00");
+// Une fois le 27 août terminé, les invités des 2 dates basculent sur le 29 août.
+const SAT_OVER = new Date("2026-08-28T00:00:00+02:00");
 
 /* Palettes — deux ambiances distinctes */
 const SAT = {
   bg: "#f8f1e8",
   panel: "rgba(255,255,255,0.72)",
-  ink: "#3a2418",
-  sub: "#6f3f2a",
-  accent: "#a65f3b",
-  line: "rgba(166,95,59,0.22)",
+  ink: "#281118",
+  sub: "#7b4d4f",
+  accent: "#7d1f30",
+  line: "rgba(125,31,48,0.22)",
 };
 const SUN = {
-  bg: "#fbf8f1",
-  panel: "rgba(255,255,255,0.8)",
-  ink: "#2c2620",
-  sub: "#8a6f33",
-  accent: "#c19a3e",
-  line: "rgba(193,154,62,0.34)",
-  dark: "#2c2620",
+  bg: "#070707",
+  panel: "rgba(255,255,255,0.08)",
+  ink: "#f6f0e6",
+  sub: "#c7b99a",
+  accent: "#c7b99a",
+  line: "rgba(215,197,158,0.28)",
+  dark: "#111111",
 };
 type Theme = typeof SAT;
 
@@ -181,6 +182,30 @@ function DressSwatches({ colors, names, theme }: { colors: string[]; names: stri
   );
 }
 
+function InvitationVisual({ theme, compact = false, image }: { theme: Theme; compact?: boolean; image: string }) {
+  return (
+    <div
+      className={`relative w-full overflow-hidden ${compact ? "aspect-[5/4]" : "aspect-[3/4]"}`}
+      style={{ background: `linear-gradient(145deg, ${theme.ink} 0%, ${theme.accent}22 48%, ${theme.bg} 100%)` }}
+    >
+      <img src={image} alt={laeticiaMaxime.title} className="absolute inset-0 h-full w-full object-cover" />
+      <motion.div
+        className="absolute inset-0"
+        animate={{ scale: [1, 1.08, 1], rotate: [0, 1.5, 0] }}
+        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          background:
+            "radial-gradient(circle at 26% 24%, rgba(255,255,255,0.16), transparent 24%), radial-gradient(circle at 78% 74%, rgba(125,31,48,0.18), transparent 30%)",
+        }}
+      />
+      <div className="absolute inset-5 rounded-[1.5rem] border border-white/18" />
+      <div className="absolute inset-10 rounded-full border border-white/16" />
+      <div className="absolute inset-x-8 top-1/2 h-px bg-gradient-to-r from-transparent via-white/42 to-transparent" />
+      <div className="absolute inset-y-8 left-1/2 w-px bg-gradient-to-b from-transparent via-white/26 to-transparent" />
+    </div>
+  );
+}
+
 /* ─── RSVP simplifié : confirmer / décliner ───────────────── */
 function SimpleRsvp({ token, status, theme }: { token: string; status: string; theme: Theme }) {
   const { toast } = useToast();
@@ -274,19 +299,19 @@ function SimpleRsvp({ token, status, theme }: { token: string; status: string; t
 /* ─── Hero commun (photo + noms + date + rebours) ─────────── */
 function InvitationHero({
   guest,
-  image,
   dateLabel,
   target,
   theme,
+  image,
 }: {
   guest: InvitationGuest;
-  image: string;
   dateLabel: string;
   target: Date;
   theme: Theme;
+  image: string;
 }) {
   return (
-    <header className="px-6 pt-10">
+    <header className="px-4 pt-5">
       <motion.p
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -301,14 +326,14 @@ function InvitationHero({
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ ...reveal, delay: 0.1 }}
-        className="relative mt-5 overflow-hidden rounded-[2rem] shadow-xl"
+        className="relative mt-5 overflow-hidden rounded-[2rem] shadow-2xl"
         style={{ border: `1px solid ${theme.line}` }}
       >
-        <img src={image} alt={glodieSamuel.title} className="aspect-[3/4] w-full object-cover" />
+        <InvitationVisual theme={theme} image={image} />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(20,12,6,0.78) 0%, rgba(20,12,6,0.05) 45%, transparent 70%)" }} />
         <figcaption className="absolute inset-x-0 bottom-0 p-7 text-center text-white">
           <p className="text-[10px] uppercase tracking-[0.48em] text-white/75">{dateLabel}</p>
-          <p className="mt-3 font-script text-6xl leading-none">{glodieSamuel.title}</p>
+          <p className="mt-3 font-script text-6xl leading-none">{laeticiaMaxime.title}</p>
         </figcaption>
       </motion.figure>
 
@@ -357,19 +382,19 @@ function BackToChoice({ token, theme }: { token: string; theme: Theme }) {
    ════════════════════════════════════════════════════════════ */
 function DateCard({
   href,
-  image,
   dateLabel,
   title,
   subtitle,
   theme,
+  image,
   past,
 }: {
   href: string;
-  image: string;
   dateLabel: string;
   title: string;
   subtitle: string;
   theme: Theme;
+  image: string;
   past?: boolean;
 }) {
   return (
@@ -382,7 +407,7 @@ function DateCard({
         className="relative cursor-pointer overflow-hidden rounded-[1.75rem] shadow-xl transition-transform duration-500 group-hover:scale-[1.015]"
         style={{ border: `1px solid ${theme.line}` }}
       >
-        <img src={image} alt={title} className="aspect-[5/4] w-full object-cover" />
+        <InvitationVisual theme={theme} compact image={image} />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(20,12,6,0.82) 0%, rgba(20,12,6,0.15) 55%, rgba(20,12,6,0.05) 100%)" }} />
         {past && (
           <span className="absolute right-4 top-4 rounded-full bg-black/45 px-3 py-1 text-[8px] uppercase tracking-[0.3em] text-white/90">
@@ -402,7 +427,9 @@ function DateCard({
   );
 }
 
-function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: string; dates: ("samedi" | "dimanche")[] }) {
+type InvitationDateKey = "civil" | "soiree";
+
+function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: string; dates: InvitationDateKey[] }) {
   const theme = SAT;
   const saturdayOver = Date.now() >= SAT_OVER.getTime();
   return (
@@ -413,7 +440,7 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
             Invitation officielle
           </p>
           <p className="mt-6 font-script text-6xl leading-none" style={{ color: theme.ink }}>
-            {glodieSamuel.title}
+            {laeticiaMaxime.title}
           </p>
           <p className="mt-5 font-serif text-base italic" style={{ color: theme.sub }}>
             À l'attention de
@@ -423,9 +450,22 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
           </p>
         </motion.div>
 
-        <div className="mt-9">
-          <RingsMotif color={theme.accent} />
-        </div>
+        <motion.figure
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...reveal, delay: 0.12 }}
+          className="relative mt-9 overflow-hidden rounded-[2rem] shadow-xl"
+          style={{ border: `1px solid ${theme.line}` }}
+        >
+          <img src={redPortraitImg} alt={laeticiaMaxime.title} className="aspect-[4/5] w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/68 via-transparent to-black/8" />
+          <div className="absolute inset-5 border border-white/16" />
+          <figcaption className="absolute bottom-5 left-5 right-5 text-center">
+            <p className="text-[9px] uppercase tracking-[0.42em] text-white/70">
+              Élégance · Uvira · 2026
+            </p>
+          </figcaption>
+        </motion.figure>
 
         <p className="mt-6 text-center text-sm leading-7" style={{ color: theme.sub }}>
           {dates.length > 1
@@ -434,25 +474,25 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
         </p>
 
         <div className="mt-8 space-y-5">
-          {dates.includes("samedi") && (
+          {dates.includes("civil") && (
             <DateCard
-              href={`/invitation/${token}/samedi`}
-              image={heroImg}
-              dateLabel={glodieSamuel.date.display}
-              title="Civil & coutumier"
+              href={`/invitation/${token}/civil`}
+              dateLabel={laeticiaMaxime.date.display}
+              title="Civil & bénédiction"
               subtitle="Voir l'invitation"
               theme={SAT}
+              image={gardenFormalImg}
               past={saturdayOver}
             />
           )}
-          {dates.includes("dimanche") && (
+          {dates.includes("soiree") && (
             <DateCard
-              href={`/invitation/${token}/dimanche`}
-              image={coutumierImg}
-              dateLabel={glodieSamuel.secondDate.display}
-              title="Religieux & fête"
+              href={`/invitation/${token}/soiree`}
+              dateLabel={laeticiaMaxime.secondDate.display}
+              title="Soirée dansante"
               subtitle="Voir l'invitation"
               theme={SUN}
+              image={blackSeatedImg}
             />
           )}
         </div>
@@ -469,11 +509,10 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
 }
 
 /* ════════════════════════════════════════════════════════════
-   INVITATION — SAMEDI 04 (Civil & Coutumier) · Terracotta
+   INVITATION — 27 août (Civil & bénédiction) · à l'anglaise
    ════════════════════════════════════════════════════════════ */
 function SaturdayInvitation({ guest, token, showBack }: { guest: InvitationGuest; token: string; showBack?: boolean }) {
   const theme = SAT;
-  const tableVerse = guest.tableNumber != null ? coutumierTables[guest.tableNumber] : null;
 
   return (
     <main className="min-h-screen overflow-x-hidden" style={{ background: theme.bg, color: theme.ink }}>
@@ -481,21 +520,20 @@ function SaturdayInvitation({ guest, token, showBack }: { guest: InvitationGuest
         {showBack && <BackToChoice token={token} theme={theme} />}
         <InvitationHero
           guest={guest}
-          image={heroImg}
-          dateLabel={glodieSamuel.date.display}
+          dateLabel={laeticiaMaxime.date.display}
           target={SAT_DATE}
           theme={theme}
+          image={gardenWideImg}
         />
 
         {/* Intro */}
         <section className="px-7 pt-14 text-center">
           <RingsMotif color={theme.accent} />
           <h2 className="mt-5 font-serif text-3xl" style={{ color: theme.ink }}>
-            Civil &amp; coutumier
+            Civil &amp; bénédiction
           </h2>
           <p className="mx-auto mt-4 max-w-xs text-sm leading-7" style={{ color: theme.sub }}>
-            Une journée de tradition et de joie, en famille. Nous serions honorés de
-            votre présence.
+            Une journée élégante, dans l'esprit à l'anglaise, pour célébrer notre union civile et notre bénédiction nuptiale.
           </p>
         </section>
 
@@ -508,58 +546,17 @@ function SaturdayInvitation({ guest, token, showBack }: { guest: InvitationGuest
             className="mt-5 divide-y overflow-hidden rounded-2xl"
             style={{ background: theme.panel, border: `1px solid ${theme.line}`, borderColor: theme.line }}
           >
-            <TimeRow icon={Clock} time="10h30" title="Mariage civil" place="11ème rue, Kinshasa" theme={theme} />
-            <TimeRow icon={Clock} time="19h30" title="Mariage coutumier" place="Paroisse Saint Augustin de Lemba" theme={theme} delay={0.06} />
-            <TimeRow icon={MapPin} time="20h00" title="Entrée des mariés" place="Glodie & Samuel" theme={theme} delay={0.12} />
-          </div>
-        </section>
-
-        {/* Table personnelle */}
-        {tableVerse && (
-          <section className="px-6 pt-10">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={reveal}
-              className="rounded-2xl p-7 text-center shadow-sm"
-              style={{ background: theme.panel, border: `1px solid ${theme.line}` }}
-            >
-              <p className="text-[9px] uppercase tracking-[0.5em]" style={{ color: theme.accent }}>Votre table</p>
-              <p className="mt-2 font-serif text-5xl leading-none" style={{ color: theme.sub }}>{guest.tableNumber}</p>
-              <div className="mx-auto my-4 h-px w-12" style={{ background: theme.line }} />
-              <p className="font-serif text-xl italic" style={{ color: theme.accent }}>« {tableVerse} »</p>
-            </motion.div>
-          </section>
-        )}
-
-        {/* Pagnes */}
-        <section className="px-6 pt-12">
-          <OrnamentRule color={theme.accent} opacity={0.6} />
-          <h3 className="mt-6 text-center font-serif text-2xl" style={{ color: theme.ink }}>Les pagnes</h3>
-          <p className="mx-auto mt-3 max-w-xs text-center text-sm leading-6" style={{ color: theme.sub }}>
-            Chaque famille porte son pagne. Voici les motifs à arborer pour honorer la tradition.
-          </p>
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            {[
-              { img: pagneGlodieImg, label: "Famille Glodie" },
-              { img: pagneSamuelImg, label: "Famille Samuel" },
-            ].map((p) => (
-              <figure key={p.label} className="overflow-hidden rounded-2xl shadow-md" style={{ border: `1px solid ${theme.line}` }}>
-                <img src={p.img} alt={`Pagne ${p.label}`} className="aspect-square w-full object-cover" />
-                <figcaption className="py-2.5 text-center text-[10px] uppercase tracking-[0.3em]" style={{ background: "rgba(255,255,255,0.85)", color: theme.sub }}>
-                  {p.label}
-                </figcaption>
-              </figure>
-            ))}
+            <TimeRow icon={Clock} time="À confirmer" title="Mariage civil" place="Espace Saphyr Event, Uvira" theme={theme} />
+            <TimeRow icon={Clock} time="À confirmer" title="Bénédiction nuptiale" place="Espace Saphyr Event, Uvira" theme={theme} delay={0.06} />
+            <TimeRow icon={MapPin} time="Lieu" title="Espace Saphyr Event" place="Uvira" theme={theme} delay={0.12} />
           </div>
         </section>
 
         {/* Dress code */}
         <section className="px-6 pt-12 text-center">
           <p className="text-[9px] uppercase tracking-[0.5em]" style={{ color: theme.accent }}>Dress code</p>
-          <h3 className="mt-3 font-serif text-2xl italic" style={{ color: theme.ink }}>{glodieSamuel.dresscode.blessing.theme}</h3>
-          <DressSwatches colors={glodieSamuel.dresscode.blessing.colors} names={glodieSamuel.dresscode.blessing.colorNames} theme={theme} />
+          <h3 className="mt-3 font-serif text-2xl italic" style={{ color: theme.ink }}>{laeticiaMaxime.dresscode.blessing.theme}</h3>
+          <DressSwatches colors={laeticiaMaxime.dresscode.blessing.colors} names={laeticiaMaxime.dresscode.blessing.colorNames} theme={theme} />
         </section>
 
         {/* RSVP */}
@@ -572,7 +569,7 @@ function SaturdayInvitation({ guest, token, showBack }: { guest: InvitationGuest
         {/* Closing */}
         <footer className="px-6 pt-14 text-center">
           <OrnamentRule color={theme.accent} opacity={0.5} />
-          <p className="mt-7 font-script text-5xl" style={{ color: theme.ink }}>{glodieSamuel.brand}</p>
+          <p className="mt-7 font-script text-5xl" style={{ color: theme.ink }}>{laeticiaMaxime.brand}</p>
           <p className="mt-4 text-[10px] uppercase tracking-[0.5em]" style={{ color: theme.sub }}>
             Avec joie, nous vous attendons
           </p>
@@ -583,7 +580,7 @@ function SaturdayInvitation({ guest, token, showBack }: { guest: InvitationGuest
 }
 
 /* ════════════════════════════════════════════════════════════
-   INVITATION — DIMANCHE 12 (Religieux & Fête) · Ivoire & doré
+   INVITATION — 29 août (Soirée dansante) · noir
    ════════════════════════════════════════════════════════════ */
 function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; token: string; showBack?: boolean }) {
   const theme = SUN;
@@ -594,25 +591,24 @@ function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; 
         {showBack && <BackToChoice token={token} theme={theme} />}
         <InvitationHero
           guest={guest}
-          image={coutumierImg}
-          dateLabel={glodieSamuel.secondDate.display}
+          dateLabel={laeticiaMaxime.secondDate.display}
           target={SUN_DATE}
           theme={theme}
+          image={blackSeatedImg}
         />
 
-        {/* Intro — style symétrique, double filet doré */}
+        {/* Intro — style symétrique, double filet champagne */}
         <section className="px-7 pt-14 text-center">
           <RingsMotif color={theme.accent} />
           <div className="mx-auto mt-5 max-w-[16rem]">
             <div className="h-px w-full" style={{ background: theme.line }} />
             <h2 className="my-3 font-serif text-3xl tracking-wide" style={{ color: theme.ink }}>
-              Religieux &amp; fête
+              Soirée dansante
             </h2>
             <div className="h-px w-full" style={{ background: theme.line }} />
           </div>
           <p className="mx-auto mt-5 max-w-xs text-sm leading-7" style={{ color: theme.sub }}>
-            Le jour de notre union devant Dieu. Partageons ensemble ce moment de grâce,
-            puis la fête, en blanc et doré.
+            Une soirée chic et festive pour prolonger la célébration, danser ensemble et célébrer l'amour en noir.
           </p>
         </section>
 
@@ -625,18 +621,27 @@ function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; 
             className="mt-5 divide-y overflow-hidden rounded-2xl"
             style={{ background: theme.panel, border: `1px solid ${theme.line}`, borderColor: theme.line }}
           >
-            <TimeRow icon={Clock} time="08h00" title="Bénédiction nuptiale" place="Église évangélique Patmos · entrée d'Elengesa" theme={theme} />
-            <TimeRow icon={Clock} time="19h00" title="Mariage religieux" theme={theme} delay={0.06} />
-            <TimeRow icon={Clock} time="20h00" title="Entrée des mariés" theme={theme} delay={0.12} />
-            <TimeRow icon={MapPin} time="Fête" title="Salle Exaudus Arena" place="Matonge, commune de Kalamu" theme={theme} delay={0.18} />
+            <TimeRow icon={Clock} time="À confirmer" title="Entrée des mariés" place="Grand Résident La Fontaine" theme={theme} />
+            <TimeRow icon={Clock} time="Soirée" title="Soirée dansante" place="Thème noir" theme={theme} delay={0.06} />
+            <TimeRow icon={MapPin} time="Lieu" title="Salle de banquet du Grand Résident La Fontaine" place="Uvira" theme={theme} delay={0.12} />
           </div>
         </section>
 
         {/* Dress code */}
         <section className="px-6 pt-12 text-center">
           <p className="text-[9px] uppercase tracking-[0.5em]" style={{ color: theme.accent }}>Dress code</p>
-          <h3 className="mt-3 font-serif text-2xl italic" style={{ color: theme.ink }}>{glodieSamuel.dresscode.evening.theme}</h3>
-          <DressSwatches colors={glodieSamuel.dresscode.evening.colors} names={glodieSamuel.dresscode.evening.colorNames} theme={theme} />
+          <h3 className="mt-3 font-serif text-2xl italic" style={{ color: theme.ink }}>{laeticiaMaxime.dresscode.evening.theme}</h3>
+          <DressSwatches colors={laeticiaMaxime.dresscode.evening.colors} names={laeticiaMaxime.dresscode.evening.colorNames} theme={theme} />
+        </section>
+
+        <section className="px-6 pt-12">
+          <figure className="relative overflow-hidden rounded-[1.75rem] shadow-xl" style={{ border: `1px solid ${theme.line}` }}>
+            <img src={redStaircaseImg} alt="Laeticia & Maxime" className="aspect-[4/5] w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <figcaption className="absolute bottom-5 left-5 right-5 text-center">
+              <p className="text-[9px] uppercase tracking-[0.42em] text-white/72">Rich red · élégance</p>
+            </figcaption>
+          </figure>
         </section>
 
         {/* Versets */}
@@ -649,7 +654,7 @@ function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; 
           </p>
         </section>
 
-        {/* RSVP — bloc sombre doré pour contraster avec le samedi */}
+        {/* RSVP — bloc sombre pour contraster avec le 27 août */}
         <section className="px-6 pt-14">
           <div className="rounded-2xl p-8" style={{ background: theme.dark }}>
             <SimpleRsvp
@@ -663,7 +668,7 @@ function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; 
         {/* Closing */}
         <footer className="px-6 pt-14 text-center">
           <OrnamentRule color={theme.accent} opacity={0.5} />
-          <p className="mt-7 font-script text-5xl" style={{ color: theme.ink }}>{glodieSamuel.brand}</p>
+          <p className="mt-7 font-script text-5xl" style={{ color: theme.ink }}>{laeticiaMaxime.brand}</p>
           <p className="mt-4 text-[10px] uppercase tracking-[0.5em]" style={{ color: theme.sub }}>
             Avec amour, nous vous attendons
           </p>
@@ -698,7 +703,7 @@ export default function Invitation() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-7 p-6 text-center" style={{ background: SAT.bg, color: SAT.ink }}>
         <OrnamentRule color={SAT.accent} opacity={0.4} />
-        <p className="font-script text-6xl" style={{ color: SAT.ink }}>{glodieSamuel.brand}</p>
+        <p className="font-script text-6xl" style={{ color: SAT.ink }}>{laeticiaMaxime.brand}</p>
         <h1 className="font-serif text-2xl">Invitation introuvable</h1>
         <p className="text-[10px] uppercase tracking-[0.42em] max-w-xs" style={{ color: SAT.sub }}>
           Ce lien semble invalide ou a expiré. Veuillez contacter les mariés directement.
@@ -711,20 +716,20 @@ export default function Invitation() {
   // Dates auxquelles l'invité est convié.
   const isSundayGuest = guest.ceremonyChoice === "evening";
   const isSaturdayGuest = guest.ceremonyChoice === "civil";
-  const dates: ("samedi" | "dimanche")[] = isSaturdayGuest
-    ? ["samedi"]
+  const dates: InvitationDateKey[] = isSaturdayGuest
+    ? ["civil"]
     : isSundayGuest
-      ? ["dimanche"]
-      : ["samedi", "dimanche"]; // both ou non défini
+      ? ["soiree"]
+      : ["civil", "soiree"]; // both ou non défini
 
   const multiple = dates.length > 1;
-  const requested = dateParam === "samedi" || dateParam === "dimanche" ? dateParam : null;
+  const requested = dateParam === "civil" || dateParam === "soiree" ? dateParam : null;
 
   // Page de transit : choix de la date. Affichée quand aucune date valide n'est
   // demandée. Pour un invité d'une seule date, on l'envoie directement à la sienne.
   if (!requested || !dates.includes(requested)) {
     if (!multiple) {
-      return dates[0] === "dimanche" ? (
+      return dates[0] === "soiree" ? (
         <SundayInvitation guest={guest} token={token} />
       ) : (
         <SaturdayInvitation guest={guest} token={token} />
@@ -733,7 +738,7 @@ export default function Invitation() {
     return <TransitPage guest={guest} token={token} dates={dates} />;
   }
 
-  return requested === "dimanche" ? (
+  return requested === "soiree" ? (
     <SundayInvitation guest={guest} token={token} showBack={multiple} />
   ) : (
     <SaturdayInvitation guest={guest} token={token} showBack={multiple} />

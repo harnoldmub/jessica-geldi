@@ -32,7 +32,7 @@ import {
   type RsvpResponse,
   type SafeUser,
 } from "@shared/schema";
-import { beverageOptions } from "@shared/glodieSamuel";
+import { beverageOptions } from "@shared/laeticiaMaxime";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -85,14 +85,14 @@ const invitationFilterOptions = [
   { value: "sent", label: "Envoyées" },
 ];
 const ceremonyOptions = [
-  { value: "both", label: "Les deux cérémonies" },
-  { value: "civil", label: "04 juillet seulement", detail: "10h30" },
-  { value: "evening", label: "12 juillet seulement", detail: "19h00" },
+  { value: "both", label: "Les deux célébrations" },
+  { value: "civil", label: "27 août seulement", detail: "Civil & bénédiction" },
+  { value: "evening", label: "29 août seulement", detail: "Soirée dansante" },
 ];
 const ceremonyFilterOptions = [
-  { value: "all", label: "Toutes les cérémonies" },
-  { value: "civil", label: "04 juillet" },
-  { value: "evening", label: "12 juillet" },
+  { value: "all", label: "Toutes les célébrations" },
+  { value: "civil", label: "27 août" },
+  { value: "evening", label: "29 août" },
   { value: "both", label: "Les deux" },
 ];
 const guestCountOptions = [
@@ -487,14 +487,14 @@ export default function Admin() {
     const choice = guest.ceremonyChoice || "both";
     const dateLines =
       choice === "civil"
-        ? "Samedi 04 juillet 2026 : mariage civil (10h30) & coutumier (19h30)."
+        ? "Jeudi 27 août 2026 : mariage civil & bénédiction nuptiale à l'Espace Saphyr Event, Uvira."
         : choice === "evening"
-          ? "Dimanche 12 juillet 2026 : bénédiction nuptiale (8h), mariage religieux (19h) & fête."
-          : "Samedi 04 juillet 2026 : civil & coutumier.\nDimanche 12 juillet 2026 : religieux & fête.";
+          ? "Samedi 29 août 2026 : soirée dansante dans la salle de banquet du Grand Résident La Fontaine."
+          : "Jeudi 27 août 2026 : civil & bénédiction nuptiale.\nSamedi 29 août 2026 : soirée dansante.";
     const linkIntro = "Ouvrez votre invitation et choisissez la date selon votre confirmation :";
     const message =
       `Bonjour ${guest.firstName},\n\n` +
-      `Nous avons la joie de vous inviter au mariage de *Glodie & Samuel* à Kinshasa.\n\n` +
+      `Nous avons la joie de vous inviter au mariage de *Laeticia & Maxime* à Uvira.\n\n` +
       `${dateLines}\n\n` +
       `${linkIntro}\n${url}\n\n` +
       `Avec joie de vous avoir parmi nous.`;
@@ -539,7 +539,7 @@ export default function Admin() {
               Espace admin
             </p>
             <h1 className="mt-6 font-serif text-4xl leading-tight md:text-6xl">
-              Gérez les invités de Glodie & Samuel avec précision.
+              Gérez les invités de Laeticia & Maxime avec précision.
             </h1>
             <p className="mt-6 max-w-lg text-sm leading-8 text-white/72">
               Créez les invités, générez leurs liens d'invitation individuels,
@@ -744,7 +744,7 @@ export default function Admin() {
           {/* Ligne cérémonies */}
           <div className="grid grid-cols-2 divide-x divide-primary/8">
             <div className="p-5 text-center bg-yellow-50/50">
-              <p className="text-[9px] uppercase tracking-[0.4em] text-yellow-700/60 mb-2">04 juillet · civil</p>
+              <p className="text-[9px] uppercase tracking-[0.4em] text-yellow-700/60 mb-2">27 août · civil & bénédiction</p>
               <p className="font-serif text-2xl text-yellow-700">
                 {stats.civilAttendees}
                 <span className="text-sm font-sans font-normal text-yellow-600/50"> / 250</span>
@@ -754,7 +754,7 @@ export default function Admin() {
               </p>
             </div>
             <div className="p-5 text-center bg-violet-50/50">
-              <p className="text-[9px] uppercase tracking-[0.4em] text-violet-700/60 mb-2">12 juillet · religieux</p>
+              <p className="text-[9px] uppercase tracking-[0.4em] text-violet-700/60 mb-2">29 août · soirée</p>
               <p className="font-serif text-2xl text-violet-700">
                 {stats.eveningAttendees}
                 <span className="text-sm font-sans font-normal text-violet-600/50"> / 350</span>
@@ -1140,10 +1140,10 @@ export default function Admin() {
                       }`}
                     >
                       {(guest.ceremonyChoice || "both") === "both"
-                        ? "Civil & Soirée"
+                        ? "Les deux dates"
                         : guest.ceremonyChoice === "civil"
-                        ? "04 juillet"
-                        : "12 juillet"}
+                        ? "27 août"
+                        : "29 août"}
                     </Badge>
                     {guest.beverageChoice && (
                       <Badge

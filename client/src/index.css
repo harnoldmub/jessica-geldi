@@ -4,36 +4,36 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%; /* #FFFFFF - Pure White */
-    --foreground: 0 0% 10%; /* #1A1A1A - Dark text */
-    --primary: 0 0% 20%; /* #333333 - Noir light / Anthracite */
+    --background: 34 48% 96%; /* warm ivory */
+    --foreground: 344 36% 13%; /* deep wine */
+    --primary: 349 60% 31%; /* burgundy */
     --primary-foreground: 0 0% 100%; /* #FFFFFF */
-    --secondary: 0 0% 96%; /* #F5F5F5 - Very Light Pure Grey */
-    --secondary-foreground: 0 0% 10%; /* #1A1A1A */
-    --accent: 0 0% 20%; /* #333333 */
+    --secondary: 27 54% 92%; /* blush champagne */
+    --secondary-foreground: 344 36% 13%;
+    --accent: 42 34% 67%; /* champagne */
     --accent-foreground: 0 0% 100%; /* #FFFFFF */
-    --muted: 0 0% 92%; /* #EBEBEB */
-    --muted-foreground: 0 0% 45%; /* #737373 */
-    --border: 0 0% 88%; /* #E0E0E0 */
-    --input: 0 0% 92%; /* #EBEBEB */
-    --ring: 0 0% 20%; /* #333333 */
+    --muted: 32 34% 89%;
+    --muted-foreground: 344 12% 42%;
+    --border: 30 28% 79%;
+    --input: 32 34% 89%;
+    --ring: 349 60% 31%;
     --radius: 0px;
   }
 
   .dark {
-    --background: 38 34% 24%; /* #524226 - Dark gold */
-    --foreground: 42 45% 94%; /* Warm ivory */
-    --primary: 43 56% 72%; /* Muted gold */
-    --primary-foreground: 38 34% 18%;
-    --secondary: 37 31% 31%;
-    --secondary-foreground: 42 45% 94%;
-    --accent: 43 56% 72%;
-    --accent-foreground: 38 34% 18%;
-    --muted: 37 24% 36%;
-    --muted-foreground: 42 26% 78%;
-    --border: 39 22% 43%;
-    --input: 37 24% 36%;
-    --ring: 43 56% 72%;
+    --background: 0 0% 4%;
+    --foreground: 38 45% 93%;
+    --primary: 42 34% 73%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 344 28% 13%;
+    --secondary-foreground: 38 45% 93%;
+    --accent: 42 34% 73%;
+    --accent-foreground: 0 0% 5%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 39 24% 75%;
+    --border: 42 18% 34%;
+    --input: 0 0% 14%;
+    --ring: 42 34% 73%;
   }
 
   html {

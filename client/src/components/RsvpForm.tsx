@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, ChevronDown } from "lucide-react";
 import { insertRsvpSchema, type RsvpFormInput, type RsvpResponse } from "@shared/schema";
-import { beverageOptions } from "@shared/glodieSamuel";
+import { beverageOptions } from "@shared/laeticiaMaxime";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -376,9 +376,9 @@ export default function RsvpForm({
         : "border border-[#dedede] bg-white p-6 text-[#111111] editorial-shadow md:p-10";
   const labelClassName = "text-[10px] uppercase tracking-[0.26em] text-[#111111]/70";
   const inputClassName = "h-12 rounded-none border-[#d7d7d7] bg-white text-[#111111] placeholder:text-[#777777] focus-visible:ring-[#111111]/20";
-  const choiceClassName = "border p-4 text-left text-sm font-medium transition-colors";
-  const selectedChoiceClassName = "border-[#6f5427] bg-[#6f5427] text-white";
-  const unselectedChoiceClassName = "border-[#d7d7d7] bg-white text-[#111111] hover:border-[#6f5427]/50";
+  const choiceClassName = "group border p-4 text-left text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg";
+  const selectedChoiceClassName = "border-[#111111] bg-[#111111] text-white shadow-lg";
+  const unselectedChoiceClassName = "border-[#d7d7d7] bg-white text-[#111111] hover:border-[#111111]/50";
   const selectedCountry = COUNTRY_CODES.find((item) => item.key === selectedCountryKey) || COUNTRY_CODES.find((item) => item.key === "RDC-+243") || COUNTRY_CODES[0];
   const countrySearch = countryQuery.trim().toLowerCase();
   const filteredCountryCodes = COUNTRY_CODES.filter((item) => {
@@ -425,7 +425,7 @@ export default function RsvpForm({
               name="firstName"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel className={labelClassName}>Prénom</FormLabel>
+                  <FormLabel className={labelClassName}>👤 Prénom</FormLabel>
                   <FormControl>
                     <Input {...field} className={inputClassName} placeholder="Votre prénom" />
                   </FormControl>
@@ -438,7 +438,7 @@ export default function RsvpForm({
               name="lastName"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel className={labelClassName}>Nom</FormLabel>
+                  <FormLabel className={labelClassName}>🪪 Nom</FormLabel>
                   <FormControl>
                     <Input {...field} className={inputClassName} placeholder="Votre nom" />
                   </FormControl>
@@ -455,7 +455,7 @@ export default function RsvpForm({
               name="phone"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel className={labelClassName}>Téléphone</FormLabel>
+                  <FormLabel className={labelClassName}>📞 Téléphone</FormLabel>
                   <FormControl>
                     <div className="grid grid-cols-[minmax(96px,0.45fr)_1fr] gap-2 md:grid-cols-[minmax(180px,0.75fr)_1fr] md:gap-3">
                       <div
@@ -540,7 +540,7 @@ export default function RsvpForm({
               name="status"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel className={labelClassName}>Votre réponse</FormLabel>
+                  <FormLabel className={labelClassName}>💌 Votre réponse</FormLabel>
                   <FormControl>
                     <div className="grid grid-cols-2 gap-2">
                       <button
@@ -549,7 +549,7 @@ export default function RsvpForm({
                         onClick={() => field.onChange("confirmed")}
                         className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === "confirmed" ? selectedChoiceClassName : unselectedChoiceClassName}`}
                       >
-                        Je serai là
+                        <span className="mr-2 text-base">🥂</span> Je serai là
                       </button>
                       <button
                         type="button"
@@ -557,7 +557,7 @@ export default function RsvpForm({
                         onClick={() => field.onChange("declined")}
                         className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === "declined" ? selectedChoiceClassName : unselectedChoiceClassName}`}
                       >
-                        Je serai absent(e)
+                        <span className="mr-2 text-base">🤍</span> Je serai absent(e)
                       </button>
                     </div>
                   </FormControl>
@@ -573,7 +573,7 @@ export default function RsvpForm({
                   name="ceremonyChoice"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel className={labelClassName}>Je participe à</FormLabel>
+                      <FormLabel className={labelClassName}>📅 Je participe à</FormLabel>
                       <FormControl>
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                           <button
@@ -583,10 +583,10 @@ export default function RsvpForm({
                             disabled={civilFull}
                             className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${civilFull ? "opacity-40 cursor-not-allowed" : field.value === "civil" ? selectedChoiceClassName : unselectedChoiceClassName}`}
                           >
-                            <span className="block font-medium">Mariage civil</span>
+                            <span className="block font-medium">🌿 Civil & bénédiction</span>
                             {civilFull
                               ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
-                              : <span className="block text-[10px] mt-0.5 opacity-70">04 juillet · 10h30</span>
+                              : <span className="block text-[10px] mt-0.5 opacity-70">27 août · à l'anglaise</span>
                             }
                           </button>
                           <button
@@ -596,10 +596,10 @@ export default function RsvpForm({
                             disabled={eveningFull}
                             className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${eveningFull ? "opacity-40 cursor-not-allowed" : field.value === "evening" ? selectedChoiceClassName : unselectedChoiceClassName}`}
                           >
-                            <span className="block font-medium">Mariage religieux</span>
+                            <span className="block font-medium">🖤 Soirée dansante</span>
                             {eveningFull
                               ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
-                              : <span className="block text-[10px] mt-0.5 opacity-70">12 juillet · 19h00</span>
+                              : <span className="block text-[10px] mt-0.5 opacity-70">29 août · thème noir</span>
                             }
                           </button>
                           <button
@@ -609,10 +609,10 @@ export default function RsvpForm({
                             disabled={civilFull || eveningFull}
                             className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${(civilFull || eveningFull) ? "opacity-40 cursor-not-allowed" : field.value === "both" ? selectedChoiceClassName : unselectedChoiceClassName}`}
                           >
-                            <span className="block font-medium">Les deux</span>
+                            <span className="block font-medium">✨ Les deux</span>
                             {(civilFull || eveningFull)
                               ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
-                              : <span className="block text-[10px] mt-0.5 opacity-70">04 juillet & 12 juillet</span>
+                              : <span className="block text-[10px] mt-0.5 opacity-70">27 août & 29 août</span>
                             }
                           </button>
                         </div>
@@ -627,7 +627,7 @@ export default function RsvpForm({
                   name="guestCount"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel className={labelClassName}>Je viens</FormLabel>
+                      <FormLabel className={labelClassName}>👥 Je viens</FormLabel>
                       <FormControl>
                         <div className="grid grid-cols-2 gap-2">
                           <button
@@ -636,7 +636,7 @@ export default function RsvpForm({
                             onClick={() => field.onChange(1)}
                             className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === 1 ? selectedChoiceClassName : unselectedChoiceClassName}`}
                           >
-                            Seul(e)
+                            <span className="mr-2 text-base">🙋</span> Seul(e)
                           </button>
                           <button
                             type="button"
@@ -644,7 +644,7 @@ export default function RsvpForm({
                             onClick={() => field.onChange(2)}
                             className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === 2 ? selectedChoiceClassName : unselectedChoiceClassName}`}
                           >
-                            En couple
+                            <span className="mr-2 text-base">💑</span> En couple
                           </button>
                         </div>
                       </FormControl>
@@ -658,7 +658,7 @@ export default function RsvpForm({
                   name="beverageChoice"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel className={labelClassName}>Boisson souhaitée</FormLabel>
+                      <FormLabel className={labelClassName}>🍹 Boisson souhaitée</FormLabel>
                       <FormControl>
                         <div className="space-y-3">
                           <PrettySelect
@@ -694,7 +694,7 @@ export default function RsvpForm({
             name="message"
             render={({ field }) => (
               <FormItem className="space-y-3">
-                <FormLabel className={labelClassName}>Un mot pour les mariés</FormLabel>
+                <FormLabel className={labelClassName}>✍️ Un mot pour les mariés</FormLabel>
                 <FormControl>
                   <Textarea
                     {...field}
@@ -711,7 +711,7 @@ export default function RsvpForm({
           <Button
             type="submit"
             disabled={mutation.isPending}
-            className="w-full rounded-none bg-[#6f5427] py-7 uppercase tracking-[0.32em] text-[10px] text-white hover:bg-[#5a421f]"
+            className="w-full rounded-none bg-[#111111] py-7 uppercase tracking-[0.32em] text-[10px] text-white transition-all hover:-translate-y-0.5 hover:bg-[#263629] hover:shadow-xl"
           >
             {mutation.isPending ? "Envoi en cours..." : submitLabel}
           </Button>

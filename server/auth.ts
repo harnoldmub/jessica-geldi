@@ -127,7 +127,7 @@ export async function ensureAdminUser() {
   return storage.createUser({
     username,
     password: hashedPassword,
-    firstName: "Glodie",
+    firstName: "Laeticia",
     lastName: "Admin",
   });
 }

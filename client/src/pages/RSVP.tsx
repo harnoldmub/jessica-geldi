@@ -20,12 +20,12 @@ export default function RSVP() {
               RSVP
             </p>
             <h1 className="font-serif text-4xl leading-tight text-foreground md:text-6xl">
-              Une réponse simple pour Glodie & Samuel.
+              Une réponse simple pour Laeticia & Maxime.
             </h1>
             <p className="max-w-xl text-base leading-8 text-foreground/72">
               Cette page reste disponible si vous souhaitez partager un lien
               RSVP direct, mais le formulaire est aussi intégré à l'invitation
-              officielle de Glodie & Samuel.
+              officielle de Laeticia & Maxime.
             </p>
           </section>
 

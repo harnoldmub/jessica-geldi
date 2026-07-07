@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import { type RsvpResponse } from "@shared/schema";
-import { glodieSamuel } from "@shared/glodieSamuel";
+import { laeticiaMaxime } from "@shared/laeticiaMaxime";
 
 export async function sendRsvpConfirmationEmail(rsvp: RsvpResponse) {
   if (!rsvp.email) return;
@@ -13,8 +13,8 @@ export async function sendRsvpConfirmationEmail(rsvp: RsvpResponse) {
   const html = `
     <div style="font-family: 'Playfair Display', serif; background-color: #F7F7F5; padding: 40px; color: #181818; max-width: 600px; margin: auto; border: 1px solid #7E8990;">
       <div style="text-align: center; margin-bottom: 40px;">
-        <h1 style="font-family: 'Great Vibes', cursive; font-size: 48px; color: #181818; margin: 0;">${glodieSamuel.brand}</h1>
-        <p style="text-transform: uppercase; letter-spacing: 4px; font-size: 10px; margin-top: 10px;">Invitation de ${glodieSamuel.couple.bride} & ${glodieSamuel.couple.groom}</p>
+        <h1 style="font-family: 'Great Vibes', cursive; font-size: 48px; color: #181818; margin: 0;">${laeticiaMaxime.brand}</h1>
+        <p style="text-transform: uppercase; letter-spacing: 4px; font-size: 10px; margin-top: 10px;">Invitation de ${laeticiaMaxime.couple.bride} & ${laeticiaMaxime.couple.groom}</p>
       </div>
       
       <div style="background-color: white; padding: 40px; border: 1px solid #D5DADF;">
@@ -55,15 +55,15 @@ export async function sendRsvpConfirmationEmail(rsvp: RsvpResponse) {
       </div>
 
       <div style="text-align: center; margin-top: 40px; font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 2px;">
-        ${glodieSamuel.date.display} & ${glodieSamuel.secondDate.display} • Kinshasa
+        ${laeticiaMaxime.date.display} & ${laeticiaMaxime.secondDate.display} • Uvira
       </div>
     </div>
   `;
 
   await resend.emails.send({
-    from: process.env.EMAIL_FROM || "Glodie & Samuel <onboarding@resend.dev>",
+    from: process.env.EMAIL_FROM || "Laeticia & Maxime <onboarding@resend.dev>",
     to: [rsvp.email],
-    subject: "Confirmation de votre RSVP - Glodie & Samuel",
+    subject: "Confirmation de votre RSVP - Laeticia & Maxime",
     html,
   });
 }

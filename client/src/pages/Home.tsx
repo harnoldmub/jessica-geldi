@@ -2,15 +2,31 @@ import { useRef, useState } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { Clock, MapPin, ChevronDown, ExternalLink, Plus, Minus, Gift } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { glodieSamuel } from "@shared/glodieSamuel";
+import { laeticiaMaxime } from "@shared/laeticiaMaxime";
 import RsvpForm from "@/components/RsvpForm";
 import Countdown from "@/components/Countdown";
 
-import heroImg from "../../images/hero.png";
-import coutumierImg from "../../images/image-coutumier.png";
+import heroVideo from "../../images/hero-video.mp4";
+import gardenFormalImg from "../../images/couple-garden-formal.jpeg";
+import gardenCloseImg from "../../images/couple-garden-embrace-close.jpeg";
+import gardenWideImg from "../../images/couple-garden-embrace-wide.jpeg";
+import blackSeatedImg from "../../images/couple-black-seated-portrait.jpeg";
+import blackWalkwaySeatedImg from "../../images/couple-black-walkway-seated.jpeg";
+import blackStandingImg from "../../images/couple-black-walkway-standing.jpeg";
+import redFullImg from "../../images/couple-red-salon-full.jpeg";
+import redPortraitImg from "../../images/couple-red-salon-portrait.jpeg";
+import redStaircaseImg from "../../images/couple-red-staircase.jpeg";
 
-const IMAGES = { hero: heroImg, coutumier: coutumierImg } as Record<string, string>;
 const rv = { duration: 1.05, ease: [0.22, 1, 0.36, 1] as const };
+
+const storyImages = [gardenCloseImg, gardenFormalImg, redPortraitImg, blackStandingImg];
+const galleryImages = [
+  { src: redFullImg, label: "Rich red", tall: true },
+  { src: blackSeatedImg, label: "Black mood", tall: false },
+  { src: gardenWideImg, label: "Garden light", tall: false },
+  { src: blackWalkwaySeatedImg, label: "Noir chic", tall: false },
+  { src: redStaircaseImg, label: "Editorial", tall: true },
+];
 
 /* ─── Capacity blocks ─────────────────────────────────────── */
 function CapacityBlocks() {
@@ -21,15 +37,15 @@ function CapacityBlocks() {
   const events = [
     {
       key: "civil",
-      title: "Mariage civil & coutumier",
-      time: "Samedi 04 juillet 2026",
-      theme: glodieSamuel.dresscode.blessing.theme,
+      title: "Civil & bénédiction nuptiale",
+      time: laeticiaMaxime.date.display,
+      theme: laeticiaMaxime.dresscode.blessing.theme,
     },
     {
       key: "evening",
-      title: "Mariage religieux & fête",
-      time: "Dimanche 12 juillet 2026",
-      theme: glodieSamuel.dresscode.evening.theme,
+      title: "Soirée dansante",
+      time: laeticiaMaxime.secondDate.display,
+      theme: laeticiaMaxime.dresscode.evening.theme,
     },
   ];
   return (
@@ -47,7 +63,7 @@ function CapacityBlocks() {
                 </span>
               )}
             </div>
-            <p className="mt-1 font-serif text-lg text-foreground">{e.time} · Kinshasa</p>
+            <p className="mt-1 font-serif text-lg text-foreground">{e.time} · {laeticiaMaxime.location}</p>
             <p className="text-[10px] italic text-muted-foreground">{e.theme}</p>
           </div>
         );
@@ -110,6 +126,38 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   );
 }
 
+function HeroVideo() {
+  return (
+    <video
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="metadata"
+      className="absolute inset-0 h-full w-full object-cover"
+    >
+      <source src={heroVideo} type="video/mp4" />
+    </video>
+  );
+}
+
+function PhotoFrame({ src, label, tall = false }: { src: string; label: string; tall?: boolean }) {
+  return (
+    <div className={`group relative overflow-hidden bg-[#120b0d] editorial-shadow ${tall ? "min-h-[520px]" : "min-h-[340px]"}`}>
+      <img
+        src={src}
+        alt={label}
+        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/58 via-black/8 to-transparent" />
+      <div className="absolute inset-5 border border-white/16" />
+      <p className="absolute bottom-6 left-6 text-[9px] uppercase tracking-[0.48em] text-white/72">
+        {label}
+      </p>
+    </div>
+  );
+}
+
 /* ─── Main ────────────────────────────────────────────────── */
 export default function Home() {
   const heroRef = useRef<HTMLElement>(null);
@@ -117,27 +165,20 @@ export default function Home() {
   const heroOpacity = useTransform(heroScroll, [0, 0.8], [1, 0]);
   const heroY = useTransform(heroScroll, [0, 1], ["0%", "18%"]);
 
-  const weddingDate = glodieSamuel.weddingDate;
+  const weddingDate = laeticiaMaxime.weddingDate;
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-background">
 
       {/* ══════════════════════════════════════════════════════
-          1 · HÉROS — Contenu à gauche · Image 9:16 à droite
+          1 · HÉROS — vidéo éditoriale
       ══════════════════════════════════════════════════════ */}
-      <section ref={heroRef} className="relative overflow-hidden h-[100svh] bg-secondary">
+      <section ref={heroRef} className="relative h-[100svh] min-h-[640px] overflow-hidden bg-[#120b0d]">
 
-        {/* ── MOBILE : image en fond plein écran ── */}
+        {/* ── MOBILE : vidéo en fond plein écran ── */}
         <div className="absolute inset-0 pointer-events-none md:hidden overflow-hidden">
-          <motion.img
-            src={heroImg}
-            alt={glodieSamuel.title}
-            className="absolute inset-0 h-full w-full object-cover"
-            initial={{ scale: 1.08, x: "-2%" }}
-            animate={{ scale: [1.08, 1.16, 1.08], x: ["-2%", "2%", "-2%"] }}
-            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/15 to-black/92" />
+          <HeroVideo />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-[#2b060b]/15 to-black/86" />
         </div>
 
         {/* ── DESKTOP : layout côte à côte ── */}
@@ -149,9 +190,9 @@ export default function Home() {
               y: heroY,
               opacity: heroOpacity,
             }}
-            className="relative flex flex-1 flex-col justify-center px-14 lg:px-20 bg-secondary"
-          >
-            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 70% 84%, hsl(var(--primary)/0.1) 0%, transparent 40%)" }} />
+              className="relative flex flex-1 flex-col justify-center px-14 lg:px-20 bg-[#f8f1e8]"
+            >
+            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 80% 80%, rgba(128,22,37,0.16) 0%, transparent 44%), radial-gradient(ellipse at 12% 10%, rgba(129,141,111,0.14) 0%, transparent 42%)" }} />
 
             <motion.p
               initial={{ opacity: 0, y: 10 }}
@@ -159,7 +200,7 @@ export default function Home() {
               transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
               className="text-[10px] uppercase tracking-[0.68em] text-foreground/50"
             >
-              {glodieSamuel.hero.eyebrow}
+              {laeticiaMaxime.hero.eyebrow}
             </motion.p>
 
             <motion.p
@@ -169,7 +210,7 @@ export default function Home() {
               className="mt-6 font-script leading-none text-foreground"
               style={{ fontSize: "clamp(3.5rem, 7vw, 6rem)" }}
             >
-              {glodieSamuel.title}
+              {laeticiaMaxime.title}
             </motion.p>
 
             <motion.p
@@ -185,9 +226,9 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 1, delay: 0.6 }}
-              className="mt-3 inline-flex w-fit border border-foreground/15 bg-background/70 px-4 py-2 text-[11px] uppercase tracking-[0.38em] text-foreground/80"
+              className="mt-3 inline-flex w-fit border border-[#7d1f30]/20 bg-white/60 px-4 py-2 text-[11px] uppercase tracking-[0.38em] text-foreground/80"
             >
-              {glodieSamuel.date.display}
+              {laeticiaMaxime.date.display} · {laeticiaMaxime.secondDate.display}
             </motion.p>
 
             {/* Separator */}
@@ -233,15 +274,16 @@ export default function Home() {
             </motion.div>
           </motion.div>
 
-          {/* Droite — image 9:16 pleine hauteur */}
+          {/* Droite — vidéo 9:16 pleine hauteur */}
           <div
             className="relative flex-shrink-0 overflow-hidden"
             style={{ width: "calc(100svh * 9 / 16)" }}
           >
-            <img src={heroImg} alt={glodieSamuel.title} className="absolute inset-0 h-full w-full object-cover" />
-            {/* Fondu gauche */}
+            <HeroVideo />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
+            <div className="absolute inset-8 border border-white/16" />
             <div
-              className="absolute inset-y-0 left-0 w-28 pointer-events-none bg-gradient-to-r from-secondary to-transparent"
+              className="absolute inset-y-0 left-0 w-28 pointer-events-none bg-gradient-to-r from-[#f8f1e8] to-transparent"
             />
           </div>
         </div>
@@ -252,13 +294,13 @@ export default function Home() {
           className="absolute inset-0 flex flex-col items-center justify-end pb-12 px-6 text-center text-white md:hidden"
         >
           <p className="text-[10px] uppercase tracking-[0.68em] text-white/50">
-            {glodieSamuel.hero.eyebrow}
+            {laeticiaMaxime.hero.eyebrow}
           </p>
           <p className="mt-5 font-script text-white leading-none" style={{ fontSize: "clamp(3.5rem,14vw,5.5rem)" }}>
-            {glodieSamuel.title}
+            {laeticiaMaxime.title}
           </p>
-          <p className="mt-4 border border-white/25 bg-[#5f4828]/55 px-4 py-2 font-serif text-base text-white shadow-xl backdrop-blur-sm">
-            {glodieSamuel.date.display}
+          <p className="mt-4 border border-white/25 bg-[#7d1f30]/45 px-4 py-2 font-serif text-base text-white shadow-xl backdrop-blur-sm">
+            {laeticiaMaxime.date.display} · {laeticiaMaxime.secondDate.display}
           </p>
           <div className="mt-6">
             <Countdown target={weddingDate} dark />
@@ -285,7 +327,7 @@ export default function Home() {
               <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,4.5vw,3rem)" }}>
                 Confirmez votre présence.
               </h2>
-              <p className="mt-5 text-base leading-8 text-muted-foreground">Une réponse simple suffit : dites-nous si vous serez là, puis choisissez seul(e) ou en couple et votre boisson souhaitée.</p>
+              <p className="mt-5 text-base leading-8 text-muted-foreground">Une réponse simple suffit : dites-nous si vous serez là, choisissez la célébration et ajoutez vos préférences.</p>
             </div>
 
             <CapacityBlocks />
@@ -296,7 +338,7 @@ export default function Home() {
             <RsvpForm
               variant="invitation"
               title="Répondre à l'invitation"
-              description="Dites-nous simplement si vous venez. Si oui, choisissez seul(e) ou en couple, puis votre boisson souhaitée."
+              description="Dites-nous simplement si vous venez. Si oui, choisissez seul(e) ou en couple, votre date de présence et votre boisson souhaitée."
               submitLabel="Envoyer ma réponse"
               successDescription="Merci. Votre réponse a bien été enregistrée. Nous avons hâte de vous accueillir."
             />
@@ -323,7 +365,7 @@ export default function Home() {
             <div className="absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 hidden md:block bg-gradient-to-b from-transparent via-border to-transparent" />
 
             <div className="space-y-16 md:space-y-24">
-              {glodieSamuel.story.map((chapter, i) => (
+              {laeticiaMaxime.story.map((chapter, i) => (
                 <motion.div
                   key={chapter.title}
                   initial={{ opacity: 0, y: 28 }}
@@ -342,31 +384,43 @@ export default function Home() {
                     <p className="text-base leading-8 text-muted-foreground">{chapter.body}</p>
                   </div>
 
-                  {/* Image side */}
-                  {chapter.image ? (
-                    <div className="overflow-hidden editorial-shadow bg-secondary">
-                      <motion.img
-                        src={IMAGES[chapter.image]}
-                        alt={chapter.title}
-                        className="h-full w-full object-contain md:object-cover"
-                        style={{ height: "clamp(360px,70vh,620px)" }}
-                        initial={{ scale: 1.08 }}
-                        whileInView={{ scale: 1 }}
-                        viewport={{ once: true, amount: 0.35 }}
-                        transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      className="flex items-center justify-center editorial-shadow bg-gradient-to-br from-background to-secondary"
-                      style={{ height: "clamp(200px,30vw,320px)" }}
-                    >
-                      <p className="font-script text-6xl text-primary/30">{glodieSamuel.brand}</p>
-                    </div>
-                  )}
+                  <PhotoFrame src={storyImages[i % storyImages.length]} label={chapter.period} tall={i === 0 || i === 2} />
                 </motion.div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+          3b · GALERIE — Ambiances photo
+      ══════════════════════════════════════════════════════ */}
+      <section id="galerie" className="relative overflow-hidden bg-[#13090d]">
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_18%_0%,rgba(125,31,48,0.34),transparent_42%),radial-gradient(ellipse_at_85%_100%,rgba(199,185,154,0.18),transparent_42%)]" />
+        <div className="relative mx-auto max-w-6xl px-6 py-24 md:px-10 md:py-28">
+          <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={rv} className="mb-14 text-center">
+            <p className="text-[9px] uppercase tracking-[0.68em] text-[#c7b99a]">Ambiances</p>
+            <h2 className="mt-5 font-serif leading-tight text-white" style={{ fontSize: "clamp(2rem,5vw,3.25rem)" }}>
+              Élégance en trois actes
+            </h2>
+            <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-white/55">
+              Le jardin pour la douceur, le rouge pour l'éclat, le noir pour la soirée.
+            </p>
+          </motion.div>
+
+          <div className="grid gap-4 md:grid-cols-4 md:items-end">
+            {galleryImages.map((image, i) => (
+              <motion.div
+                key={image.src}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ ...rv, delay: i * 0.08 }}
+                className={image.tall ? "md:row-span-2" : ""}
+              >
+                <PhotoFrame src={image.src} label={image.label} tall={image.tall} />
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -379,7 +433,7 @@ export default function Home() {
 
         <div className="mx-auto max-w-3xl px-6 py-24 md:px-10 md:py-28">
           <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={rv} className="mb-16 text-center">
-            <Label>04 Juillet & 12 Juillet 2026</Label>
+            <Label>27 août & 29 août 2026</Label>
             <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3.25rem)" }}>
               Programme de la journée
             </h2>
@@ -390,7 +444,7 @@ export default function Home() {
             <div className="absolute left-0 top-2 bottom-2 w-px bg-gradient-to-b from-border to-transparent" />
 
             <div className="space-y-10">
-              {glodieSamuel.programme.map((event, i) => (
+              {laeticiaMaxime.programme.map((event, i) => (
                 <motion.div
                   key={`${event.time}-${event.title}`}
                   initial={{ opacity: 0, x: -16 }}
@@ -409,7 +463,7 @@ export default function Home() {
                         {event.time}
                       </p>
                       <span className="text-[8px] uppercase tracking-[0.5em] px-2 py-0.5 text-primary border border-primary/30">
-                        {event.theme === "blessing" ? "04 Juillet" : "12 Juillet"}
+                        {event.theme === "blessing" ? "27 août" : "29 août"}
                       </span>
                     </div>
                     <p className="font-serif text-2xl text-foreground">{event.title}</p>
@@ -430,17 +484,17 @@ export default function Home() {
 
         <div className="mx-auto max-w-5xl px-6 py-24 md:px-10 md:py-28">
           <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={rv} className="mb-14 text-center">
-            <Label>Kinshasa, RDC</Label>
+            <Label>Uvira, RDC</Label>
             <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3.25rem)" }}>
               Lieux &amp; Accès
             </h2>
             <p className="mt-4 text-sm italic text-muted-foreground">
-              Le mariage civil aura lieu à la paroisse Saint Augustin de Lemba. La bénédiction nuptiale ne sera pas à l'église Saint Augustin.
+              Deux lieux à retenir : Espace Saphyr Event pour le civil et la bénédiction, puis Grand Résident La Fontaine pour la soirée.
             </p>
           </motion.div>
 
           <div className="grid gap-5 md:grid-cols-2">
-            {glodieSamuel.venues.map((venue, i) => (
+            {laeticiaMaxime.venues.map((venue, i) => (
               <motion.article
                 key={venue.label}
                 initial={{ opacity: 0, y: 20 }}
@@ -464,7 +518,7 @@ export default function Home() {
                   <div className="flex items-start gap-3">
                     <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.4} />
                     <p className="text-sm leading-6 text-muted-foreground">
-                      {venue.time} · {venue.theme === "blessing" ? glodieSamuel.date.display : glodieSamuel.secondDate.display}
+                      {venue.time} · {venue.theme === "blessing" ? laeticiaMaxime.date.display : laeticiaMaxime.secondDate.display}
                     </p>
                   </div>
                 </div>
@@ -503,7 +557,7 @@ export default function Home() {
           </motion.div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            {[glodieSamuel.dresscode.blessing, glodieSamuel.dresscode.evening].map((dc, idx) => (
+            {[laeticiaMaxime.dresscode.blessing, laeticiaMaxime.dresscode.evening].map((dc, idx) => (
               <motion.article
                 key={dc.label}
                 initial={{ opacity: 0, y: 20 }}
@@ -544,7 +598,7 @@ export default function Home() {
                 {idx === 1 && (
                   <div className="mt-5 border-t border-border pt-4">
                     <p className="text-sm leading-7 text-muted-foreground italic">
-                      La soirée religieuse et festive se vit en blanc et doré.
+                      La soirée dansante se vit en noir chic.
                     </p>
                   </div>
                 )}
@@ -602,10 +656,10 @@ export default function Home() {
 
             <Label>Liste de mariage</Label>
             <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3rem)" }}>
-              {glodieSamuel.cagnotte.title}
+              {laeticiaMaxime.cagnotte.title}
             </h2>
             <p className="mt-6 text-base leading-8 text-muted-foreground whitespace-pre-wrap">
-              {glodieSamuel.cagnotte.message}
+              {laeticiaMaxime.cagnotte.message}
             </p>
           </motion.div>
         </div>
@@ -627,7 +681,7 @@ export default function Home() {
 
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, amount: 0.3 }} transition={rv}>
             <div className="border-t border-border">
-              {glodieSamuel.faq.map((item) => (
+              {laeticiaMaxime.faq.map((item) => (
                 <FaqItem key={item.q} q={item.q} a={item.a} />
               ))}
             </div>
@@ -641,12 +695,12 @@ export default function Home() {
       <footer className="px-6 py-16 text-center bg-secondary border-t border-border">
         <Rule opacity={0.5} />
         <div className="my-10">
-          <p className="font-script leading-none text-foreground" style={{ fontSize: "5rem" }}>{glodieSamuel.brand}</p>
+          <p className="font-script leading-none text-foreground" style={{ fontSize: "5rem" }}>{laeticiaMaxime.brand}</p>
           <p className="mt-5 text-[10px] uppercase tracking-[0.55em] text-muted-foreground">
-            {glodieSamuel.title} · 04 Juillet & 12 Juillet 2026 · Kinshasa
+            {laeticiaMaxime.title} · 27 août & 29 août 2026 · Uvira
           </p>
           <p className="mt-7 mx-auto max-w-sm font-serif text-sm italic leading-7 text-muted-foreground/80">
-            {glodieSamuel.couple.statement}
+            {laeticiaMaxime.couple.statement}
           </p>
         </div>
         <Rule opacity={0.5} />
