@@ -8,9 +8,7 @@ import { laeticiaMaxime } from "@shared/laeticiaMaxime";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import gardenFormalImg from "../../images/couple-garden-formal.jpeg";
 import gardenWideImg from "../../images/couple-garden-embrace-wide.jpeg";
-import blackSeatedImg from "../../images/couple-black-seated-portrait.jpeg";
 import redPortraitImg from "../../images/couple-red-salon-portrait.jpeg";
 import redStaircaseImg from "../../images/couple-red-staircase.jpeg";
 
@@ -481,7 +479,7 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
               title="Civil & bénédiction"
               subtitle="Voir l'invitation"
               theme={SAT}
-              image={gardenFormalImg}
+              image={gardenWideImg}
               past={saturdayOver}
             />
           )}
@@ -492,7 +490,7 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
               title="Soirée dansante"
               subtitle="Voir l'invitation"
               theme={SUN}
-              image={blackSeatedImg}
+              image={redStaircaseImg}
             />
           )}
         </div>
@@ -594,7 +592,7 @@ function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; 
           dateLabel={laeticiaMaxime.secondDate.display}
           target={SUN_DATE}
           theme={theme}
-          image={blackSeatedImg}
+          image={redStaircaseImg}
         />
 
         {/* Intro — style symétrique, double filet champagne */}

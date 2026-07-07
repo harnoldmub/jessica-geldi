@@ -19,13 +19,18 @@ import redStaircaseImg from "../../images/couple-red-staircase.jpeg";
 
 const rv = { duration: 1.05, ease: [0.22, 1, 0.36, 1] as const };
 
-const storyImages = [gardenCloseImg, gardenFormalImg, redPortraitImg, blackStandingImg];
+const storyImages = [
+  { main: gardenWideImg, accent: gardenCloseImg, alt: "Laeticia et Maxime au jardin" },
+  { main: gardenFormalImg, accent: blackStandingImg, alt: "Laeticia et Maxime en tenue elegante" },
+  { main: redPortraitImg, accent: redStaircaseImg, alt: "Laeticia et Maxime dans le decor rouge" },
+  { main: blackStandingImg, accent: blackWalkwaySeatedImg, alt: "Laeticia et Maxime en ambiance noire" },
+];
 const galleryImages = [
-  { src: redFullImg, label: "Rich red", tall: true },
-  { src: blackSeatedImg, label: "Black mood", tall: false },
-  { src: gardenWideImg, label: "Garden light", tall: false },
-  { src: blackWalkwaySeatedImg, label: "Noir chic", tall: false },
-  { src: redStaircaseImg, label: "Editorial", tall: true },
+  { src: redFullImg, alt: "Laeticia et Maxime dans un salon rouge", tall: true },
+  { src: blackSeatedImg, alt: "Laeticia et Maxime assis en tenue noire", tall: false },
+  { src: gardenWideImg, alt: "Laeticia et Maxime au jardin", tall: false },
+  { src: blackWalkwaySeatedImg, alt: "Laeticia et Maxime sur une allee", tall: false },
+  { src: redStaircaseImg, alt: "Laeticia et Maxime sur un escalier rouge", tall: true },
 ];
 
 /* ─── Capacity blocks ─────────────────────────────────────── */
@@ -141,19 +146,39 @@ function HeroVideo() {
   );
 }
 
-function PhotoFrame({ src, label, tall = false }: { src: string; label: string; tall?: boolean }) {
+function PhotoFrame({ src, alt, tall = false }: { src: string; alt: string; tall?: boolean }) {
   return (
     <div className={`group relative overflow-hidden bg-[#120b0d] editorial-shadow ${tall ? "min-h-[520px]" : "min-h-[340px]"}`}>
       <img
         src={src}
-        alt={label}
+        alt={alt}
         className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/58 via-black/8 to-transparent" />
       <div className="absolute inset-5 border border-white/16" />
-      <p className="absolute bottom-6 left-6 text-[9px] uppercase tracking-[0.48em] text-white/72">
-        {label}
-      </p>
+    </div>
+  );
+}
+
+function StoryPhotos({ main, accent, alt, reverse = false }: { main: string; accent: string; alt: string; reverse?: boolean }) {
+  return (
+    <div className="relative min-h-[430px] md:min-h-[520px]">
+      <motion.div
+        whileHover={{ y: -6 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        className={`absolute top-0 ${reverse ? "left-0" : "right-0"} h-[78%] w-[78%] overflow-hidden bg-[#120b0d] editorial-shadow`}
+      >
+        <img src={main} alt={alt} className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/32 via-transparent to-transparent" />
+        <div className="absolute inset-4 border border-white/16" />
+      </motion.div>
+      <motion.div
+        whileHover={{ y: -4, rotate: reverse ? -1.5 : 1.5 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        className={`absolute bottom-0 ${reverse ? "right-0" : "left-0"} h-[46%] w-[48%] overflow-hidden border-[10px] border-background bg-[#120b0d] shadow-2xl`}
+      >
+        <img src={accent} alt={alt} className="h-full w-full object-cover" />
+      </motion.div>
     </div>
   );
 }
@@ -384,7 +409,7 @@ export default function Home() {
                     <p className="text-base leading-8 text-muted-foreground">{chapter.body}</p>
                   </div>
 
-                  <PhotoFrame src={storyImages[i % storyImages.length]} label={chapter.period} tall={i === 0 || i === 2} />
+                  <StoryPhotos {...storyImages[i % storyImages.length]} reverse={i % 2 !== 0} />
                 </motion.div>
               ))}
             </div>
@@ -418,7 +443,7 @@ export default function Home() {
                 transition={{ ...rv, delay: i * 0.08 }}
                 className={image.tall ? "md:row-span-2" : ""}
               >
-                <PhotoFrame src={image.src} label={image.label} tall={image.tall} />
+                <PhotoFrame src={image.src} alt={image.alt} tall={image.tall} />
               </motion.div>
             ))}
           </div>
