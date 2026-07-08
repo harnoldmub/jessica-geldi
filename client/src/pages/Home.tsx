@@ -36,7 +36,7 @@ function CapacityBlocks() {
       key: "civil",
       title: "Civil & bénédiction nuptiale",
       time: laeticiaMaxime.date.display,
-      place: "Espace Saphyr Event, Uvira",
+      place: "Saphir Events, Gombe / Kinshasa",
       theme: laeticiaMaxime.dresscode.blessing.theme,
     },
     {
@@ -457,12 +457,12 @@ export default function Home() {
 
         <div className="mx-auto max-w-5xl px-6 py-24 md:px-10 md:py-28">
           <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={rv} className="mb-14 text-center">
-            <Label>Uvira & Kinshasa, RDC</Label>
+            <Label>Kinshasa, RDC</Label>
             <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3.25rem)" }}>
               Lieux &amp; Accès
             </h2>
             <p className="mt-4 text-sm italic text-muted-foreground">
-              Deux lieux à retenir : Espace Saphyr Event pour le civil et la bénédiction, puis Salle Legacy à Gombe / Kinshasa pour la soirée.
+              Deux lieux à retenir : Saphir Events pour le civil et la bénédiction, puis Salle Legacy à Gombe / Kinshasa pour la soirée.
             </p>
           </motion.div>
 
@@ -670,7 +670,7 @@ export default function Home() {
         <div className="my-10">
           <p className="font-script leading-none text-foreground" style={{ fontSize: "5rem" }}>{laeticiaMaxime.brand}</p>
           <p className="mt-5 text-[10px] uppercase tracking-[0.55em] text-muted-foreground">
-            {laeticiaMaxime.title} · 27 août & 29 août 2026 · Uvira & Kinshasa
+            {laeticiaMaxime.title} · 27 août & 29 août 2026 · Kinshasa
           </p>
           <p className="mt-7 mx-auto max-w-sm font-serif text-sm italic leading-7 text-muted-foreground/80">
             {laeticiaMaxime.couple.statement}

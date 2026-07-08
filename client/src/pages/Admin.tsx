@@ -487,10 +487,10 @@ export default function Admin() {
     const choice = guest.ceremonyChoice || "both";
     const dateLines =
       choice === "civil"
-        ? "Jeudi 27 août 2026 : mariage civil & bénédiction nuptiale à l'Espace Saphyr Event, Uvira."
+        ? "Jeudi 27 août 2026 : mariage civil & bénédiction nuptiale à Saphir Events, Avenue Uvira 1054, croisement Batetela, en face du parking Pullman, Gombe / Kinshasa."
         : choice === "evening"
           ? "Samedi 29 août 2026 : soirée dansante à la Salle Legacy, accès via le Parking de Galerie La Fontaine, No 9257, croisement des avenues Batetela & Cliniques, Gombe / Kinshasa."
-          : "Jeudi 27 août 2026 : civil & bénédiction nuptiale à l'Espace Saphyr Event, Uvira.\nSamedi 29 août 2026 : soirée dansante à la Salle Legacy, Gombe / Kinshasa.";
+          : "Jeudi 27 août 2026 : civil & bénédiction nuptiale à Saphir Events, Avenue Uvira 1054, croisement Batetela, en face du parking Pullman, Gombe / Kinshasa.\nSamedi 29 août 2026 : soirée dansante à la Salle Legacy, Gombe / Kinshasa.";
     const linkIntro = "Ouvrez votre invitation et choisissez la date selon votre confirmation :";
     const message =
       `Bonjour ${guest.firstName},\n\n` +

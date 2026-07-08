@@ -527,9 +527,9 @@ function SaturdayInvitation({ guest, token, showBack }: { guest: InvitationGuest
             className="mt-5 divide-y overflow-hidden rounded-2xl"
             style={{ background: theme.panel, border: `1px solid ${theme.line}`, borderColor: theme.line }}
           >
-            <TimeRow icon={Clock} time="À confirmer" title="Mariage civil" place="Espace Saphyr Event, Uvira" theme={theme} />
-            <TimeRow icon={Clock} time="À confirmer" title="Bénédiction nuptiale" place="Espace Saphyr Event, Uvira" theme={theme} delay={0.06} />
-            <TimeRow icon={MapPin} time="Lieu" title="Espace Saphyr Event" place="Uvira" theme={theme} delay={0.12} />
+            <TimeRow icon={Clock} time="À confirmer" title="Mariage civil" place="Saphir Events" theme={theme} />
+            <TimeRow icon={Clock} time="À confirmer" title="Bénédiction nuptiale" place="Saphir Events" theme={theme} delay={0.06} />
+            <TimeRow icon={MapPin} time="Lieu" title="Avenue Uvira 1054, croisement Batetela" place="En face du parking Pullman, Gombe / Kinshasa" theme={theme} delay={0.12} />
           </div>
         </section>
 

@@ -152,7 +152,7 @@ function drawCivilCard(ctx: CanvasRenderingContext2D, options: CardOptions) {
     accent: "#7a8a68",
     ink: "#1f3328",
   };
-  drawInfoTile(ctx, 148, 820, 784, "Lieu", "Espace Saphyr Event", ["Uvira", "Civil & bénédiction nuptiale"], palette);
+  drawInfoTile(ctx, 148, 820, 784, "Lieu", "Saphir Events", ["Avenue Uvira 1054", "Face parking Pullman"], palette);
 
   ctx.fillStyle = "#1f3328";
   ctx.font = '24px "Lato", sans-serif';
@@ -231,7 +231,7 @@ function drawBothCard(ctx: CanvasRenderingContext2D, options: CardOptions) {
     accent: "#d7c59e",
     ink: "#fff8ec",
   };
-  drawInfoTile(ctx, 154, 810, 382, "27 août", "Civil & bénédiction", ["Espace Saphyr Event", "Thème à l'anglaise"], civilPalette);
+  drawInfoTile(ctx, 154, 810, 382, "27 août", "Civil & bénédiction", ["Saphir Events", "Avenue Uvira 1054"], civilPalette);
   drawInfoTile(ctx, 556, 810, 382, "29 août", "Soirée dansante", ["Salle Legacy", "Gombe / Kinshasa"], eveningPalette);
 
   ctx.fillStyle = "#1f3328";

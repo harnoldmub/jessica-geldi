@@ -51,7 +51,7 @@ export const laeticiaMaxime = {
       label: "Bénédiction nuptiale",
       time: "À confirmer",
       theme: "À l'anglaise",
-      themeNote: "Civil et bénédiction nuptiale à l'Espace Saphyr Event.",
+      themeNote: "Civil et bénédiction nuptiale à Saphir Events.",
     },
     evening: {
       label: "Soirée dansante",
@@ -61,7 +61,7 @@ export const laeticiaMaxime = {
       dress: "Noir chic.",
     },
   },
-  location: "Uvira & Kinshasa",
+  location: "Kinshasa",
   couple: {
     bride: "Laeticia",
     groom: "Maxime",
@@ -105,13 +105,13 @@ export const laeticiaMaxime = {
     {
       time: "Jeudi 27 août",
       title: "Mariage civil",
-      body: "Espace Saphyr Event, Uvira.",
+      body: "Saphir Events, Gombe / Kinshasa.",
       theme: "blessing" as "blessing" | "evening",
     },
     {
       time: "Jeudi 27 août",
       title: "Bénédiction nuptiale",
-      body: "Espace Saphyr Event, Uvira.",
+      body: "Saphir Events, Gombe / Kinshasa.",
       theme: "blessing" as "blessing" | "evening",
     },
     {
@@ -148,13 +148,13 @@ export const laeticiaMaxime = {
   venues: [
     {
       label: "Civil & bénédiction nuptiale",
-      name: "Espace Saphyr Event",
-      address: "Espace Saphyr Event",
-      city: "Uvira",
+      name: "Saphir Events",
+      address: "Avenue Uvira 1054, croisement Batetela",
+      city: "Gombe / Kinshasa, RDC",
       time: "Horaire à confirmer",
-      note: "Lieu du mariage civil et de la bénédiction nuptiale.",
+      note: "Référence : en face du parking Pullman.",
       theme: "blessing" as "blessing" | "evening",
-      mapsUrl: "https://maps.google.com/?q=Espace+Saphyr+Event+Uvira",
+      mapsUrl: "https://maps.google.com/?q=Saphir+Events+Avenue+Uvira+1054+Batetela+Parking+Pullman+Gombe+Kinshasa+RDC",
     },
     {
       label: "Soirée dansante",
@@ -190,7 +190,7 @@ export const laeticiaMaxime = {
     },
     {
       q: "Comment accéder au lieu ?",
-      a: "Le civil et la bénédiction nuptiale auront lieu à l'Espace Saphyr Event, à Uvira. La soirée dansante aura lieu à la Salle Legacy, avec accès via le Parking de Galerie La Fontaine, No 9257, croisement des avenues Batetela & Cliniques, Gombe / Kinshasa.",
+      a: "Le civil et la bénédiction nuptiale auront lieu à Saphir Events, Avenue Uvira 1054, croisement Batetela, en face du parking Pullman, Gombe / Kinshasa. La soirée dansante aura lieu à la Salle Legacy, avec accès via le Parking de Galerie La Fontaine, No 9257, croisement des avenues Batetela & Cliniques, Gombe / Kinshasa.",
     },
     {
       q: "Y a-t-il un espace pour les enfants ?",
