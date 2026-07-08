@@ -8,9 +8,9 @@ import { laeticiaMaxime } from "@shared/laeticiaMaxime";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import gardenWideImg from "../../images/couple-garden-embrace-wide.jpeg";
-import redPortraitImg from "../../images/couple-red-salon-portrait.jpeg";
-import redStaircaseImg from "../../images/couple-red-staircase.jpeg";
+import gardenWideImg from "../../images/couple-garden-wide.jpg";
+import redStaircaseFullImg from "../../images/couple-red-staircase-full.jpg";
+import redPianoWideImg from "../../images/couple-red-piano-wide.jpg";
 
 type InvitationGuest = RsvpResponse & { invitationUrl: string };
 
@@ -448,24 +448,7 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
           </p>
         </motion.div>
 
-        <motion.figure
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ...reveal, delay: 0.12 }}
-          className="relative mt-9 overflow-hidden rounded-[2rem] shadow-xl"
-          style={{ border: `1px solid ${theme.line}` }}
-        >
-          <img src={redPortraitImg} alt={laeticiaMaxime.title} className="aspect-[4/5] w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/68 via-transparent to-black/8" />
-          <div className="absolute inset-5 border border-white/16" />
-          <figcaption className="absolute bottom-5 left-5 right-5 text-center">
-            <p className="text-[9px] uppercase tracking-[0.42em] text-white/70">
-              Élégance · Uvira · 2026
-            </p>
-          </figcaption>
-        </motion.figure>
-
-        <p className="mt-6 text-center text-sm leading-7" style={{ color: theme.sub }}>
+        <p className="mt-9 text-center text-sm leading-7" style={{ color: theme.sub }}>
           {dates.length > 1
             ? "Vous êtes convié(e) aux deux célébrations. Choisissez la date à découvrir."
             : "Découvrez votre invitation."}
@@ -490,7 +473,7 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
               title="Soirée dansante"
               subtitle="Voir l'invitation"
               theme={SUN}
-              image={redStaircaseImg}
+              image={redStaircaseFullImg}
             />
           )}
         </div>
@@ -592,7 +575,7 @@ function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; 
           dateLabel={laeticiaMaxime.secondDate.display}
           target={SUN_DATE}
           theme={theme}
-          image={redStaircaseImg}
+          image={redStaircaseFullImg}
         />
 
         {/* Intro — style symétrique, double filet champagne */}
@@ -619,9 +602,9 @@ function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; 
             className="mt-5 divide-y overflow-hidden rounded-2xl"
             style={{ background: theme.panel, border: `1px solid ${theme.line}`, borderColor: theme.line }}
           >
-            <TimeRow icon={Clock} time="À confirmer" title="Entrée des mariés" place="Grand Résident La Fontaine" theme={theme} />
-            <TimeRow icon={Clock} time="Soirée" title="Soirée dansante" place="Thème noir" theme={theme} delay={0.06} />
-            <TimeRow icon={MapPin} time="Lieu" title="Salle de banquet du Grand Résident La Fontaine" place="Uvira" theme={theme} delay={0.12} />
+            <TimeRow icon={CalendarDays} time="Samedi 29 août 2026" title="Soirée dansante" place="Salle Legacy" theme={theme} />
+            <TimeRow icon={Clock} time="Horaire à confirmer" title="Entrée des mariés" place="Thème noir" theme={theme} delay={0.06} />
+            <TimeRow icon={MapPin} time="Lieu" title="Salle Legacy" place="Parking Galerie La Fontaine, Gombe / Kinshasa" theme={theme} delay={0.12} />
           </div>
         </section>
 
@@ -634,7 +617,7 @@ function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; 
 
         <section className="px-6 pt-12">
           <figure className="relative overflow-hidden rounded-[1.75rem] shadow-xl" style={{ border: `1px solid ${theme.line}` }}>
-            <img src={redStaircaseImg} alt="Laeticia & Maxime" className="aspect-[4/5] w-full object-cover" />
+            <img src={redPianoWideImg} alt="Laeticia & Maxime" className="aspect-[4/5] w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             <figcaption className="absolute bottom-5 left-5 right-5 text-center">
               <p className="text-[9px] uppercase tracking-[0.42em] text-white/72">Rich red · élégance</p>

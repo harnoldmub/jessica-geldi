@@ -192,7 +192,7 @@ function drawEveningCard(ctx: CanvasRenderingContext2D, options: CardOptions) {
     accent: "#d7c59e",
     ink: "#fff8ec",
   };
-  drawInfoTile(ctx, 148, 800, 784, "Lieu", "Grand Résident La Fontaine", ["Salle de banquet", "Uvira"], palette);
+  drawInfoTile(ctx, 148, 800, 784, "Lieu", "Salle Legacy", ["Parking Galerie La Fontaine", "Gombe / Kinshasa"], palette);
   drawInfoTile(ctx, 148, 1050, 784, "Ambiance", "Chic & festive", ["Tenue noire", "Danse, joie et célébration"], palette);
 
   ctx.fillStyle = "#d7c59e";
@@ -232,7 +232,7 @@ function drawBothCard(ctx: CanvasRenderingContext2D, options: CardOptions) {
     ink: "#fff8ec",
   };
   drawInfoTile(ctx, 154, 810, 382, "27 août", "Civil & bénédiction", ["Espace Saphyr Event", "Thème à l'anglaise"], civilPalette);
-  drawInfoTile(ctx, 556, 810, 382, "29 août", "Soirée dansante", ["Grand Résident La Fontaine", "Thème noir"], eveningPalette);
+  drawInfoTile(ctx, 556, 810, 382, "29 août", "Soirée dansante", ["Salle Legacy", "Gombe / Kinshasa"], eveningPalette);
 
   ctx.fillStyle = "#1f3328";
   ctx.font = '24px "Lato", sans-serif';

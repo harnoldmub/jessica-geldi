@@ -55,7 +55,7 @@ export async function sendRsvpConfirmationEmail(rsvp: RsvpResponse) {
       </div>
 
       <div style="text-align: center; margin-top: 40px; font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 2px;">
-        ${laeticiaMaxime.date.display} & ${laeticiaMaxime.secondDate.display} • Uvira
+        ${laeticiaMaxime.date.display} & ${laeticiaMaxime.secondDate.display} • Uvira & Kinshasa
       </div>
     </div>
   `;

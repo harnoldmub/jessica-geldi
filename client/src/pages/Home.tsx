@@ -7,21 +7,22 @@ import RsvpForm from "@/components/RsvpForm";
 import Countdown from "@/components/Countdown";
 
 import heroVideo from "../../images/hero-video.mp4";
-import gardenFormalImg from "../../images/couple-garden-formal.jpeg";
-import gardenCloseImg from "../../images/couple-garden-embrace-close.jpeg";
-import gardenWideImg from "../../images/couple-garden-embrace-wide.jpeg";
-import blackWalkwaySeatedImg from "../../images/couple-black-walkway-seated.jpeg";
-import blackStandingImg from "../../images/couple-black-walkway-standing.jpeg";
-import redPortraitImg from "../../images/couple-red-salon-portrait.jpeg";
-import redStaircaseImg from "../../images/couple-red-staircase.jpeg";
+import gardenWideImg from "../../images/couple-garden-wide.jpg";
+import gardenEmbraceImg from "../../images/couple-garden-embrace.jpg";
+import gardenSeatedImg from "../../images/couple-garden-seated.jpg";
+import blackStandingImg from "../../images/couple-black-walkway-standing.jpg";
+import blackBenchImg from "../../images/couple-black-bench.jpg";
+import blackCloseImg from "../../images/couple-black-close-portrait.jpg";
+import redStaircasePortraitImg from "../../images/couple-red-staircase-portrait.jpg";
+import redPianoWideImg from "../../images/couple-red-piano-wide.jpg";
 
 const rv = { duration: 1.05, ease: [0.22, 1, 0.36, 1] as const };
 
 const storyImages = [
-  { main: gardenWideImg, accent: gardenCloseImg, alt: "Laeticia et Maxime au jardin" },
-  { main: gardenFormalImg, accent: blackStandingImg, alt: "Laeticia et Maxime en tenue elegante" },
-  { main: redPortraitImg, accent: redStaircaseImg, alt: "Laeticia et Maxime dans le decor rouge" },
-  { main: blackStandingImg, accent: blackWalkwaySeatedImg, alt: "Laeticia et Maxime en ambiance noire" },
+  { main: gardenWideImg, accent: gardenEmbraceImg, alt: "Laeticia et Maxime au jardin" },
+  { main: gardenSeatedImg, accent: blackStandingImg, alt: "Laeticia et Maxime en tenue elegante" },
+  { main: redStaircasePortraitImg, accent: redPianoWideImg, alt: "Laeticia et Maxime dans le decor rouge" },
+  { main: blackBenchImg, accent: blackCloseImg, alt: "Laeticia et Maxime en ambiance noire" },
 ];
 
 /* ─── Capacity blocks ─────────────────────────────────────── */
@@ -35,12 +36,14 @@ function CapacityBlocks() {
       key: "civil",
       title: "Civil & bénédiction nuptiale",
       time: laeticiaMaxime.date.display,
+      place: "Espace Saphyr Event, Uvira",
       theme: laeticiaMaxime.dresscode.blessing.theme,
     },
     {
       key: "evening",
       title: "Soirée dansante",
       time: laeticiaMaxime.secondDate.display,
+      place: "Salle Legacy, Gombe / Kinshasa",
       theme: laeticiaMaxime.dresscode.evening.theme,
     },
   ];
@@ -59,7 +62,7 @@ function CapacityBlocks() {
                 </span>
               )}
             </div>
-            <p className="mt-1 font-serif text-lg text-foreground">{e.time} · {laeticiaMaxime.location}</p>
+            <p className="mt-1 font-serif text-lg text-foreground">{e.time} · {e.place}</p>
             <p className="text-[10px] italic text-muted-foreground">{e.theme}</p>
           </div>
         );
@@ -454,12 +457,12 @@ export default function Home() {
 
         <div className="mx-auto max-w-5xl px-6 py-24 md:px-10 md:py-28">
           <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={rv} className="mb-14 text-center">
-            <Label>Uvira, RDC</Label>
+            <Label>Uvira & Kinshasa, RDC</Label>
             <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3.25rem)" }}>
               Lieux &amp; Accès
             </h2>
             <p className="mt-4 text-sm italic text-muted-foreground">
-              Deux lieux à retenir : Espace Saphyr Event pour le civil et la bénédiction, puis Grand Résident La Fontaine pour la soirée.
+              Deux lieux à retenir : Espace Saphyr Event pour le civil et la bénédiction, puis Salle Legacy à Gombe / Kinshasa pour la soirée.
             </p>
           </motion.div>
 
@@ -667,7 +670,7 @@ export default function Home() {
         <div className="my-10">
           <p className="font-script leading-none text-foreground" style={{ fontSize: "5rem" }}>{laeticiaMaxime.brand}</p>
           <p className="mt-5 text-[10px] uppercase tracking-[0.55em] text-muted-foreground">
-            {laeticiaMaxime.title} · 27 août & 29 août 2026 · Uvira
+            {laeticiaMaxime.title} · 27 août & 29 août 2026 · Uvira & Kinshasa
           </p>
           <p className="mt-7 mx-auto max-w-sm font-serif text-sm italic leading-7 text-muted-foreground/80">
             {laeticiaMaxime.couple.statement}

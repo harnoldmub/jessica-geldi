@@ -489,12 +489,12 @@ export default function Admin() {
       choice === "civil"
         ? "Jeudi 27 août 2026 : mariage civil & bénédiction nuptiale à l'Espace Saphyr Event, Uvira."
         : choice === "evening"
-          ? "Samedi 29 août 2026 : soirée dansante dans la salle de banquet du Grand Résident La Fontaine."
-          : "Jeudi 27 août 2026 : civil & bénédiction nuptiale.\nSamedi 29 août 2026 : soirée dansante.";
+          ? "Samedi 29 août 2026 : soirée dansante à la Salle Legacy, accès via le Parking de Galerie La Fontaine, No 9257, croisement des avenues Batetela & Cliniques, Gombe / Kinshasa."
+          : "Jeudi 27 août 2026 : civil & bénédiction nuptiale à l'Espace Saphyr Event, Uvira.\nSamedi 29 août 2026 : soirée dansante à la Salle Legacy, Gombe / Kinshasa.";
     const linkIntro = "Ouvrez votre invitation et choisissez la date selon votre confirmation :";
     const message =
       `Bonjour ${guest.firstName},\n\n` +
-      `Nous avons la joie de vous inviter au mariage de *Laeticia & Maxime* à Uvira.\n\n` +
+      `Nous avons la joie de vous inviter au mariage de *Laeticia & Maxime*.\n\n` +
       `${dateLines}\n\n` +
       `${linkIntro}\n${url}\n\n` +
       `Avec joie de vous avoir parmi nous.`;

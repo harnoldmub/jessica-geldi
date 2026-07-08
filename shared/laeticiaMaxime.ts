@@ -61,7 +61,7 @@ export const laeticiaMaxime = {
       dress: "Noir chic.",
     },
   },
-  location: "Uvira",
+  location: "Uvira & Kinshasa",
   couple: {
     bride: "Laeticia",
     groom: "Maxime",
@@ -117,7 +117,7 @@ export const laeticiaMaxime = {
     {
       time: "Samedi 29 août",
       title: "Entrée des mariés",
-      body: "Salle de banquet du Grand Résident La Fontaine.",
+      body: "Salle Legacy, Gombe / Kinshasa.",
       theme: "evening" as "blessing" | "evening",
     },
     {
@@ -158,13 +158,13 @@ export const laeticiaMaxime = {
     },
     {
       label: "Soirée dansante",
-      name: "Grand Résident La Fontaine",
-      address: "Salle de banquet du Grand Résident La Fontaine",
-      city: "Uvira",
+      name: "Salle Legacy",
+      address: "Accès via le Parking de Galerie La Fontaine, No 9257, croisement des avenues Batetela & Cliniques",
+      city: "Gombe / Kinshasa, RDC",
       time: "Horaire à confirmer",
       note: "Lieu de la soirée dansante du 29 août.",
       theme: "evening" as "blessing" | "evening",
-      mapsUrl: "https://maps.google.com/?q=Grand+Resident+La+Fontaine+Uvira",
+      mapsUrl: "https://maps.google.com/?q=Salle+Legacy+Parking+Galerie+La+Fontaine+9257+Batetela+Cliniques+Gombe+Kinshasa+RDC",
     },
   ],
   cagnotte: {
@@ -190,7 +190,7 @@ export const laeticiaMaxime = {
     },
     {
       q: "Comment accéder au lieu ?",
-      a: "Le civil et la bénédiction nuptiale auront lieu à l'Espace Saphyr Event, à Uvira. La soirée dansante aura lieu dans la salle de banquet du Grand Résident La Fontaine.",
+      a: "Le civil et la bénédiction nuptiale auront lieu à l'Espace Saphyr Event, à Uvira. La soirée dansante aura lieu à la Salle Legacy, avec accès via le Parking de Galerie La Fontaine, No 9257, croisement des avenues Batetela & Cliniques, Gombe / Kinshasa.",
     },
     {
       q: "Y a-t-il un espace pour les enfants ?",
