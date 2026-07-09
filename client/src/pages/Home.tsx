@@ -7,6 +7,8 @@ import RsvpForm from "@/components/RsvpForm";
 import Countdown from "@/components/Countdown";
 
 import heroVideo from "../../images/hero-video.mp4";
+import logoBlack from "../../images/logo-lm-black.png";
+import logoWhite from "../../images/logo-lm-white.png";
 import gardenWideImg from "../../images/couple-garden-wide.jpg";
 import gardenEmbraceImg from "../../images/couple-garden-embrace.jpg";
 import gardenSeatedImg from "../../images/couple-garden-seated.jpg";
@@ -199,6 +201,15 @@ export default function Home() {
             >
             <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 80% 80%, rgba(128,22,37,0.16) 0%, transparent 44%), radial-gradient(ellipse at 12% 10%, rgba(129,141,111,0.14) 0%, transparent 42%)" }} />
 
+            <motion.img
+              src={logoBlack}
+              alt="Logo Laeticia & Maxime"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              className="relative mb-8 h-20 w-20 object-contain"
+            />
+
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -298,6 +309,7 @@ export default function Home() {
           style={{ y: heroY, opacity: heroOpacity }}
           className="absolute inset-0 flex flex-col items-center justify-end pb-12 px-6 text-center text-white md:hidden"
         >
+          <img src={logoWhite} alt="Logo Laeticia & Maxime" className="mb-5 h-20 w-20 object-contain" />
           <p className="text-[10px] uppercase tracking-[0.68em] text-white/50">
             {laeticiaMaxime.hero.eyebrow}
           </p>
@@ -668,6 +680,7 @@ export default function Home() {
       <footer className="px-6 py-16 text-center bg-secondary border-t border-border">
         <Rule opacity={0.5} />
         <div className="my-10">
+          <img src={logoBlack} alt="Logo Laeticia & Maxime" className="mx-auto mb-8 h-20 w-20 object-contain" />
           <p className="font-script leading-none text-foreground" style={{ fontSize: "5rem" }}>{laeticiaMaxime.brand}</p>
           <p className="mt-5 text-[10px] uppercase tracking-[0.55em] text-muted-foreground">
             {laeticiaMaxime.title} · 27 août & 29 août 2026 · Kinshasa

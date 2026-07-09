@@ -81,8 +81,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await ensureAdminUser();
   
   // Public capacity endpoint
-  const CIVIL_MAX = 250;
-  const EVENING_MAX = 350;
+  const CIVIL_MAX = 120;
+  const EVENING_MAX = 250;
 
   async function getCapacity(excludeGuestId?: number) {
     const all = await storage.getAllRsvps();

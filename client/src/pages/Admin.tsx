@@ -106,6 +106,8 @@ const pageSizeOptions = [
 ];
 const TABLES_STORAGE_KEY = "gs-admin-table-count";
 const DEFAULT_TABLE_COUNT = 16;
+const CIVIL_MAX = 120;
+const EVENING_MAX = 250;
 const beverageSelectOptions = [
   { value: "", label: "Aucune préférence" },
   ...beverageOptions.beers.map((drink) => ({ value: drink, label: drink, group: "Bières" })),
@@ -747,20 +749,20 @@ export default function Admin() {
               <p className="text-[9px] uppercase tracking-[0.4em] text-yellow-700/60 mb-2">27 août · civil & bénédiction</p>
               <p className="font-serif text-2xl text-yellow-700">
                 {stats.civilAttendees}
-                <span className="text-sm font-sans font-normal text-yellow-600/50"> / 250</span>
+                <span className="text-sm font-sans font-normal text-yellow-600/50"> / {CIVIL_MAX}</span>
               </p>
               <p className="mt-1 text-[9px] text-foreground/35">
-                {stats.civilAttendees >= 250 ? "🔴 Complet" : `${250 - stats.civilAttendees} places restantes`}
+                {stats.civilAttendees >= CIVIL_MAX ? "🔴 Complet" : `${CIVIL_MAX - stats.civilAttendees} places restantes`}
               </p>
             </div>
             <div className="p-5 text-center bg-violet-50/50">
               <p className="text-[9px] uppercase tracking-[0.4em] text-violet-700/60 mb-2">29 août · soirée</p>
               <p className="font-serif text-2xl text-violet-700">
                 {stats.eveningAttendees}
-                <span className="text-sm font-sans font-normal text-violet-600/50"> / 350</span>
+                <span className="text-sm font-sans font-normal text-violet-600/50"> / {EVENING_MAX}</span>
               </p>
               <p className="mt-1 text-[9px] text-foreground/35">
-                {stats.eveningAttendees >= 350 ? "🔴 Complet" : `${350 - stats.eveningAttendees} places restantes`}
+                {stats.eveningAttendees >= EVENING_MAX ? "🔴 Complet" : `${EVENING_MAX - stats.eveningAttendees} places restantes`}
               </p>
             </div>
           </div>

@@ -8,7 +8,9 @@ import { laeticiaMaxime } from "@shared/laeticiaMaxime";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import gardenWideImg from "../../images/couple-garden-wide.jpg";
+import logoBlack from "../../images/logo-lm-black.png";
+import logoWhite from "../../images/logo-lm-white.png";
+import civilBlessingPortraitImg from "../../images/couple-civil-blessing-portrait.jpg";
 import redStaircaseFullImg from "../../images/couple-red-staircase-full.jpg";
 import redPianoWideImg from "../../images/couple-red-piano-wide.jpg";
 
@@ -301,15 +303,25 @@ function InvitationHero({
   target,
   theme,
   image,
+  logo,
 }: {
   guest: InvitationGuest;
   dateLabel: string;
   target: Date;
   theme: Theme;
   image: string;
+  logo: string;
 }) {
   return (
     <header className="px-4 pt-5">
+      <motion.img
+        src={logo}
+        alt="Logo Laeticia & Maxime"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={reveal}
+        className="mx-auto mb-4 h-16 w-16 object-contain"
+      />
       <motion.p
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -434,6 +446,7 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
     <main className="min-h-screen overflow-x-hidden" style={{ background: theme.bg, color: theme.ink }}>
       <div className="mx-auto w-full max-w-md px-6 py-12">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={reveal} className="text-center">
+          <img src={logoBlack} alt="Logo Laeticia & Maxime" className="mx-auto mb-5 h-16 w-16 object-contain" />
           <p className="text-[9px] uppercase tracking-[0.6em]" style={{ color: theme.accent }}>
             Invitation officielle
           </p>
@@ -462,7 +475,7 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
               title="Civil & bénédiction"
               subtitle="Voir l'invitation"
               theme={SAT}
-              image={gardenWideImg}
+              image={civilBlessingPortraitImg}
               past={saturdayOver}
             />
           )}
@@ -504,7 +517,8 @@ function SaturdayInvitation({ guest, token, showBack }: { guest: InvitationGuest
           dateLabel={laeticiaMaxime.date.display}
           target={SAT_DATE}
           theme={theme}
-          image={gardenWideImg}
+          image={civilBlessingPortraitImg}
+          logo={logoBlack}
         />
 
         {/* Intro */}
@@ -516,6 +530,13 @@ function SaturdayInvitation({ guest, token, showBack }: { guest: InvitationGuest
           <p className="mx-auto mt-4 max-w-xs text-sm leading-7" style={{ color: theme.sub }}>
             Une journée élégante, dans l'esprit à l'anglaise, pour célébrer notre union civile et notre bénédiction nuptiale.
           </p>
+        </section>
+
+        {/* RSVP */}
+        <section className="px-6 pt-10">
+          <div className="rounded-2xl p-8" style={{ background: theme.panel, border: `1px solid ${theme.line}` }}>
+            <SimpleRsvp token={token} status={guest.status} theme={theme} />
+          </div>
         </section>
 
         {/* Programme */}
@@ -540,16 +561,10 @@ function SaturdayInvitation({ guest, token, showBack }: { guest: InvitationGuest
           <DressSwatches colors={laeticiaMaxime.dresscode.blessing.colors} names={laeticiaMaxime.dresscode.blessing.colorNames} theme={theme} />
         </section>
 
-        {/* RSVP */}
-        <section className="px-6 pt-14">
-          <div className="rounded-2xl p-8" style={{ background: theme.panel, border: `1px solid ${theme.line}` }}>
-            <SimpleRsvp token={token} status={guest.status} theme={theme} />
-          </div>
-        </section>
-
         {/* Closing */}
         <footer className="px-6 pt-14 text-center">
           <OrnamentRule color={theme.accent} opacity={0.5} />
+          <img src={logoBlack} alt="Logo Laeticia & Maxime" className="mx-auto mt-7 h-16 w-16 object-contain" />
           <p className="mt-7 font-script text-5xl" style={{ color: theme.ink }}>{laeticiaMaxime.brand}</p>
           <p className="mt-4 text-[10px] uppercase tracking-[0.5em]" style={{ color: theme.sub }}>
             Avec joie, nous vous attendons
@@ -576,6 +591,7 @@ function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; 
           target={SUN_DATE}
           theme={theme}
           image={redStaircaseFullImg}
+          logo={logoWhite}
         />
 
         {/* Intro — style symétrique, double filet champagne */}
@@ -591,6 +607,17 @@ function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; 
           <p className="mx-auto mt-5 max-w-xs text-sm leading-7" style={{ color: theme.sub }}>
             Une soirée chic et festive pour prolonger la célébration, danser ensemble et célébrer l'amour en noir.
           </p>
+        </section>
+
+        {/* RSVP — bloc sombre pour contraster avec le 29 août */}
+        <section className="px-6 pt-10">
+          <div className="rounded-2xl p-8" style={{ background: theme.dark }}>
+            <SimpleRsvp
+              token={token}
+              status={guest.status}
+              theme={{ ...theme, ink: "#f4ecd8", sub: "#cdb98a", panel: "transparent" }}
+            />
+          </div>
         </section>
 
         {/* Programme */}
@@ -635,20 +662,10 @@ function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; 
           </p>
         </section>
 
-        {/* RSVP — bloc sombre pour contraster avec le 27 août */}
-        <section className="px-6 pt-14">
-          <div className="rounded-2xl p-8" style={{ background: theme.dark }}>
-            <SimpleRsvp
-              token={token}
-              status={guest.status}
-              theme={{ ...theme, ink: "#f4ecd8", sub: "#cdb98a", panel: "transparent" }}
-            />
-          </div>
-        </section>
-
         {/* Closing */}
         <footer className="px-6 pt-14 text-center">
           <OrnamentRule color={theme.accent} opacity={0.5} />
+          <img src={logoWhite} alt="Logo Laeticia & Maxime" className="mx-auto mt-7 h-16 w-16 object-contain" />
           <p className="mt-7 font-script text-5xl" style={{ color: theme.ink }}>{laeticiaMaxime.brand}</p>
           <p className="mt-4 text-[10px] uppercase tracking-[0.5em]" style={{ color: theme.sub }}>
             Avec amour, nous vous attendons
@@ -684,6 +701,7 @@ export default function Invitation() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-7 p-6 text-center" style={{ background: SAT.bg, color: SAT.ink }}>
         <OrnamentRule color={SAT.accent} opacity={0.4} />
+        <img src={logoBlack} alt="Logo Laeticia & Maxime" className="h-20 w-20 object-contain" />
         <p className="font-script text-6xl" style={{ color: SAT.ink }}>{laeticiaMaxime.brand}</p>
         <h1 className="font-serif text-2xl">Invitation introuvable</h1>
         <p className="text-[10px] uppercase tracking-[0.42em] max-w-xs" style={{ color: SAT.sub }}>
