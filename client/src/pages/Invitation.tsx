@@ -26,12 +26,12 @@ const SAT_OVER = new Date("2026-08-28T00:00:00+02:00");
 
 /* Palettes — deux ambiances distinctes */
 const SAT = {
-  bg: "#f8f1e8",
-  panel: "rgba(255,255,255,0.72)",
-  ink: "#281118",
-  sub: "#7b4d4f",
-  accent: "#7d1f30",
-  line: "rgba(125,31,48,0.22)",
+  bg: "#F6F8DB",
+  panel: "rgba(255,255,255,0.68)",
+  ink: "#3d421e",
+  sub: "#6f7940",
+  accent: "#ADBACE",
+  line: "rgba(161,172,78,0.28)",
 };
 const SUN = {
   bg: "#070707",
@@ -188,7 +188,8 @@ function InvitationVisual({ theme, compact = false, image }: { theme: Theme; com
       className={`relative w-full overflow-hidden ${compact ? "aspect-[5/4]" : "aspect-[3/4]"}`}
       style={{ background: `linear-gradient(145deg, ${theme.ink} 0%, ${theme.accent}22 48%, ${theme.bg} 100%)` }}
     >
-      <img src={image} alt={laeticiaMaxime.title} className="absolute inset-0 h-full w-full object-cover" />
+      <img src={image} alt="" aria-hidden className="absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-xl" />
+      <img src={image} alt={laeticiaMaxime.title} className="absolute inset-0 h-full w-full object-contain" />
       <motion.div
         className="absolute inset-0"
         animate={{ scale: [1, 1.08, 1], rotate: [0, 1.5, 0] }}

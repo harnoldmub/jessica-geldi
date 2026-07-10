@@ -131,9 +131,9 @@ export const laeticiaMaxime = {
     blessing: {
       label: "Civil & bénédiction",
       theme: "À l'anglaise",
-      description: "Pour le civil et la bénédiction nuptiale, le thème est à l'anglaise : élégant, doux, raffiné, avec une inspiration jardin anglais.",
-      colors: ["#F8F1E8", "#D9C7A3", "#7F8A62", "#7D1F30"],
-      colorNames: ["Ivoire", "Champagne", "Sauge", "Bordeaux"],
+      description: "Pour le civil et la bénédiction nuptiale, le thème est à l'anglaise : élégant, doux, raffiné, avec une palette florale pastel.",
+      colors: ["#ADBACE", "#F6F8DB", "#EECA74", "#E5A39D", "#A1AC4E"],
+      colorNames: ["Bleu poudré", "Ivoire floral", "Jaune doux", "Rose poudré", "Vert sauge"],
       forbidden: "",
     },
     evening: {
