@@ -583,7 +583,7 @@ export default function Home() {
                 {idx === 1 && (
                   <div className="mt-5 border-t border-border pt-4">
                     <p className="text-sm leading-7 text-muted-foreground italic">
-                      La soirée dansante se vit en noir chic.
+                      La soirée dansante se vit en Full Black Chic.
                     </p>
                   </div>
                 )}

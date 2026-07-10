@@ -599,7 +599,7 @@ export default function RsvpForm({
                             <span className="block font-medium">🖤 Soirée dansante</span>
                             {eveningFull
                               ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
-                              : <span className="block text-[10px] mt-0.5 opacity-70">29 août · thème noir</span>
+                              : <span className="block text-[10px] mt-0.5 opacity-70">29 août · Full Black Chic</span>
                             }
                           </button>
                           <button

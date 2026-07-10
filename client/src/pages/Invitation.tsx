@@ -605,7 +605,7 @@ function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; 
             <div className="h-px w-full" style={{ background: theme.line }} />
           </div>
           <p className="mx-auto mt-5 max-w-xs text-sm leading-7" style={{ color: theme.sub }}>
-            Une soirée chic et festive pour prolonger la célébration, danser ensemble et célébrer l'amour en noir.
+            Une soirée chic et festive pour prolonger la célébration, danser ensemble et célébrer l'amour en Full Black Chic.
           </p>
         </section>
 
@@ -630,7 +630,7 @@ function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; 
             style={{ background: theme.panel, border: `1px solid ${theme.line}`, borderColor: theme.line }}
           >
             <TimeRow icon={CalendarDays} time="Samedi 29 août 2026" title="Soirée dansante" place="Salle Legacy" theme={theme} />
-            <TimeRow icon={Clock} time="Horaire à confirmer" title="Entrée des mariés" place="Thème noir" theme={theme} delay={0.06} />
+            <TimeRow icon={Clock} time="Horaire à confirmer" title="Entrée des mariés" place="Thème Full Black Chic" theme={theme} delay={0.06} />
             <TimeRow icon={MapPin} time="Lieu" title="Salle Legacy" place="Parking Galerie La Fontaine, Gombe / Kinshasa" theme={theme} delay={0.12} />
           </div>
         </section>

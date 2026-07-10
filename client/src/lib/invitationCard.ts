@@ -180,7 +180,7 @@ function drawEveningCard(ctx: CanvasRenderingContext2D, options: CardOptions) {
   ctx.font = '88px "Playfair Display", serif';
   ctx.fillText("29 août 2026", CARD_WIDTH / 2, 330);
   ctx.font = '58px "Playfair Display", serif';
-  ctx.fillText("Thème noir", CARD_WIDTH / 2, 420);
+  ctx.fillText("Full Black Chic", CARD_WIDTH / 2, 420);
 
   if (options.guestName) {
     drawGuestName(ctx, options.guestName, 635, "#fff8ec", options.tableNumber);
@@ -193,7 +193,7 @@ function drawEveningCard(ctx: CanvasRenderingContext2D, options: CardOptions) {
     ink: "#fff8ec",
   };
   drawInfoTile(ctx, 148, 800, 784, "Lieu", "Salle Legacy", ["Parking Galerie La Fontaine", "Gombe / Kinshasa"], palette);
-  drawInfoTile(ctx, 148, 1050, 784, "Ambiance", "Chic & festive", ["Tenue noire", "Danse, joie et célébration"], palette);
+  drawInfoTile(ctx, 148, 1050, 784, "Ambiance", "Full Black Chic", ["Tenue entièrement noire", "Danse, joie et célébration"], palette);
 
   ctx.fillStyle = "#d7c59e";
   ctx.font = '72px "Great Vibes", cursive';
@@ -232,7 +232,7 @@ function drawBothCard(ctx: CanvasRenderingContext2D, options: CardOptions) {
     ink: "#fff8ec",
   };
   drawInfoTile(ctx, 154, 810, 382, "27 août", "Civil & bénédiction", ["Saphir Events", "Avenue Uvira 1054"], civilPalette);
-  drawInfoTile(ctx, 556, 810, 382, "29 août", "Soirée dansante", ["Salle Legacy", "Gombe / Kinshasa"], eveningPalette);
+  drawInfoTile(ctx, 556, 810, 382, "29 août", "Soirée dansante", ["Salle Legacy", "Full Black Chic"], eveningPalette);
 
   ctx.fillStyle = "#1f3328";
   ctx.font = '24px "Lato", sans-serif';

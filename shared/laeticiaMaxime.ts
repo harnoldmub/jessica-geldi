@@ -56,9 +56,9 @@ export const laeticiaMaxime = {
     evening: {
       label: "Soirée dansante",
       time: "À confirmer",
-      theme: "Noir",
-      themeNote: "Une soirée chic, festive et habillée en noir.",
-      dress: "Noir chic.",
+      theme: "Full Black Chic",
+      themeNote: "Une soirée chic, festive et entièrement habillée en noir.",
+      dress: "Full Black Chic.",
     },
   },
   location: "Kinshasa",
@@ -123,7 +123,7 @@ export const laeticiaMaxime = {
     {
       time: "Samedi 29 août",
       title: "Soirée dansante",
-      body: "Une célébration festive et chic sur le thème noir.",
+      body: "Une célébration festive et chic sur le thème Full Black Chic.",
       theme: "evening" as "blessing" | "evening",
     },
   ],
@@ -138,10 +138,10 @@ export const laeticiaMaxime = {
     },
     evening: {
       label: "Soirée dansante",
-      theme: "Noir",
-      description: "Pour la soirée dansante du 29 août, le thème est noir : chic, moderne et élégant.",
-      colors: ["#050505", "#161616", "#7D1F30", "#C7B99A"],
-      colorNames: ["Noir", "Noir profond", "Bordeaux", "Champagne"],
+      theme: "Full Black Chic",
+      description: "Pour la soirée dansante du 29 août, le thème est Full Black Chic : une tenue entièrement noire, chic, moderne et élégante.",
+      colors: ["#050505", "#111111", "#1C1C1C", "#2A2A2A"],
+      colorNames: ["Noir", "Noir profond", "Noir satin", "Noir chic"],
       forbidden: "",
     },
   },
@@ -182,7 +182,7 @@ export const laeticiaMaxime = {
     },
     {
       q: "Le dress code est-il strict ?",
-      a: "Le 27 août, le thème du civil et de la bénédiction nuptiale est à l'anglaise. Le 29 août, la soirée dansante est sur le thème noir.",
+      a: "Le 27 août, le thème du civil et de la bénédiction nuptiale est à l'anglaise. Le 29 août, la soirée dansante est sur le thème Full Black Chic.",
     },
     {
       q: "À quelle heure dois-je arriver ?",
