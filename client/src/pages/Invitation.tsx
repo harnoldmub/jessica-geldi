@@ -11,7 +11,7 @@ import { queryClient } from "@/lib/queryClient";
 import logoBlack from "../../images/logo-lm-black.png";
 import logoWhite from "../../images/logo-lm-white.png";
 import civilBlessingPortraitImg from "../../images/couple-civil-blessing-portrait.jpg";
-import redStaircaseSeatedImg from "../../images/couple-red-staircase-seated.jpg";
+import redPianoVerticalImg from "../../images/couple-red-piano-vertical.jpg";
 import redPianoWideImg from "../../images/couple-red-piano-wide.jpg";
 
 type InvitationGuest = RsvpResponse & { invitationUrl: string };
@@ -487,7 +487,7 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
               title="Soirée dansante"
               subtitle="Voir l'invitation"
               theme={SUN}
-              image={redStaircaseSeatedImg}
+              image={redPianoVerticalImg}
             />
           )}
         </div>
@@ -591,7 +591,7 @@ function SundayInvitation({ guest, token, showBack }: { guest: InvitationGuest; 
           dateLabel={laeticiaMaxime.secondDate.display}
           target={SUN_DATE}
           theme={theme}
-          image={redStaircaseSeatedImg}
+          image={redPianoVerticalImg}
           logo={logoWhite}
         />
 

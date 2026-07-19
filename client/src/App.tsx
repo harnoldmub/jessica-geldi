@@ -12,7 +12,7 @@ import Admin from "@/pages/Admin";
 import CheckIn from "@/pages/CheckIn";
 import NotFound from "@/pages/NotFound";
 
-const SITE_ACCESS_CODE = "LoveLM2026";
+const SITE_ACCESS_CODE = "LoveLM2016";
 const SITE_ACCESS_STORAGE_KEY = "laeticia-maxime-site-access";
 
 function SiteAccessGate({ children }: { children: React.ReactNode }) {
