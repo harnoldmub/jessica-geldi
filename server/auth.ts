@@ -54,6 +54,13 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
+    if (typeof req.body?.username === "string") {
+      req.body.username = req.body.username.trim();
+    }
+    if (typeof req.body?.password === "string") {
+      req.body.password = req.body.password.trim();
+    }
+
     passport.authenticate("local", (err: Error | null, user: Express.User | false, info?: { message?: string }) => {
       if (err) {
         return next(err);

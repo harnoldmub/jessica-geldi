@@ -15,7 +15,7 @@ import gardenSeatedImg from "../../images/couple-garden-seated.jpg";
 import blackStandingImg from "../../images/couple-black-walkway-standing.jpg";
 import blackBenchImg from "../../images/couple-black-bench.jpg";
 import blackCloseImg from "../../images/couple-black-close-portrait.jpg";
-import redStaircaseSeatedImg from "../../images/couple-red-staircase-seated.jpg";
+import redPianoVerticalImg from "../../images/couple-red-piano-vertical.jpg";
 import redPianoWideImg from "../../images/couple-red-piano-wide.jpg";
 
 const rv = { duration: 1.05, ease: [0.22, 1, 0.36, 1] as const };
@@ -23,7 +23,7 @@ const rv = { duration: 1.05, ease: [0.22, 1, 0.36, 1] as const };
 const storyImages = [
   { main: gardenWideImg, accent: gardenEmbraceImg, alt: "Laeticia et Maxime au jardin" },
   { main: gardenSeatedImg, accent: blackStandingImg, alt: "Laeticia et Maxime en tenue elegante" },
-  { main: redStaircaseSeatedImg, accent: redPianoWideImg, alt: "Laeticia et Maxime dans le decor rouge" },
+  { main: redPianoVerticalImg, accent: redPianoWideImg, alt: "Laeticia et Maxime dans le decor rouge" },
   { main: blackBenchImg, accent: blackCloseImg, alt: "Laeticia et Maxime en ambiance noire" },
 ];
 

@@ -232,7 +232,10 @@ export default function Admin() {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/login", credentials);
+      const response = await apiRequest("POST", "/api/login", {
+        username: credentials.username.trim(),
+        password: credentials.password.trim(),
+      });
       return (await response.json()) as SafeUser;
     },
     onSuccess: (loggedUser) => {
