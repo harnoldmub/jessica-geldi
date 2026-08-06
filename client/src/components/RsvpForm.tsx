@@ -370,12 +370,12 @@ export default function RsvpForm({
   });
 
   const cardClassName =
-    "border border-border bg-white/70 p-6 text-foreground editorial-shadow backdrop-blur-sm md:p-10";
+    "border border-border bg-secondary/60 p-6 text-foreground editorial-shadow backdrop-blur-sm md:p-10";
   const labelClassName = "text-[10px] uppercase tracking-[0.28em] text-primary/80";
-  const inputClassName = "h-12 rounded-none border-border bg-white/85 text-foreground placeholder:text-muted-foreground/70 focus-visible:ring-primary/30";
+  const inputClassName = "h-12 rounded-none border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-primary/35";
   const choiceClassName = "group border p-4 text-left text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg";
   const selectedChoiceClassName = "border-primary bg-primary text-primary-foreground shadow-lg";
-  const unselectedChoiceClassName = "border-border bg-white/80 text-foreground hover:border-primary/60";
+  const unselectedChoiceClassName = "border-border bg-background text-foreground hover:border-primary/60";
   const selectedCountry = COUNTRY_CODES.find((item) => item.key === selectedCountryKey) || COUNTRY_CODES.find((item) => item.key === "RDC-+243") || COUNTRY_CODES[0];
   const countrySearch = countryQuery.trim().toLowerCase();
   const filteredCountryCodes = COUNTRY_CODES.filter((item) => {
@@ -390,8 +390,8 @@ export default function RsvpForm({
           <CheckCircle2 className="h-10 w-10 text-primary" strokeWidth={1.6} />
         </div>
         <p className="text-[11px] uppercase tracking-[0.45em] text-primary/60">Merci</p>
-        <h3 className="mt-4 text-3xl font-serif text-[#281118] md:text-4xl">{successTitle}</h3>
-        <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-[#7b4d4f]">{successDescription}</p>
+        <h3 className="mt-4 text-3xl font-serif text-foreground md:text-4xl">{successTitle}</h3>
+        <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-muted-foreground">{successDescription}</p>
         <Button
           type="button"
           variant="outline"
@@ -408,8 +408,8 @@ export default function RsvpForm({
     <div className={cardClassName}>
       <div className="mb-10 space-y-4">
         <p className="text-[11px] uppercase tracking-[0.45em] text-primary/60">RSVP</p>
-        <h3 className="text-3xl font-serif text-[#281118] md:text-4xl">{title}</h3>
-        <p className="max-w-2xl text-sm leading-7 text-[#7b4d4f]">{description}</p>
+        <h3 className="text-3xl font-serif text-foreground md:text-4xl">{title}</h3>
+        <p className="max-w-2xl text-sm leading-7 text-muted-foreground">{description}</p>
       </div>
 
       <Form {...form}>
@@ -472,7 +472,7 @@ export default function RsvpForm({
                             setCountryOpen((open) => !open);
                             setCountryQuery("");
                           }}
-                          className="flex h-12 w-full items-center justify-between gap-1 border border-border bg-white/85 px-2 text-left text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 md:px-3 md:text-sm"
+                          className="flex h-12 w-full items-center justify-between gap-1 border border-border bg-background px-2 text-left text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 md:px-3 md:text-sm"
                         >
                           <span className="min-w-0 truncate">
                             <span className="md:hidden">{getFlag(selectedCountry.country)} {selectedCountry.code}</span>
@@ -482,12 +482,12 @@ export default function RsvpForm({
                         </button>
 
                         {countryOpen && (
-                          <div className="absolute left-0 top-[calc(100%+6px)] z-30 w-[min(82vw,320px)] border border-border bg-[#fffaf4] shadow-xl">
+                          <div className="absolute left-0 top-[calc(100%+6px)] z-30 w-[min(82vw,320px)] border border-border bg-background shadow-xl">
                             <Input
                               autoFocus
                               value={countryQuery}
                               onChange={(event) => setCountryQuery(event.target.value)}
-                              className="h-11 rounded-none border-0 border-b border-border bg-white/85 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:ring-0"
+                              className="h-11 rounded-none border-0 border-b border-border bg-background text-sm text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-0"
                               placeholder="Rechercher pays ou indicatif"
                             />
                             <div className="max-h-64 overflow-y-auto py-1">
@@ -509,7 +509,7 @@ export default function RsvpForm({
                                 </button>
                               ))}
                               {filteredCountryCodes.length === 0 && (
-                                <p className="px-3 py-3 text-sm text-[#777777]">Aucun pays trouvé</p>
+                                <p className="px-3 py-3 text-sm text-muted-foreground">Aucun pays trouvé</p>
                               )}
                             </div>
                           </div>
@@ -690,7 +690,7 @@ export default function RsvpForm({
                   <Textarea
                     {...field}
                     value={field.value || ""}
-                    className="min-h-[110px] rounded-none border-border bg-white/85 text-foreground placeholder:text-muted-foreground/70 focus-visible:ring-primary/25"
+                    className="min-h-[110px] rounded-none border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-primary/25"
                     placeholder="Une pensée, un mot doux, un message..."
                   />
                 </FormControl>
@@ -702,7 +702,7 @@ export default function RsvpForm({
           <Button
             type="submit"
             disabled={mutation.isPending}
-            className="w-full rounded-none bg-foreground py-7 uppercase tracking-[0.32em] text-[10px] text-background transition-all hover:-translate-y-0.5 hover:bg-primary hover:shadow-xl"
+            className="w-full rounded-none bg-primary py-7 uppercase tracking-[0.32em] text-[10px] text-primary-foreground transition-all hover:-translate-y-0.5 hover:brightness-110 hover:shadow-xl"
           >
             {mutation.isPending ? "Envoi en cours..." : submitLabel}
           </Button>

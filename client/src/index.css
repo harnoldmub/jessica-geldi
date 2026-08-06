@@ -28,23 +28,23 @@
   }
 
   .dark {
-    --background: 24 12% 5%;        /* noir chaud */
-    --foreground: 40 40% 94%;
-    --primary: 39 46% 62%;         /* or */
-    --primary-foreground: 24 20% 6%;
-    --secondary: 280 8% 12%;
-    --secondary-foreground: 40 40% 94%;
-    --accent: 39 46% 62%;
-    --accent-foreground: 24 20% 6%;
-    --muted: 24 8% 13%;
-    --muted-foreground: 39 18% 74%;
-    --border: 39 16% 30%;
-    --input: 24 8% 13%;
-    --ring: 39 46% 62%;
-    --sage: 86 12% 58%;
-    --gold: 39 46% 62%;
-    --blush: 280 8% 14%;
-    --ink: 40 40% 94%;
+    --background: 26 14% 7%;        /* charbon chaud #151210 */
+    --foreground: 38 38% 90%;       /* ivoire */
+    --primary: 39 48% 62%;          /* or */
+    --primary-foreground: 26 20% 8%;
+    --secondary: 22 9% 13%;         /* surface sombre */
+    --secondary-foreground: 38 38% 90%;
+    --accent: 39 48% 62%;
+    --accent-foreground: 26 20% 8%;
+    --muted: 24 8% 15%;
+    --muted-foreground: 38 16% 70%;
+    --border: 39 14% 26%;
+    --input: 24 8% 15%;
+    --ring: 39 48% 62%;
+    --sage: 86 16% 60%;
+    --gold: 39 48% 62%;
+    --blush: 20 8% 15%;
+    --ink: 38 38% 90%;
   }
 
   html {
