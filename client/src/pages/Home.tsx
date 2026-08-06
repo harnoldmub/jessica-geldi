@@ -1,113 +1,114 @@
-import { useRef, useState } from "react";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { Clock, MapPin, ChevronDown, ExternalLink, Plus, Minus, Gift } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { laeticiaMaxime } from "@shared/laeticiaMaxime";
+import { useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { motion, useScroll, useSpring, useTransform, AnimatePresence } from "framer-motion";
+import { CalendarDays, Clock, MapPin, Gift, Plus, Minus, ChevronDown } from "lucide-react";
+import { JessicaGeldi, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 import RsvpForm from "@/components/RsvpForm";
 import Countdown from "@/components/Countdown";
 
-import heroVideo from "../../images/hero-video.mp4";
-import logoBlack from "../../images/logo-lm-black.png";
-import logoWhite from "../../images/logo-lm-white.png";
-import gardenWideImg from "../../images/couple-garden-wide.jpg";
-import gardenEmbraceImg from "../../images/couple-garden-embrace.jpg";
-import gardenSeatedImg from "../../images/couple-garden-seated.jpg";
-import blackStandingImg from "../../images/couple-black-walkway-standing.jpg";
-import blackBenchImg from "../../images/couple-black-bench.jpg";
-import blackCloseImg from "../../images/couple-black-close-portrait.jpg";
-import redPianoVerticalImg from "../../images/couple-red-piano-vertical.jpg";
-import redPianoWideImg from "../../images/couple-red-piano-wide.jpg";
+import flowerStem from "../../images/pattern/flower-stem.png";
+import peony from "../../images/pattern/peony.png";
+import roseOpen from "../../images/pattern/rose-open.png";
+import roseBud from "../../images/pattern/rose-bud.png";
 
-const rv = { duration: 1.05, ease: [0.22, 1, 0.36, 1] as const };
+const flowers = [flowerStem, peony, roseOpen, roseBud];
+const eventKeys = Object.keys(weddingEvents) as WeddingEventKey[];
+const eventFlower: Record<WeddingEventKey, string> = {
+  civil: roseBud,
+  customary: flowerStem,
+  religious: peony,
+  reception: roseOpen,
+};
 
-const storyImages = [
-  { main: gardenWideImg, accent: gardenEmbraceImg, alt: "Laeticia et Maxime au jardin" },
-  { main: gardenSeatedImg, accent: blackStandingImg, alt: "Laeticia et Maxime en tenue elegante" },
-  { main: redPianoVerticalImg, accent: redPianoWideImg, alt: "Laeticia et Maxime dans le decor rouge" },
-  { main: blackBenchImg, accent: blackCloseImg, alt: "Laeticia et Maxime en ambiance noire" },
-];
+const ease = [0.22, 1, 0.36, 1] as const;
+const reveal = { duration: 0.9, ease };
 
-/* ─── Capacity blocks ─────────────────────────────────────── */
-function CapacityBlocks() {
-  const { data: cap } = useQuery<{ civil: number; civilMax: number; evening: number; eveningMax: number }>({
-    queryKey: ["/api/capacity"],
-    staleTime: 30_000,
-  });
-  const events = [
-    {
-      key: "civil",
-      title: "Civil & bénédiction nuptiale",
-      time: laeticiaMaxime.date.display,
-      place: "Saphir Events, Gombe / Kinshasa",
-      theme: laeticiaMaxime.dresscode.blessing.theme,
-    },
-    {
-      key: "evening",
-      title: "Soirée dansante",
-      time: laeticiaMaxime.secondDate.display,
-      place: "Salle Legacy, Gombe / Kinshasa",
-      theme: laeticiaMaxime.dresscode.evening.theme,
-    },
-  ];
+/* ─── Motif botanique (le line-art PNG sert de masque, teinté à volonté) ─── */
+function Botanical({
+  src,
+  tint = "hsl(var(--primary))",
+  className = "",
+  style,
+}: {
+  src: string;
+  tint?: string;
+  className?: string;
+  style?: CSSProperties;
+}) {
   return (
-    <div className="space-y-5">
-      {events.map((e) => {
-        const isCivil = e.key === "civil";
-        const full = cap ? (isCivil ? cap.civil >= cap.civilMax : cap.evening >= cap.eveningMax) : false;
-        return (
-          <div key={e.key} className="border-l-2 border-border pl-5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-[9px] uppercase tracking-[0.45em] text-muted-foreground/60">{e.title}</p>
-              {full && (
-                <span className="text-[8px] uppercase tracking-[0.3em] bg-rose-100 text-rose-600 px-2 py-0.5">
-                  Complet
-                </span>
-              )}
-            </div>
-            <p className="mt-1 font-serif text-lg text-foreground">{e.time} · {e.place}</p>
-            <p className="text-[10px] italic text-muted-foreground">{e.theme}</p>
-          </div>
-        );
-      })}
-    </div>
+    <span
+      aria-hidden
+      className={`botanical block ${className}`}
+      style={{
+        WebkitMaskImage: `url(${src})`,
+        maskImage: `url(${src})`,
+        backgroundColor: tint,
+        ...style,
+      }}
+    />
   );
 }
 
-/* ─── Ornamental rule ─────────────────────────────────────── */
-function Rule({ opacity = 0.5 }: { opacity?: number }) {
+/* ─── Reveal on scroll ─── */
+function Reveal({
+  children,
+  y = 26,
+  delay = 0,
+  className = "",
+}: {
+  children: ReactNode;
+  y?: number;
+  delay?: number;
+  className?: string;
+}) {
   return (
-    <div className="flex items-center justify-center gap-4" style={{ opacity }}>
-      <div className="h-px flex-1 bg-gradient-to-r from-transparent to-primary/40" />
-      <span className="text-sm text-primary">✦</span>
-      <div className="h-px flex-1 bg-gradient-to-r from-primary/40 to-transparent" />
-    </div>
-  );
-}
-
-/* ─── Section label ───────────────────────────────────────── */
-function Label({ children }: { children: React.ReactNode; dark?: boolean }) {
-  return (
-    <p className="text-[9px] uppercase tracking-[0.68em] text-primary">
+    <motion.div
+      initial={{ opacity: 0, y }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ ...reveal, delay }}
+      className={className}
+    >
       {children}
-    </p>
+    </motion.div>
   );
 }
 
-/* ─── FAQ item ────────────────────────────────────────────── */
+function Eyebrow({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <p className={`text-[10px] uppercase tracking-[0.55em] ${className}`}>{children}</p>
+  );
+}
+
+function Monogram({ dark = false, size = "md" }: { dark?: boolean; size?: "sm" | "md" | "lg" }) {
+  const dims = size === "lg" ? "h-24 w-24" : size === "sm" ? "h-14 w-14" : "h-20 w-20";
+  const script = size === "lg" ? "text-4xl" : size === "sm" ? "text-2xl" : "text-3xl";
+  return (
+    <div
+      className={`relative flex ${dims} items-center justify-center rounded-full border ${
+        dark ? "border-white/35 text-white" : "border-primary/30 text-primary"
+      }`}
+    >
+      <span className="absolute inset-1.5 rounded-full border border-current opacity-40" />
+      <div className="text-center leading-none">
+        <p className={`font-script ${script}`}>J&amp;G</p>
+        <p className="mt-1 text-[7px] uppercase tracking-[0.3em] opacity-70">2026</p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── FAQ ─── */
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="border-b border-border">
       <button
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between py-5 text-left"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-6 py-5 text-left"
       >
-        <span className="font-serif text-lg pr-8 text-foreground">{q}</span>
-        <span className="shrink-0 transition-transform duration-300" style={{ transform: open ? "rotate(45deg)" : "none" }}>
-          {open
-            ? <Minus className="h-4 w-4 text-muted-foreground" strokeWidth={1.4} />
-            : <Plus className="h-4 w-4 text-muted-foreground" strokeWidth={1.4} />
-          }
+        <span className="font-serif text-lg text-foreground md:text-xl">{q}</span>
+        <span className="shrink-0 text-primary transition-transform duration-300" style={{ transform: open ? "rotate(90deg)" : "none" }}>
+          {open ? <Minus className="h-4 w-4" strokeWidth={1.4} /> : <Plus className="h-4 w-4" strokeWidth={1.4} />}
         </span>
       </button>
       <AnimatePresence initial={false}>
@@ -116,10 +117,10 @@ function FaqItem({ q, a }: { q: string; a: string }) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.4, ease }}
             className="overflow-hidden"
           >
-            <p className="pb-6 text-base leading-8 text-muted-foreground">{a}</p>
+            <p className="pb-6 font-body text-lg leading-8 text-muted-foreground">{a}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -127,569 +128,440 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   );
 }
 
-function HeroVideo() {
+/* ─── Nav ─── */
+function Nav() {
+  const links = [
+    { href: "#celebrations", label: "Célébrations" },
+    { href: "#couleurs", label: "Couleurs" },
+    { href: "#faq", label: "Infos" },
+  ];
   return (
-    <video
-      autoPlay
-      muted
-      loop
-      playsInline
-      preload="metadata"
-      className="absolute inset-0 h-full w-full object-cover"
+    <motion.header
+      initial={{ opacity: 0, y: -14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, ease, delay: 0.2 }}
+      className="fixed inset-x-0 top-0 z-40"
     >
-      <source src={heroVideo} type="video/mp4" />
-    </video>
+      <div className="glass-ivory mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2.5 md:my-3 md:rounded-full md:px-6">
+        <a href="#top" className="font-script text-2xl text-primary leading-none">J&amp;G</a>
+        <nav className="hidden items-center gap-8 md:flex">
+          {links.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              className="text-[10px] uppercase tracking-[0.32em] text-foreground/70 transition-colors hover:text-primary"
+            >
+              {l.label}
+            </a>
+          ))}
+        </nav>
+        <a
+          href="#rsvp"
+          className="rounded-full bg-foreground px-5 py-2 text-[9px] uppercase tracking-[0.3em] text-background transition-colors hover:bg-primary"
+        >
+          RSVP
+        </a>
+      </div>
+    </motion.header>
   );
 }
 
-function StoryPhotos({ main, accent, alt, reverse = false }: { main: string; accent: string; alt: string; reverse?: boolean }) {
+/* ─── Célébration card ─── */
+function CelebrationCard({ eventKey, index }: { eventKey: WeddingEventKey; index: number }) {
+  const event = weddingEvents[eventKey];
+  const dark = eventKey === "religious" || eventKey === "reception";
+  const textMain = dark ? "text-white" : "text-foreground";
+  const textSub = dark ? "text-white/65" : "text-muted-foreground";
   return (
-    <div className="relative min-h-[430px] md:min-h-[520px]">
-      <motion.div
-        whileHover={{ y: -6 }}
-        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className={`absolute top-0 ${reverse ? "left-0" : "right-0"} h-[78%] w-[78%] overflow-hidden bg-[#120b0d] editorial-shadow`}
-      >
-        <img src={main} alt={alt} className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/32 via-transparent to-transparent" />
-        <div className="absolute inset-4 border border-white/16" />
-      </motion.div>
-      <motion.div
-        whileHover={{ y: -4, rotate: reverse ? -1.5 : 1.5 }}
-        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className={`absolute bottom-0 ${reverse ? "right-0" : "left-0"} h-[46%] w-[48%] overflow-hidden border-[10px] border-background bg-[#120b0d] shadow-2xl`}
-      >
-        <img src={accent} alt={alt} className="h-full w-full object-cover" />
-      </motion.div>
-    </div>
+    <motion.article
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ ...reveal, delay: index * 0.08 }}
+      whileHover={{ y: -8 }}
+      className="group relative flex min-h-[24rem] flex-col justify-between overflow-hidden border p-8 editorial-shadow"
+      style={{ background: event.background, borderColor: `${event.accent}55` }}
+    >
+      {/* motif filigrane */}
+      <Botanical
+        src={eventFlower[eventKey]}
+        tint={event.accent}
+        className="absolute -right-8 -top-10 h-56 w-56 opacity-[0.16] transition-transform duration-700 group-hover:scale-110 group-hover:rotate-6"
+      />
+      <div className="absolute inset-5 border" style={{ borderColor: `${event.accent}33` }} />
+
+      <div className="relative">
+        <Eyebrow>
+          <span style={{ color: event.accent }}>{event.theme}</span>
+        </Eyebrow>
+        <h3 className={`mt-4 font-serif text-3xl md:text-4xl ${textMain}`}>{event.label}</h3>
+        <p className={`mt-5 max-w-sm font-body text-lg leading-7 ${textSub}`}>{event.themeNote}</p>
+      </div>
+
+      <div className="relative mt-8">
+        <div className={`space-y-2 text-sm ${textSub}`}>
+          <p className="flex items-center gap-3"><CalendarDays className="h-4 w-4" style={{ color: event.accent }} /> {event.date}</p>
+          <p className="flex items-center gap-3"><Clock className="h-4 w-4" style={{ color: event.accent }} /> {event.time}</p>
+          <p className="flex items-center gap-3"><MapPin className="h-4 w-4" style={{ color: event.accent }} /> Lieu à confirmer · Kinshasa</p>
+        </div>
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          {event.palette.map((color, i) => (
+            <span
+              key={`${color}-${i}`}
+              title={event.colorNames[i]}
+              className="h-7 w-7 rounded-full border border-black/10 shadow-sm"
+              style={{ background: color }}
+            />
+          ))}
+        </div>
+      </div>
+    </motion.article>
   );
 }
 
-/* ─── Main ────────────────────────────────────────────────── */
+/* ─── Page ─── */
 export default function Home() {
   const heroRef = useRef<HTMLElement>(null);
-  const { scrollYProgress: heroScroll } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
-  const heroOpacity = useTransform(heroScroll, [0, 0.8], [1, 0]);
-  const heroY = useTransform(heroScroll, [0, 1], ["0%", "18%"]);
+  const { scrollYProgress } = useScroll();
+  const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 30, mass: 0.4 });
 
-  const weddingDate = laeticiaMaxime.weddingDate;
+  const { scrollYProgress: heroScroll } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+  const heroY = useTransform(heroScroll, [0, 1], ["0%", "22%"]);
+  const heroFade = useTransform(heroScroll, [0, 0.85], [1, 0]);
+
+  const isUpcoming = JessicaGeldi.weddingDate.getTime() > Date.now();
+  const marquee = "Jessica & Geldi · 11 · 13 Février 2026 · Kinshasa · ";
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-background">
+    <main id="top" className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
+      {/* barre de progression */}
+      <motion.div
+        style={{ scaleX: progress }}
+        className="fixed inset-x-0 top-0 z-50 h-[3px] origin-left bg-gradient-to-r from-primary via-accent to-sage"
+      />
 
-      {/* ══════════════════════════════════════════════════════
-          1 · HÉROS — vidéo éditoriale
-      ══════════════════════════════════════════════════════ */}
-      <section ref={heroRef} className="relative h-[100svh] min-h-[640px] overflow-hidden bg-[#120b0d]">
+      <Nav />
 
-        {/* ── MOBILE : vidéo en fond plein écran ── */}
-        <div className="absolute inset-0 pointer-events-none md:hidden overflow-hidden">
-          <HeroVideo />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-[#2b060b]/15 to-black/86" />
-        </div>
+      {/* ══════════════ HÉROS ══════════════ */}
+      <section
+        ref={heroRef}
+        className="paper-grain relative flex min-h-[100svh] items-center overflow-hidden"
+        style={{
+          background:
+            "radial-gradient(120% 100% at 15% 12%, #FDF9F3 0%, #F7ECE4 42%, #F3E7E7 75%, #EFE4EC 100%)",
+        }}
+      >
+        {/* florals flottants */}
+        <Botanical src={peony} tint="hsl(var(--primary))" className="absolute left-[4%] top-[16%] h-40 w-40 opacity-20 animate-drift" />
+        <Botanical src={roseOpen} tint="hsl(var(--sage))" className="absolute right-[6%] top-[10%] hidden h-52 w-52 opacity-[0.18] animate-float-slow md:block" />
+        <Botanical src={roseBud} tint="hsl(var(--accent))" className="absolute bottom-[8%] left-[10%] hidden h-36 w-36 opacity-20 animate-sway md:block" />
+        <Botanical src={flowerStem} tint="hsl(var(--primary))" className="absolute -right-6 bottom-[6%] h-64 w-40 opacity-[0.14] animate-float" />
 
-        {/* ── DESKTOP : layout côte à côte ── */}
-        <div className="hidden md:flex h-full">
-
-          {/* Gauche — contenu */}
-          <motion.div
-            style={{
-              y: heroY,
-              opacity: heroOpacity,
-            }}
-              className="relative flex flex-1 flex-col justify-center px-14 lg:px-20 bg-[#f8f1e8]"
-            >
-            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 80% 80%, rgba(128,22,37,0.16) 0%, transparent 44%), radial-gradient(ellipse at 12% 10%, rgba(129,141,111,0.14) 0%, transparent 42%)" }} />
-
-            <motion.img
-              src={logoBlack}
-              alt="Logo Laeticia & Maxime"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-              className="relative mb-8 h-20 w-20 object-contain"
-            />
-
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-              className="text-[10px] uppercase tracking-[0.68em] text-foreground/50"
-            >
-              {laeticiaMaxime.hero.eyebrow}
-            </motion.p>
-
-            <motion.p
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-6 font-script leading-none text-foreground"
-              style={{ fontSize: "clamp(3.5rem, 7vw, 6rem)" }}
-            >
-              {laeticiaMaxime.title}
-            </motion.p>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1, delay: 0.45 }}
-              className="mt-4 font-serif text-xl text-foreground/60"
-            >
-              vous invitent à leur mariage
-            </motion.p>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1, delay: 0.6 }}
-              className="mt-3 inline-flex w-fit border border-[#7d1f30]/20 bg-white/60 px-4 py-2 text-[11px] uppercase tracking-[0.38em] text-foreground/80"
-            >
-              {laeticiaMaxime.date.display} · {laeticiaMaxime.secondDate.display}
-            </motion.p>
-
-            {/* Separator */}
-            <motion.div
-              initial={{ scaleX: 0, opacity: 0 }}
-              animate={{ scaleX: 1, opacity: 1 }}
-              transition={{ duration: 0.9, delay: 0.75 }}
-              className="mt-8 h-px w-16 origin-left bg-border"
-            />
-
-            {/* Countdown */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.85 }}
-              className="mt-8"
-            >
-              <Countdown target={weddingDate} />
+        <motion.div
+          style={{ y: heroY, opacity: heroFade }}
+          className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-28 md:grid-cols-[1.05fr_.95fr] md:px-10"
+        >
+          {/* colonne texte */}
+          <div>
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ ...reveal, delay: 0.15 }}>
+              <Eyebrow className="text-primary/70">Save the Date · Invitation officielle</Eyebrow>
             </motion.div>
 
-            {/* CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
+            <motion.h1
+              initial={{ opacity: 0, y: 26 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 1.05 }}
+              transition={{ duration: 1.1, delay: 0.25, ease }}
+              className="mt-6 font-script leading-[0.9] text-foreground"
+              style={{ fontSize: "clamp(4.2rem, 11vw, 8.5rem)" }}
+            >
+              Jessica
+              <span className="mx-2 align-middle text-[0.55em] text-primary">&amp;</span>
+              Geldi
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1, delay: 0.5 }}
+              className="mt-6 max-w-md font-body text-xl leading-relaxed text-foreground/70"
+            >
+              {JessicaGeldi.tagline}
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.7 }}
               className="mt-10"
+            >
+              <p className="mb-4 text-[10px] uppercase tracking-[0.5em] text-primary/60">
+                {isUpcoming ? "Le grand jour approche" : "Rendez-vous les 11 & 13 février"}
+              </p>
+              {isUpcoming ? (
+                <Countdown target={JessicaGeldi.weddingDate} />
+              ) : (
+                <p className="font-serif text-3xl text-foreground md:text-4xl">
+                  11 &amp; 13 Février 2026 · Kinshasa
+                </p>
+              )}
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.9 }}
+              className="mt-10 flex flex-wrap items-center gap-4"
             >
               <a
                 href="#rsvp"
-                className="inline-flex items-center px-8 py-4 text-[10px] uppercase tracking-[0.45em] transition-all border border-foreground/30 text-foreground bg-foreground/5 hover:bg-foreground/10"
+                className="group inline-flex items-center gap-3 bg-foreground px-9 py-4 text-[10px] uppercase tracking-[0.4em] text-background transition-all hover:-translate-y-0.5 hover:bg-primary"
               >
                 Confirmer ma présence
               </a>
+              <a
+                href="#celebrations"
+                className="text-[10px] uppercase tracking-[0.4em] text-foreground/60 underline-offset-8 transition hover:text-primary hover:underline"
+              >
+                Découvrir le programme
+              </a>
             </motion.div>
+          </div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.9 }}
-              className="mt-14"
-            >
-              <ChevronDown className="h-5 w-5 animate-bounce text-muted-foreground/60" strokeWidth={1.3} />
-            </motion.div>
+          {/* colonne composition florale */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.2, delay: 0.35, ease }}
+            className="relative mx-auto hidden aspect-[4/5] w-full max-w-sm md:block"
+          >
+            <div className="absolute inset-0 rounded-[999px_999px_16px_16px] border border-primary/25 bg-white/40 backdrop-blur-sm editorial-shadow-warm" />
+            <div className="absolute inset-6 rounded-[999px_999px_10px_10px] border border-primary/15" />
+            <Botanical src={roseOpen} tint="hsl(var(--primary))" className="absolute left-1/2 top-10 h-40 w-40 -translate-x-1/2 opacity-70 animate-float-slow" />
+            <Botanical src={peony} tint="hsl(var(--sage))" className="absolute bottom-16 left-8 h-28 w-28 opacity-70 animate-sway" />
+            <Botanical src={roseBud} tint="hsl(var(--accent))" className="absolute bottom-24 right-8 h-24 w-24 opacity-70 animate-float" />
+            <div className="absolute inset-x-0 bottom-10 text-center">
+              <p className="font-serif text-2xl text-foreground">11 · 13 Février</p>
+              <p className="mt-1 text-[10px] uppercase tracking-[0.4em] text-primary/70">Kinshasa · 2026</p>
+            </div>
           </motion.div>
+        </motion.div>
 
-          {/* Droite — vidéo 9:16 pleine hauteur */}
-          <div
-            className="relative flex-shrink-0 overflow-hidden"
-            style={{ width: "calc(100svh * 9 / 16)" }}
-          >
-            <HeroVideo />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
-            <div className="absolute inset-8 border border-white/16" />
-            <div
-              className="absolute inset-y-0 left-0 w-28 pointer-events-none bg-gradient-to-r from-[#f8f1e8] to-transparent"
-            />
-          </div>
-        </div>
-
-        {/* ── MOBILE : contenu en bas ── */}
+        {/* indicateur scroll */}
         <motion.div
-          style={{ y: heroY, opacity: heroOpacity }}
-          className="absolute inset-0 flex flex-col items-center justify-end pb-12 px-6 text-center text-white md:hidden"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.6 }}
+          className="absolute inset-x-0 bottom-6 flex justify-center"
         >
-          <img src={logoWhite} alt="Logo Laeticia & Maxime" className="mb-5 h-20 w-20 object-contain" />
-          <p className="text-[10px] uppercase tracking-[0.68em] text-white/50">
-            {laeticiaMaxime.hero.eyebrow}
-          </p>
-          <p className="mt-5 font-script text-white leading-none" style={{ fontSize: "clamp(3.5rem,14vw,5.5rem)" }}>
-            {laeticiaMaxime.title}
-          </p>
-          <p className="mt-4 border border-white/25 bg-[#7d1f30]/45 px-4 py-2 font-serif text-base text-white shadow-xl backdrop-blur-sm">
-            {laeticiaMaxime.date.display} · {laeticiaMaxime.secondDate.display}
-          </p>
-          <div className="mt-6">
-            <Countdown target={weddingDate} dark />
-          </div>
-          <a
-            href="#rsvp"
-            className="mt-7 inline-flex items-center px-7 py-4 text-[10px] uppercase tracking-[0.45em] text-white border border-white/30 bg-white/10 backdrop-blur-md"
-          >
-            Confirmer ma présence
-          </a>
+          <ChevronDown className="h-5 w-5 animate-bounce text-primary/50" strokeWidth={1.3} />
         </motion.div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-          2 · RSVP — Ultra important
-      ══════════════════════════════════════════════════════ */}
-      <section id="rsvp" className="relative overflow-hidden bg-[#f8f1e8]">
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_18%_0%,rgba(125,31,48,0.16),transparent_42%),radial-gradient(ellipse_at_88%_88%,rgba(199,185,154,0.32),transparent_46%)]" />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c7b99a] to-transparent" />
-        <div className="relative mx-auto grid max-w-6xl gap-14 px-6 py-24 md:px-10 md:py-28 lg:grid-cols-[1fr_1.5fr]">
-
-          <motion.div initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }} transition={rv} className="space-y-8 text-[#281118]">
-            <div>
-              <Label>RSVP</Label>
-              <h2 className="mt-5 font-serif leading-tight text-[#281118]" style={{ fontSize: "clamp(2rem,4.5vw,3rem)" }}>
-                Confirmez votre présence.
-              </h2>
-              <p className="mt-5 text-base leading-8 text-[#7b4d4f]">Une réponse simple suffit : dites-nous si vous serez là, choisissez la célébration et ajoutez vos préférences.</p>
-            </div>
-
-            <CapacityBlocks />
-
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ ...rv, delay: 0.1 }}>
-            <RsvpForm
-              variant="invitation"
-              title="Répondre à l'invitation"
-              description="Dites-nous simplement si vous venez. Si oui, choisissez seul(e) ou en couple, votre date de présence et votre boisson souhaitée."
-              submitLabel="Envoyer ma réponse"
-              successDescription="Merci. Votre réponse a bien été enregistrée. Nous avons hâte de vous accueillir."
-            />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════════
-          3 · NOTRE HISTOIRE — Timeline
-      ══════════════════════════════════════════════════════ */}
-      <section id="histoire" className="relative overflow-hidden bg-gradient-to-br from-background to-secondary">
-        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-
-        <div className="mx-auto max-w-5xl px-6 py-24 md:px-10 md:py-28">
-          <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={rv} className="mb-20 text-center">
-            <Label>Notre histoire</Label>
-            <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3.5rem)" }}>
-              Une histoire célébrée à deux
-            </h2>
-          </motion.div>
-
-          <div className="relative">
-            {/* Vertical line */}
-            <div className="absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 hidden md:block bg-gradient-to-b from-transparent via-border to-transparent" />
-
-            <div className="space-y-16 md:space-y-24">
-              {laeticiaMaxime.story.map((chapter, i) => (
-                <motion.div
-                  key={chapter.title}
-                  initial={{ opacity: 0, y: 28 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ ...rv, delay: i * 0.06 }}
-                  className={`grid gap-8 md:grid-cols-2 md:gap-14 md:items-center ${i % 2 !== 0 ? "md:[&>*:first-child]:order-2" : ""}`}
-                >
-                  {/* Text side */}
-                  <div className={`space-y-4 ${i % 2 !== 0 ? "md:text-right" : ""}`}>
-                    <div className={`flex items-center gap-3 ${i % 2 !== 0 ? "md:justify-end" : ""}`}>
-                      <div className="h-px w-8 bg-border" />
-                      <p className="text-[9px] uppercase tracking-[0.52em] text-muted-foreground">{chapter.period}</p>
-                    </div>
-                    <h3 className="font-serif text-2xl md:text-3xl text-foreground">{chapter.title}</h3>
-                    <p className="text-base leading-8 text-muted-foreground">{chapter.body}</p>
-                  </div>
-
-                  <StoryPhotos {...storyImages[i % storyImages.length]} reverse={i % 2 !== 0} />
-                </motion.div>
+      {/* ══════════════ MARQUEE ══════════════ */}
+      <div className="overflow-hidden border-y border-border bg-secondary/60 py-4">
+        <div className="flex w-max animate-marquee whitespace-nowrap">
+          {[0, 1].map((k) => (
+            <div key={k} className="flex items-center">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <span key={i} className="flex items-center">
+                  <span className="mx-6 font-serif text-lg tracking-wide text-foreground/70">{marquee}</span>
+                  <Botanical src={flowers[i % flowers.length]} tint="hsl(var(--primary))" className="h-5 w-5 opacity-70" />
+                </span>
               ))}
             </div>
-          </div>
+          ))}
         </div>
-      </section>
+      </div>
 
-      {/* ══════════════════════════════════════════════════════
-          4 · PROGRAMME — Timeline du jour
-      ══════════════════════════════════════════════════════ */}
-      <section id="programme" className="relative overflow-hidden bg-muted">
-        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-
-        <div className="mx-auto max-w-3xl px-6 py-24 md:px-10 md:py-28">
-          <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={rv} className="mb-16 text-center">
-            <Label>27 août & 29 août 2026</Label>
-            <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3.25rem)" }}>
-              Programme de la journée
+      {/* ══════════════ INTRO / HISTOIRE ══════════════ */}
+      <section className="relative overflow-hidden px-6 py-24 md:px-10 md:py-32">
+        <Botanical src={flowerStem} tint="hsl(var(--sage))" className="absolute -left-10 top-10 h-72 w-40 opacity-[0.1] animate-float-slow" />
+        <div className="relative mx-auto max-w-3xl text-center">
+          <Reveal>
+            <Eyebrow className="text-primary">Notre promesse</Eyebrow>
+          </Reveal>
+          <Reveal delay={0.08}>
+            <h2 className="mt-6 font-serif text-4xl leading-tight text-foreground md:text-6xl">
+              Quatre célébrations,<br />une même histoire d'amour.
             </h2>
-          </motion.div>
-
-          <div className="relative pl-8 md:pl-12">
-            {/* Vertical line */}
-            <div className="absolute left-0 top-2 bottom-2 w-px bg-gradient-to-b from-border to-transparent" />
-
-            <div className="space-y-10">
-              {laeticiaMaxime.programme.map((event, i) => (
-                <motion.div
-                  key={`${event.time}-${event.title}`}
-                  initial={{ opacity: 0, x: -16 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, amount: 0.5 }}
-                  transition={{ ...rv, delay: i * 0.07 }}
-                  className="relative flex gap-6"
-                >
-                  {/* Dot */}
-                  <div
-                    className="absolute -left-[2.1rem] md:-left-[3.1rem] top-1.5 h-3 w-3 rounded-full border-2 border-primary bg-background"
-                  />
-                  <div className="space-y-1">
-                    <div className="flex items-baseline gap-3 flex-wrap">
-                      <p className="font-serif text-lg text-foreground">
-                        {event.time}
-                      </p>
-                      <span className="text-[8px] uppercase tracking-[0.5em] px-2 py-0.5 text-primary border border-primary/30">
-                        {event.theme === "blessing" ? "27 août" : "29 août"}
-                      </span>
-                    </div>
-                    <p className="font-serif text-2xl text-foreground">{event.title}</p>
-                    <p className="text-sm leading-7 text-muted-foreground">{event.body}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════════
-          5 · LIEUX & ACCÈS
-      ══════════════════════════════════════════════════════ */}
-      <section id="lieux" className="relative overflow-hidden bg-background">
-        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-
-        <div className="mx-auto max-w-5xl px-6 py-24 md:px-10 md:py-28">
-          <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={rv} className="mb-14 text-center">
-            <Label>Kinshasa, RDC</Label>
-            <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3.25rem)" }}>
-              Lieux &amp; Accès
-            </h2>
-            <p className="mt-4 text-sm italic text-muted-foreground">
-              Deux lieux à retenir : Saphir Events pour le civil et la bénédiction, puis Salle Legacy à Gombe / Kinshasa pour la soirée.
+          </Reveal>
+          <Reveal delay={0.16}>
+            <p className="mx-auto mt-7 max-w-2xl font-body text-xl leading-8 text-muted-foreground">
+              {JessicaGeldi.couple.narrative}
             </p>
-          </motion.div>
-
-          <div className="grid gap-5 md:grid-cols-2">
-            {laeticiaMaxime.venues.map((venue, i) => (
-              <motion.article
-                key={venue.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.45 }}
-                transition={{ ...rv, delay: i * 0.08 }}
-                className={`border p-8 editorial-shadow ${venue.theme === 'evening' ? 'dark bg-background border-border' : 'bg-background border-border'}`}
-              >
-                <p className="text-[9px] uppercase tracking-[0.52em] text-primary">
-                  {venue.label}
-                </p>
-                <h3 className="mt-3 font-serif text-2xl text-foreground">{venue.name}</h3>
-
-                <div className="mt-6 space-y-3">
-                  <div className="flex items-start gap-3">
-                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.4} />
-                    <p className="text-sm leading-6 text-muted-foreground">
-                      {venue.address} · {venue.city}, République Démocratique du Congo
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.4} />
-                    <p className="text-sm leading-6 text-muted-foreground">
-                      {venue.time} · {venue.theme === "blessing" ? laeticiaMaxime.date.display : laeticiaMaxime.secondDate.display}
-                    </p>
-                  </div>
-                </div>
-
-                <p className="mt-5 text-sm italic text-muted-foreground/70">
-                  {venue.note}
-                </p>
-
-                <a
-                  href={venue.mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-6 inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.42em] text-primary transition-opacity hover:opacity-70"
-                >
-                  <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
-                  Voir sur Google Maps
-                </a>
-              </motion.article>
-            ))}
-          </div>
+          </Reveal>
+          <Reveal delay={0.24}>
+            <div className="ornamental-divider mx-auto mt-10 max-w-xs text-primary">
+              <Botanical src={roseBud} tint="hsl(var(--primary))" className="h-8 w-8 opacity-80" />
+            </div>
+          </Reveal>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-          6 · THÈMES VESTIMENTAIRES
-      ══════════════════════════════════════════════════════ */}
-      <section id="dresscode" className="relative overflow-hidden bg-gradient-to-br from-background to-secondary">
-        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-
-        <div className="mx-auto max-w-5xl px-6 py-24 md:px-10 md:py-28">
-          <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={rv} className="mb-14 text-center">
-            <Label>Couleurs</Label>
-            <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3.25rem)" }}>
-              Thèmes vestimentaires
-            </h2>
-          </motion.div>
-
+      {/* ══════════════ CÉLÉBRATIONS ══════════════ */}
+      <section id="celebrations" className="relative overflow-hidden bg-secondary/40 px-6 py-24 md:px-10 md:py-32">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-14 flex flex-col items-center text-center">
+            <Reveal><Eyebrow className="text-primary">Le programme</Eyebrow></Reveal>
+            <Reveal delay={0.08}>
+              <h2 className="mt-6 font-serif text-4xl text-foreground md:text-6xl">Quatre invitations, quatre ambiances</h2>
+            </Reveal>
+            <Reveal delay={0.16}>
+              <p className="mt-6 max-w-xl font-body text-lg leading-7 text-muted-foreground">
+                Chaque moment porte sa propre atmosphère et son thème vestimentaire.
+                Votre invitation personnalisée précise les célébrations prévues pour vous.
+              </p>
+            </Reveal>
+          </div>
           <div className="grid gap-6 md:grid-cols-2">
-            {[laeticiaMaxime.dresscode.blessing, laeticiaMaxime.dresscode.evening].map((dc, idx) => (
-              <motion.article
-                key={dc.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.4 }}
-                transition={{ ...rv, delay: idx * 0.1 }}
-                className={`p-8 border border-border ${idx === 1 ? 'dark bg-background' : 'bg-background'}`}
-              >
-                <p className="text-[9px] uppercase tracking-[0.58em] text-primary">{dc.label}</p>
-                <h3 className="mt-3 font-serif text-2xl text-foreground">{dc.theme}</h3>
-                <p className="mt-3 text-sm leading-7 text-muted-foreground whitespace-pre-wrap">{dc.description}</p>
+            {eventKeys.map((key, i) => (
+              <CelebrationCard key={key} eventKey={key} index={i} />
+            ))}
+          </div>
+        </div>
+      </section>
 
-                <div className="mt-6 flex gap-2 flex-wrap">
-                  {dc.colors.map((color, i) => (
-                    <div key={color} className="group relative">
-                      {color === '#FFD700' ? (
-                        <div
-                          className="h-9 w-9 border border-yellow-400/60 gold-shimmer-swatch"
-                          title={dc.colorNames[i]}
-                        />
-                      ) : (
-                        <div
-                          className="h-9 w-9 border border-foreground/20"
-                          style={{ background: color }}
-                          title={dc.colorNames[i]}
-                        />
-                      )}
+      {/* ══════════════ COULEURS / DRESS CODE ══════════════ */}
+      <section id="couleurs" className="relative overflow-hidden px-6 py-24 md:px-10 md:py-32">
+        <Botanical src={peony} tint="hsl(var(--primary))" className="absolute -right-12 top-16 h-72 w-72 opacity-[0.08] animate-drift" />
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-14 text-center">
+            <Reveal><Eyebrow className="text-primary">Dress code</Eyebrow></Reveal>
+            <Reveal delay={0.08}>
+              <h2 className="mt-6 font-serif text-4xl text-foreground md:text-6xl">Les couleurs de la fête</h2>
+            </Reveal>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {eventKeys.map((key, i) => {
+              const event = weddingEvents[key];
+              return (
+                <Reveal key={key} delay={i * 0.07}>
+                  <div className="group h-full border border-border bg-white/60 p-6 backdrop-blur-sm transition-all hover:-translate-y-1 hover:editorial-shadow">
+                    <p className="text-[10px] uppercase tracking-[0.32em]" style={{ color: event.accent }}>{event.shortLabel}</p>
+                    <h3 className="mt-2 font-serif text-2xl text-foreground">{event.theme}</h3>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      {event.palette.map((color, idx) => (
+                        <div key={`${color}-${idx}`} className="text-center">
+                          <span className="block h-9 w-9 rounded-full border border-black/10 shadow-sm" style={{ background: color }} title={event.colorNames[idx]} />
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-
-                {dc.forbidden && (
-                  <div className="mt-5 border-t border-border pt-4">
-                    <p className="text-[10px] italic text-muted-foreground/80">{dc.forbidden}</p>
+                    <p className="mt-5 font-body text-base leading-6 text-muted-foreground">{event.colorNames.join(" · ")}</p>
                   </div>
-                )}
-
-                {idx === 1 && (
-                  <div className="mt-5 border-t border-border pt-4">
-                    <p className="text-sm leading-7 text-muted-foreground italic">
-                      La soirée dansante se vit en Full Black Chic.
-                    </p>
-                  </div>
-                )}
-              </motion.article>
-            ))}
+                </Reveal>
+              );
+            })}
           </div>
-
-          {/* Versets bibliques */}
-          <div className="mt-16 space-y-10">
-            {[
-              {
-                text: "Deux valent mieux qu'un, parce qu'ils retirent un meilleur salaire de leur travail. Car s'ils tombent, l'un relève l'autre ; mais malheur à celui qui est seul et qui tombe, sans avoir un second pour le relever.",
-                ref: "Ecclésiaste 4 : 9–10",
-              },
-              {
-                text: "Ainsi ils ne sont plus deux, mais ils ne font qu'une seule chair. Que l'homme donc ne sépare pas ce que Dieu a joint.",
-                ref: "Matthieu 19 : 6",
-              },
-            ].map((verse, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.4 }}
-                transition={{ ...rv, delay: i * 0.12 }}
-                className="relative pl-6"
-              >
-                <span className="absolute -top-3 left-0 font-serif text-5xl leading-none text-primary/15 select-none">"</span>
-                <blockquote className="font-serif text-lg md:text-xl leading-9 italic text-foreground/75">
-                  « {verse.text} »
-                </blockquote>
-                <p className="mt-4 text-[10px] uppercase tracking-[0.45em] text-muted-foreground/50">
-                  — {verse.ref}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-          7 · CAGNOTTE — Liste de mariage
-      ══════════════════════════════════════════════════════ */}
-      <section id="cagnotte" className="relative overflow-hidden dark bg-background">
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_50%_100%,hsl(var(--primary)/0.1)_0%,transparent_55%)]" />
-
-        <div className="relative mx-auto max-w-2xl px-6 py-24 text-center md:px-10 md:py-28">
-          <motion.div initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={rv}>
-            <div className="mb-8 flex justify-center">
-              <div className="flex h-16 w-16 items-center justify-center border border-primary/30">
-                <Gift className="h-7 w-7 text-primary" strokeWidth={1.3} />
-              </div>
+      {/* ══════════════ CAGNOTTE ══════════════ */}
+      <section className="relative overflow-hidden bg-foreground px-6 py-24 text-center text-background md:px-10 md:py-28">
+        <Botanical src={roseOpen} tint="hsl(var(--accent))" className="absolute left-1/2 top-1/2 h-[30rem] w-[30rem] -translate-x-1/2 -translate-y-1/2 opacity-[0.07] animate-spin-slow" />
+        <div className="relative mx-auto max-w-2xl">
+          <Reveal>
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-accent/40 text-accent">
+              <Gift className="h-6 w-6" strokeWidth={1.4} />
             </div>
-
-            <Label>Liste de mariage</Label>
-            <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3rem)" }}>
-              {laeticiaMaxime.cagnotte.title}
-            </h2>
-            <p className="mt-6 text-base leading-8 text-muted-foreground whitespace-pre-wrap">
-              {laeticiaMaxime.cagnotte.message}
+          </Reveal>
+          <Reveal delay={0.08}>
+            <p className="mt-8 text-[10px] uppercase tracking-[0.5em] text-accent">Présence & contribution</p>
+          </Reveal>
+          <Reveal delay={0.16}>
+            <p className="mt-6 font-serif text-3xl leading-snug md:text-5xl">
+              Votre présence est notre plus beau cadeau.
             </p>
-          </motion.div>
+          </Reveal>
+          <Reveal delay={0.24}>
+            <p className="mx-auto mt-6 max-w-xl font-body text-lg leading-8 text-background/70">
+              Pour celles et ceux qui souhaitent nous témoigner une attention, une contribution
+              en espèces pourra se faire directement lors des célébrations.
+            </p>
+          </Reveal>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-          8 · FAQ
-      ══════════════════════════════════════════════════════ */}
-      <section id="faq" className="relative overflow-hidden bg-background">
-        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      {/* ══════════════ RSVP (unique) ══════════════ */}
+      <section id="rsvp" className="relative overflow-hidden px-6 py-24 md:px-10 md:py-32"
+        style={{ background: "radial-gradient(120% 90% at 85% 10%, #F3E7EC 0%, #FBF6EF 55%)" }}
+      >
+        <Botanical src={roseBud} tint="hsl(var(--primary))" className="absolute left-[6%] top-[12%] hidden h-40 w-40 opacity-[0.14] animate-float md:block" />
+        <Botanical src={flowerStem} tint="hsl(var(--sage))" className="absolute -right-8 bottom-8 h-72 w-44 opacity-[0.12] animate-float-slow" />
+        <div className="relative mx-auto grid max-w-6xl items-start gap-12 lg:grid-cols-[.85fr_1.15fr]">
+          <div className="lg:sticky lg:top-28">
+            <Reveal>
+              <Monogram size="lg" />
+            </Reveal>
+            <Reveal delay={0.08}>
+              <Eyebrow className="mt-8 text-primary">RSVP</Eyebrow>
+            </Reveal>
+            <Reveal delay={0.14}>
+              <h2 className="mt-5 font-serif text-4xl leading-tight text-foreground md:text-5xl">
+                Serez-vous des nôtres&nbsp;?
+              </h2>
+            </Reveal>
+            <Reveal delay={0.2}>
+              <p className="mt-6 max-w-md font-body text-lg leading-8 text-muted-foreground">
+                Une seule réponse à donner. Dites-nous si vous venez, choisissez la ou les
+                célébrations et ajoutez vos préférences — nous préparerons chaque instant avec soin.
+              </p>
+            </Reveal>
+            <Reveal delay={0.26}>
+              <div className="mt-8 space-y-3 border-l-2 border-primary/25 pl-5">
+                <p className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <CalendarDays className="h-4 w-4 text-primary" /> {JessicaGeldi.date.display} — {JessicaGeldi.date.time}
+                </p>
+                <p className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <CalendarDays className="h-4 w-4 text-primary" /> {JessicaGeldi.secondDate.display} — {JessicaGeldi.secondDate.time}
+                </p>
+              </div>
+            </Reveal>
+          </div>
 
-        <div className="mx-auto max-w-2xl px-6 py-24 md:px-10 md:py-28">
-          <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.5 }} transition={rv} className="mb-14 text-center">
-            <Label>Questions fréquentes</Label>
-            <h2 className="mt-5 font-serif leading-tight text-foreground" style={{ fontSize: "clamp(2rem,5vw,3.25rem)" }}>
-              FAQ
-            </h2>
-          </motion.div>
+          <Reveal delay={0.12} y={34}>
+            <RsvpForm
+              title="Répondre à l'invitation"
+              description="Dites-nous si vous serez présent(e). Si oui, sélectionnez la ou les célébrations, précisez si vous venez seul(e) ou en couple, et votre boisson souhaitée."
+              submitLabel="Envoyer ma réponse"
+              successDescription="Merci du fond du cœur. Votre réponse est bien enregistrée — nous avons hâte de célébrer avec vous."
+            />
+          </Reveal>
+        </div>
+      </section>
 
-          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, amount: 0.3 }} transition={rv}>
+      {/* ══════════════ FAQ ══════════════ */}
+      <section id="faq" className="relative overflow-hidden bg-secondary/40 px-6 py-24 md:px-10 md:py-32">
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-12 text-center">
+            <Reveal><Eyebrow className="text-primary">Bon à savoir</Eyebrow></Reveal>
+            <Reveal delay={0.08}>
+              <h2 className="mt-6 font-serif text-4xl text-foreground md:text-5xl">Questions fréquentes</h2>
+            </Reveal>
+          </div>
+          <Reveal delay={0.12}>
             <div className="border-t border-border">
-              {laeticiaMaxime.faq.map((item) => (
+              {JessicaGeldi.faq.map((item) => (
                 <FaqItem key={item.q} q={item.q} a={item.a} />
               ))}
             </div>
-          </motion.div>
+          </Reveal>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-          ÉPILOGUE — Closing
-      ══════════════════════════════════════════════════════ */}
-      <footer className="px-6 py-16 text-center bg-secondary border-t border-border">
-        <Rule opacity={0.5} />
-        <div className="my-10">
-          <img src={logoBlack} alt="Logo Laeticia & Maxime" className="mx-auto mb-8 h-20 w-20 object-contain" />
-          <p className="font-script leading-none text-foreground" style={{ fontSize: "5rem" }}>{laeticiaMaxime.brand}</p>
-          <p className="mt-5 text-[10px] uppercase tracking-[0.55em] text-muted-foreground">
-            {laeticiaMaxime.title} · 27 août & 29 août 2026 · Kinshasa
+      {/* ══════════════ FOOTER ══════════════ */}
+      <footer className="relative overflow-hidden bg-foreground px-6 py-20 text-center text-background md:px-10">
+        <Botanical src={peony} tint="hsl(var(--accent))" className="absolute left-[8%] top-10 h-28 w-28 opacity-10 animate-sway" />
+        <Botanical src={roseOpen} tint="hsl(var(--accent))" className="absolute right-[8%] bottom-10 h-32 w-32 opacity-10 animate-float" />
+        <div className="relative">
+          <Monogram dark size="md" />
+          <p className="mt-8 font-script text-6xl">Jessica &amp; Geldi</p>
+          <p className="mt-4 text-[10px] uppercase tracking-[0.5em] text-background/55">
+            11 &amp; 13 Février 2026 · Kinshasa
           </p>
-          <p className="mt-7 mx-auto max-w-sm font-serif text-sm italic leading-7 text-muted-foreground/80">
-            {laeticiaMaxime.couple.statement}
+          <p className="mx-auto mt-8 max-w-md font-body text-lg italic leading-8 text-background/70">
+            {JessicaGeldi.couple.statement}
           </p>
         </div>
-        <Rule opacity={0.5} />
       </footer>
     </main>
   );

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Check, Loader2, UserCheck, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const CHECKIN_CODE = "GSCheckin2026";
+const CHECKIN_CODE = "JGCheckin2026";
 const PAGE_SIZE = 15;
 
 export default function CheckIn() {
@@ -89,11 +89,11 @@ export default function CheckIn() {
         <div className="flex items-center justify-center gap-2 text-primary/60 mb-2">
           <UserCheck className="w-4 h-4" strokeWidth={1.5} />
           <p className="text-[9px] font-sans tracking-[0.5em] uppercase">
-            Accueil Invites · 29 août 2026
+            Accueil invités · 13 février 2026
           </p>
         </div>
         <p className="font-script text-2xl text-foreground/70 leading-none">
-          Laeticia & Maxime
+          Jessica & Geldi
         </p>
         <div className="mt-4 flex justify-center gap-8">
           <div>

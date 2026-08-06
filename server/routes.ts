@@ -5,6 +5,7 @@ import { adminGuestSchema, insertRsvpSchema, updateGuestSchema } from "@shared/s
 import { nanoid } from "nanoid";
 import { sendRsvpConfirmationEmail } from "./email";
 import { ensureAdminUser, setupAuth } from "./auth";
+import { getEventKeys, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
@@ -81,21 +82,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await ensureAdminUser();
   
   // Public capacity endpoint
-  const CIVIL_MAX = 120;
-  const EVENING_MAX = 250;
-
   async function getCapacity(excludeGuestId?: number) {
     const all = await storage.getAllRsvps();
     const confirmed = all.filter(
       (g) => g.status === "confirmed" && g.id !== excludeGuestId,
     );
-    const civil = confirmed
-      .filter((g) => !g.ceremonyChoice || g.ceremonyChoice === "civil" || g.ceremonyChoice === "both")
-      .reduce((sum, g) => sum + (g.guestCount || 1), 0);
-    const evening = confirmed
-      .filter((g) => !g.ceremonyChoice || g.ceremonyChoice === "evening" || g.ceremonyChoice === "both")
-      .reduce((sum, g) => sum + (g.guestCount || 1), 0);
-    return { civil, civilMax: CIVIL_MAX, evening, eveningMax: EVENING_MAX };
+    const counts = (Object.keys(weddingEvents) as WeddingEventKey[]).reduce(
+      (acc, key) => {
+        acc[key] = confirmed
+          .filter((g) => getEventKeys(g.ceremonyChoice).includes(key))
+          .reduce((sum, g) => sum + (g.guestCount || 1), 0);
+        acc[`${key}Max`] = weddingEvents[key].capacity;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+    return counts;
   }
 
   async function checkCapacity(
@@ -105,12 +107,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (data.status !== "confirmed") return null;
     const cap = await getCapacity(excludeGuestId);
     const count = data.guestCount || 1;
-    const choice = data.ceremonyChoice || "both";
-    if ((choice === "civil" || choice === "both") && cap.civil + count > cap.civilMax) {
-      return "Le mariage civil est malheureusement complet.";
-    }
-    if ((choice === "evening" || choice === "both") && cap.evening + count > cap.eveningMax) {
-      return "La soirée dansante du 29 août est malheureusement complète.";
+    for (const key of getEventKeys(data.ceremonyChoice)) {
+      if ((cap[key] || 0) + count > weddingEvents[key].capacity) {
+        return `${weddingEvents[key].label} est malheureusement complet.`;
+      }
     }
     return null;
   }
@@ -255,10 +255,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     );
   }));
 
-  app.get("/api/admin/guests/export", requireAuth, asyncRoute(async (_req, res) => {
+  app.get("/api/admin/guests/export", requireAuth, asyncRoute(async (req, res) => {
     const guests = await storage.getAllRsvps();
+    const sort = String(req.query.sort || "");
+    const sortedGuests = [...guests].sort((a, b) => {
+      if (sort === "table") {
+        return (a.tableNumber ?? 9999) - (b.tableNumber ?? 9999)
+          || a.lastName.localeCompare(b.lastName, "fr")
+          || a.firstName.localeCompare(b.firstName, "fr");
+      }
+      if (sort === "name") {
+        return a.lastName.localeCompare(b.lastName, "fr")
+          || a.firstName.localeCompare(b.firstName, "fr");
+      }
+      return a.id - b.id;
+    });
 
     const header = [
+      "tableNumber",
       "firstName",
       "lastName",
       "email",
@@ -272,8 +286,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "createdAt",
     ];
 
-    const rows = guests.map((guest) =>
+    const rows = sortedGuests.map((guest) =>
       [
+        guest.tableNumber,
         guest.firstName,
         guest.lastName,
         guest.email,
@@ -294,7 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .status(200)
       .set({
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": 'attachment; filename="glodie-samuel-rsvp.csv"',
+        "Content-Disposition": `attachment; filename="jessica-geldi-rsvp${sort ? `-${sort}` : ""}.csv"`,
       })
       .send([header.join(","), ...rows].join("\n"));
   }));
@@ -302,7 +317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: Bulk import guests (name only)
   app.post("/api/admin/guests/import", requireAuth, async (req, res) => {
     try {
-      const { guests: names, guestCount = 1, ceremonyChoice = "both" } = req.body as {
+      const { guests: names, guestCount = 1, ceremonyChoice = "all" } = req.body as {
         guests: { firstName: string; lastName: string }[];
         guestCount?: number;
         ceremonyChoice?: string;
@@ -322,7 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           phone: null,
           status: "pending",
           guestCount,
-          ceremonyChoice: ceremonyChoice as "civil" | "evening" | "both",
+          ceremonyChoice,
           token: nanoid(10),
         });
         created.push({
@@ -408,7 +423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // ── Check-in page endpoints (protected by a lighter code) ──────────────
-  const CHECKIN_CODE = "GSCheckin2026";
+  const CHECKIN_CODE = "JGCheckin2026";
 
   function requireCheckinCode(req: Request, res: Response, next: NextFunction) {
     const code = req.headers["x-checkin-code"];

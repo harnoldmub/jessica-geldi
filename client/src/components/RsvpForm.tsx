@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, ChevronDown } from "lucide-react";
 import { insertRsvpSchema, type RsvpFormInput, type RsvpResponse } from "@shared/schema";
-import { beverageOptions } from "@shared/laeticiaMaxime";
+import { beverageOptions, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -39,7 +39,7 @@ const defaultValues: RsvpFormInput = {
   phone: "",
   status: undefined as any,
   guestCount: 0,
-  ceremonyChoice: undefined as any,
+  ceremonyChoice: "all" as any,
   mealChoice: "",
   beverageChoice: "",
   message: "",
@@ -319,12 +319,13 @@ export default function RsvpForm({
   const countrySelectorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const { data: capacity } = useQuery<{ civil: number; civilMax: number; evening: number; eveningMax: number }>({
+  const eventKeys = Object.keys(weddingEvents) as WeddingEventKey[];
+  const { data: capacity } = useQuery<Record<string, number>>({
     queryKey: ["/api/capacity"],
     staleTime: 30_000,
   });
-  const civilFull = capacity ? capacity.civil >= capacity.civilMax : false;
-  const eveningFull = capacity ? capacity.evening >= capacity.eveningMax : false;
+  const isFull = (key: WeddingEventKey) => capacity ? (capacity[key] || 0) >= weddingEvents[key].capacity : false;
+  const allFull = eventKeys.some((key) => isFull(key));
 
   const form = useForm<RsvpFormInput>({
     resolver: zodResolver(insertRsvpSchema),
@@ -369,16 +370,12 @@ export default function RsvpForm({
   });
 
   const cardClassName =
-    variant === "page"
-      ? "border border-[#c7b99a]/70 bg-[#fffaf4] p-6 text-[#281118] editorial-shadow md:p-10"
-      : variant === "invitation"
-        ? "border border-[#c7b99a]/70 bg-[#fffaf4] p-6 text-[#281118] editorial-shadow md:p-10"
-        : "border border-[#c7b99a]/70 bg-[#fffaf4] p-6 text-[#281118] editorial-shadow md:p-10";
-  const labelClassName = "text-[10px] uppercase tracking-[0.26em] text-[#7b4d4f]";
-  const inputClassName = "h-12 rounded-none border-[#d8c8a7] bg-white/85 text-[#281118] placeholder:text-[#9a7778] focus-visible:ring-[#7d1f30]/25";
+    "border border-border bg-white/70 p-6 text-foreground editorial-shadow backdrop-blur-sm md:p-10";
+  const labelClassName = "text-[10px] uppercase tracking-[0.28em] text-primary/80";
+  const inputClassName = "h-12 rounded-none border-border bg-white/85 text-foreground placeholder:text-muted-foreground/70 focus-visible:ring-primary/30";
   const choiceClassName = "group border p-4 text-left text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg";
-  const selectedChoiceClassName = "border-[#7d1f30] bg-[#7d1f30] text-white shadow-lg";
-  const unselectedChoiceClassName = "border-[#d8c8a7] bg-white/85 text-[#281118] hover:border-[#7d1f30]/60";
+  const selectedChoiceClassName = "border-primary bg-primary text-primary-foreground shadow-lg";
+  const unselectedChoiceClassName = "border-border bg-white/80 text-foreground hover:border-primary/60";
   const selectedCountry = COUNTRY_CODES.find((item) => item.key === selectedCountryKey) || COUNTRY_CODES.find((item) => item.key === "RDC-+243") || COUNTRY_CODES[0];
   const countrySearch = countryQuery.trim().toLowerCase();
   const filteredCountryCodes = COUNTRY_CODES.filter((item) => {
@@ -475,22 +472,22 @@ export default function RsvpForm({
                             setCountryOpen((open) => !open);
                             setCountryQuery("");
                           }}
-                          className="flex h-12 w-full items-center justify-between gap-1 border border-[#d8c8a7] bg-white/85 px-2 text-left text-xs text-[#281118] focus:outline-none focus:ring-2 focus:ring-[#7d1f30]/25 md:px-3 md:text-sm"
+                          className="flex h-12 w-full items-center justify-between gap-1 border border-border bg-white/85 px-2 text-left text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 md:px-3 md:text-sm"
                         >
                           <span className="min-w-0 truncate">
                             <span className="md:hidden">{getFlag(selectedCountry.country)} {selectedCountry.code}</span>
                             <span className="hidden md:inline">{getFlag(selectedCountry.country)} {selectedCountry.country} ({selectedCountry.code})</span>
                           </span>
-                          <ChevronDown className="h-4 w-4 shrink-0 text-[#7b4d4f]" strokeWidth={1.6} />
+                          <ChevronDown className="h-4 w-4 shrink-0 text-primary/70" strokeWidth={1.6} />
                         </button>
 
                         {countryOpen && (
-                          <div className="absolute left-0 top-[calc(100%+6px)] z-30 w-[min(82vw,320px)] border border-[#d8c8a7] bg-[#fffaf4] shadow-xl">
+                          <div className="absolute left-0 top-[calc(100%+6px)] z-30 w-[min(82vw,320px)] border border-border bg-[#fffaf4] shadow-xl">
                             <Input
                               autoFocus
                               value={countryQuery}
                               onChange={(event) => setCountryQuery(event.target.value)}
-                              className="h-11 rounded-none border-0 border-b border-[#d8c8a7] bg-white/85 text-sm text-[#281118] placeholder:text-[#9a7778] focus-visible:ring-0"
+                              className="h-11 rounded-none border-0 border-b border-border bg-white/85 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:ring-0"
                               placeholder="Rechercher pays ou indicatif"
                             />
                             <div className="max-h-64 overflow-y-auto py-1">
@@ -505,7 +502,7 @@ export default function RsvpForm({
                                     setCountryOpen(false);
                                     setCountryQuery("");
                                   }}
-                                  className={`flex w-full items-center justify-between gap-4 px-3 py-2 text-left text-sm transition-colors hover:bg-[#f3eadc] ${item.key === selectedCountryKey ? "bg-[#7d1f30] text-white hover:bg-[#7d1f30]" : "text-[#281118]"}`}
+                                  className={`flex w-full items-center justify-between gap-4 px-3 py-2 text-left text-sm transition-colors hover:bg-secondary ${item.key === selectedCountryKey ? "bg-primary text-primary-foreground hover:bg-primary" : "text-foreground"}`}
                                 >
                                   <span className="truncate">{getFlag(item.country)} {item.country}</span>
                                   <span className="shrink-0 font-medium">{item.code}</span>
@@ -575,44 +572,38 @@ export default function RsvpForm({
                     <FormItem className="space-y-3">
                       <FormLabel className={labelClassName}>📅 Je participe à</FormLabel>
                       <FormControl>
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          {eventKeys.map((key) => {
+                            const event = weddingEvents[key];
+                            const full = isFull(key);
+                            return (
+                              <button
+                                key={key}
+                                type="button"
+                                aria-pressed={field.value === key}
+                                onClick={() => !full && field.onChange(key)}
+                                disabled={full}
+                                className={`${choiceClassName} min-h-16 px-3 text-xs sm:text-sm ${full ? "opacity-40 cursor-not-allowed" : field.value === key ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                              >
+                                <span className="block font-medium">{event.label}</span>
+                                {full
+                                  ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
+                                  : <span className="block text-[10px] mt-0.5 opacity-70">{event.date.replace(" 2026", "")} · {event.time}</span>
+                                }
+                              </button>
+                            );
+                          })}
                           <button
                             type="button"
-                            aria-pressed={field.value === "civil"}
-                            onClick={() => !civilFull && field.onChange("civil")}
-                            disabled={civilFull}
-                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${civilFull ? "opacity-40 cursor-not-allowed" : field.value === "civil" ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                            aria-pressed={field.value === "all"}
+                            onClick={() => !allFull && field.onChange("all")}
+                            disabled={allFull}
+                            className={`${choiceClassName} min-h-16 px-3 text-xs sm:col-span-2 sm:text-sm ${allFull ? "opacity-40 cursor-not-allowed" : field.value === "all" ? selectedChoiceClassName : unselectedChoiceClassName}`}
                           >
-                            <span className="block font-medium">🌿 Civil & bénédiction</span>
-                            {civilFull
-                              ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
-                              : <span className="block text-[10px] mt-0.5 opacity-70">27 août · à l'anglaise</span>
-                            }
-                          </button>
-                          <button
-                            type="button"
-                            aria-pressed={field.value === "evening"}
-                            onClick={() => !eveningFull && field.onChange("evening")}
-                            disabled={eveningFull}
-                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${eveningFull ? "opacity-40 cursor-not-allowed" : field.value === "evening" ? selectedChoiceClassName : unselectedChoiceClassName}`}
-                          >
-                            <span className="block font-medium">🖤 Soirée dansante</span>
-                            {eveningFull
-                              ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
-                              : <span className="block text-[10px] mt-0.5 opacity-70">29 août · Full Black Chic</span>
-                            }
-                          </button>
-                          <button
-                            type="button"
-                            aria-pressed={field.value === "both"}
-                            onClick={() => !(civilFull || eveningFull) && field.onChange("both")}
-                            disabled={civilFull || eveningFull}
-                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${(civilFull || eveningFull) ? "opacity-40 cursor-not-allowed" : field.value === "both" ? selectedChoiceClassName : unselectedChoiceClassName}`}
-                          >
-                            <span className="block font-medium">✨ Les deux</span>
-                            {(civilFull || eveningFull)
-                              ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
-                              : <span className="block text-[10px] mt-0.5 opacity-70">27 août & 29 août</span>
+                            <span className="block font-medium">Toutes les célébrations</span>
+                            {allFull
+                              ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Une cérémonie est complète</span>
+                              : <span className="block text-[10px] mt-0.5 opacity-70">11 février & 13 février</span>
                             }
                           </button>
                         </div>
@@ -668,7 +659,7 @@ export default function RsvpForm({
                             }}
                             options={beverageSelectOptions}
                             placeholder="Choisir une boisson"
-                            buttonClassName="border-[#d7d7d7] text-[#111111] focus:ring-[#111111]/20"
+                            buttonClassName="border-border text-foreground focus:ring-primary/20"
                           />
                           {getBeverageSelectValue(field.value) === OTHER_BEVERAGE_VALUE && (
                             <Input
@@ -699,7 +690,7 @@ export default function RsvpForm({
                   <Textarea
                     {...field}
                     value={field.value || ""}
-                    className="min-h-[110px] rounded-none border-[#d7d7d7] bg-white text-[#111111] placeholder:text-[#777777] focus-visible:ring-[#111111]/20"
+                    className="min-h-[110px] rounded-none border-border bg-white/85 text-foreground placeholder:text-muted-foreground/70 focus-visible:ring-primary/25"
                     placeholder="Une pensée, un mot doux, un message..."
                   />
                 </FormControl>
@@ -711,7 +702,7 @@ export default function RsvpForm({
           <Button
             type="submit"
             disabled={mutation.isPending}
-            className="w-full rounded-none bg-[#111111] py-7 uppercase tracking-[0.32em] text-[10px] text-white transition-all hover:-translate-y-0.5 hover:bg-[#263629] hover:shadow-xl"
+            className="w-full rounded-none bg-foreground py-7 uppercase tracking-[0.32em] text-[10px] text-background transition-all hover:-translate-y-0.5 hover:bg-primary hover:shadow-xl"
           >
             {mutation.isPending ? "Envoi en cours..." : submitLabel}
           </Button>

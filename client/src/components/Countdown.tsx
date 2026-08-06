@@ -28,6 +28,8 @@ export default function Countdown({
     return () => clearInterval(timer);
   }, [target]);
 
+  const done = time.days + time.hours + time.minutes + time.seconds === 0;
+
   const units = [
     { value: time.days, label: "Jours" },
     { value: time.hours, label: "Heures" },
@@ -35,26 +37,35 @@ export default function Countdown({
     { value: time.seconds, label: "Sec" },
   ];
 
+  const cell = dark
+    ? "border-white/20 bg-white/[0.04] text-white"
+    : "border-primary/20 bg-white/60 text-foreground";
+  const sub = dark ? "text-white/55" : "text-muted-foreground";
+
+  if (done) {
+    return (
+      <p className={`font-script text-4xl ${dark ? "text-white" : "text-primary"}`}>
+        C'est le grand jour !
+      </p>
+    );
+  }
+
   return (
-    <div className={`flex items-center gap-1 ${dark ? "border border-white/25 bg-[#5f4828]/50 px-3 py-3 text-white shadow-xl backdrop-blur-sm" : ""}`}>
-      {units.map((unit, i) => (
-        <div key={unit.label} className="flex items-center">
-          <div className="px-2 text-center sm:px-3">
-            <p
-              className={`font-serif tabular-nums leading-none ${dark ? "text-white" : "text-foreground"}`}
-              style={{ fontSize: "clamp(1.6rem, 4vw, 2.2rem)" }}
-            >
-              {pad(unit.value)}
-            </p>
-            <p className={`mt-1 text-[9px] uppercase tracking-[0.32em] ${dark ? "text-white/80" : "text-muted-foreground"}`}>
-              {unit.label}
-            </p>
-          </div>
-          {i < units.length - 1 && (
-            <span className={`select-none pb-4 font-serif text-xl ${dark ? "text-white/55" : "text-border"}`}>
-              :
-            </span>
-          )}
+    <div className="flex items-stretch gap-2 sm:gap-3">
+      {units.map((unit) => (
+        <div
+          key={unit.label}
+          className={`flex min-w-[3.9rem] flex-1 flex-col items-center border px-2 py-3 backdrop-blur-sm sm:min-w-[4.6rem] sm:px-4 sm:py-4 ${cell}`}
+        >
+          <span
+            className="font-serif tabular-nums leading-none"
+            style={{ fontSize: "clamp(1.7rem, 4.5vw, 2.6rem)", fontWeight: 500 }}
+          >
+            {pad(unit.value)}
+          </span>
+          <span className={`mt-2 text-[8px] uppercase tracking-[0.34em] sm:text-[9px] ${sub}`}>
+            {unit.label}
+          </span>
         </div>
       ))}
     </div>

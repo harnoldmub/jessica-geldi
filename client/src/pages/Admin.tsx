@@ -32,7 +32,7 @@ import {
   type RsvpResponse,
   type SafeUser,
 } from "@shared/schema";
-import { beverageOptions } from "@shared/laeticiaMaxime";
+import { beverageOptions, getEventKeys, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -62,7 +62,7 @@ const emptyGuestForm: GuestFormState = {
   phone: "",
   status: "pending",
   guestCount: 1,
-  ceremonyChoice: "both",
+  ceremonyChoice: "all",
   mealChoice: "",
   beverageChoice: "",
   message: "",
@@ -84,16 +84,21 @@ const invitationFilterOptions = [
   { value: "draft", label: "Brouillons" },
   { value: "sent", label: "Envoyées" },
 ];
+const eventKeys = Object.keys(weddingEvents) as WeddingEventKey[];
 const ceremonyOptions = [
-  { value: "both", label: "Les deux célébrations" },
-  { value: "civil", label: "27 août seulement", detail: "Civil & bénédiction" },
-  { value: "evening", label: "29 août seulement", detail: "Soirée dansante" },
+  { value: "all", label: "Toutes les célébrations", detail: "Les 4 invitations" },
+  ...eventKeys.map((key) => ({
+    value: key,
+    label: weddingEvents[key].label,
+    detail: `${weddingEvents[key].date} · ${weddingEvents[key].time}`,
+  })),
 ];
 const ceremonyFilterOptions = [
   { value: "all", label: "Toutes les célébrations" },
-  { value: "civil", label: "27 août" },
-  { value: "evening", label: "29 août" },
-  { value: "both", label: "Les deux" },
+  ...eventKeys.map((key) => ({
+    value: key,
+    label: weddingEvents[key].shortLabel,
+  })),
 ];
 const guestCountOptions = [
   { value: "1", label: "Seul(e)", detail: "1 personne" },
@@ -106,8 +111,7 @@ const pageSizeOptions = [
 ];
 const TABLES_STORAGE_KEY = "gs-admin-table-count";
 const DEFAULT_TABLE_COUNT = 16;
-const CIVIL_MAX = 120;
-const EVENING_MAX = 250;
+type CapacityResponse = Record<string, number>;
 const beverageSelectOptions = [
   { value: "", label: "Aucune préférence" },
   ...beverageOptions.beers.map((drink) => ({ value: drink, label: drink, group: "Bières" })),
@@ -162,7 +166,7 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "confirmed" | "declined">("all");
   const [invitationFilter, setInvitationFilter] = useState<"all" | "draft" | "sent">("all");
-  const [ceremonyFilter, setCeremonyFilter] = useState<"all" | "civil" | "evening" | "both">("all");
+  const [ceremonyFilter, setCeremonyFilter] = useState<"all" | WeddingEventKey>("all");
   const [credentials, setCredentials] = useState({
     username: "",
     password: "",
@@ -176,7 +180,7 @@ export default function Admin() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
   const [importGuestCount, setImportGuestCount] = useState(1);
-  const [importCeremony, setImportCeremony] = useState<"both" | "civil" | "evening">("both");
+  const [importCeremony, setImportCeremony] = useState<string>("all");
   const MSG_PAGE_SIZE = 9;
   const [showPassword, setShowPassword] = useState(false);
 
@@ -425,11 +429,12 @@ export default function Admin() {
     declinedInvites: sumPeople(guests.filter((g) => g.status === "declined")),
     sentInvitations: guests.filter((guest) => guest.invitationStatus === "sent").length,
     attendingGuests: sumPeople(confirmed),
-    civilAttendees: sumPeople(
-      confirmed.filter((g) => !g.ceremonyChoice || g.ceremonyChoice === "civil" || g.ceremonyChoice === "both")
-    ),
-    eveningAttendees: sumPeople(
-      confirmed.filter((g) => !g.ceremonyChoice || g.ceremonyChoice === "evening" || g.ceremonyChoice === "both")
+    byEvent: eventKeys.reduce(
+      (acc, key) => {
+        acc[key] = sumPeople(confirmed.filter((g) => getEventKeys(g.ceremonyChoice).includes(key)));
+        return acc;
+      },
+      {} as Record<WeddingEventKey, number>,
     ),
   };
 
@@ -440,12 +445,10 @@ export default function Admin() {
       const matchesStatus = statusFilter === "all" || guest.status === statusFilter;
       const matchesInvitation =
         invitationFilter === "all" || guest.invitationStatus === invitationFilter;
-      const gCeremony = guest.ceremonyChoice || "both";
+      const guestEvents = getEventKeys(guest.ceremonyChoice);
       const matchesCeremony =
         ceremonyFilter === "all" ||
-        (ceremonyFilter === "civil" && (gCeremony === "civil" || gCeremony === "both")) ||
-        (ceremonyFilter === "evening" && (gCeremony === "evening" || gCeremony === "both")) ||
-        (ceremonyFilter === "both" && gCeremony === "both");
+        guestEvents.includes(ceremonyFilter);
 
       if (!matchesStatus || !matchesInvitation || !matchesCeremony) {
         return false;
@@ -489,17 +492,16 @@ export default function Admin() {
 
   function shareViaWhatsApp(guest: GuestRecord) {
     const url = getTransitInvitationUrl(guest);
-    const choice = guest.ceremonyChoice || "both";
-    const dateLines =
-      choice === "civil"
-        ? "Jeudi 27 août 2026 : mariage civil & bénédiction nuptiale à Saphir Events, Avenue Uvira 1054, croisement Batetela, en face du parking Pullman, Gombe / Kinshasa."
-        : choice === "evening"
-          ? "Samedi 29 août 2026 : soirée dansante à la Salle Legacy, accès via le Parking de Galerie La Fontaine, No 9257, croisement des avenues Batetela & Cliniques, Gombe / Kinshasa."
-          : "Jeudi 27 août 2026 : civil & bénédiction nuptiale à Saphir Events, Avenue Uvira 1054, croisement Batetela, en face du parking Pullman, Gombe / Kinshasa.\nSamedi 29 août 2026 : soirée dansante à la Salle Legacy, Gombe / Kinshasa.";
-    const linkIntro = "Ouvrez votre invitation et choisissez la date selon votre confirmation :";
+    const dateLines = getEventKeys(guest.ceremonyChoice)
+      .map((key) => {
+        const event = weddingEvents[key];
+        return `${event.date} à ${event.time} : ${event.label} (${event.theme}).`;
+      })
+      .join("\n");
+    const linkIntro = "Ouvrez votre invitation personnalisée ici :";
     const message =
       `Bonjour ${guest.firstName},\n\n` +
-      `Nous avons la joie de vous inviter au mariage de *Laeticia & Maxime*.\n\n` +
+      `Nous avons la joie de vous inviter au mariage de *Jessica & Geldi*.\n\n` +
       `${dateLines}\n\n` +
       `${linkIntro}\n${url}\n\n` +
       `Avec joie de vous avoir parmi nous.`;
@@ -544,7 +546,7 @@ export default function Admin() {
               Espace admin
             </p>
             <h1 className="mt-6 font-serif text-4xl leading-tight md:text-6xl">
-              Gérez les invités de Laeticia & Maxime avec précision.
+              Gérez les invités de Jessica & Geldi avec précision.
             </h1>
             <p className="mt-6 max-w-lg text-sm leading-8 text-white/72">
               Créez les invités, générez leurs liens d'invitation individuels,
@@ -720,6 +722,24 @@ export default function Admin() {
             <Button
               type="button"
               variant="outline"
+              onClick={() => window.open("/api/admin/guests/export?sort=table", "_blank")}
+              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
+            >
+              <Download className="mr-2 h-4 w-4" strokeWidth={1.6} />
+              Export par table
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => window.open("/api/admin/guests/export?sort=name", "_blank")}
+              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
+            >
+              <Download className="mr-2 h-4 w-4" strokeWidth={1.6} />
+              Export par nom
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => logoutMutation.mutate()}
               className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
             >
@@ -747,27 +767,25 @@ export default function Admin() {
             ))}
           </div>
           {/* Ligne cérémonies */}
-          <div className="grid grid-cols-2 divide-x divide-primary/8">
-            <div className="p-5 text-center bg-yellow-50/50">
-              <p className="text-[9px] uppercase tracking-[0.4em] text-yellow-700/60 mb-2">27 août · civil & bénédiction</p>
-              <p className="font-serif text-2xl text-yellow-700">
-                {stats.civilAttendees}
-                <span className="text-sm font-sans font-normal text-yellow-600/50"> / {CIVIL_MAX}</span>
-              </p>
-              <p className="mt-1 text-[9px] text-foreground/35">
-                {stats.civilAttendees >= CIVIL_MAX ? "🔴 Complet" : `${CIVIL_MAX - stats.civilAttendees} places restantes`}
-              </p>
-            </div>
-            <div className="p-5 text-center bg-violet-50/50">
-              <p className="text-[9px] uppercase tracking-[0.4em] text-violet-700/60 mb-2">29 août · soirée</p>
-              <p className="font-serif text-2xl text-violet-700">
-                {stats.eveningAttendees}
-                <span className="text-sm font-sans font-normal text-violet-600/50"> / {EVENING_MAX}</span>
-              </p>
-              <p className="mt-1 text-[9px] text-foreground/35">
-                {stats.eveningAttendees >= EVENING_MAX ? "🔴 Complet" : `${EVENING_MAX - stats.eveningAttendees} places restantes`}
-              </p>
-            </div>
+          <div className="grid divide-primary/8 sm:grid-cols-2 lg:grid-cols-4">
+            {eventKeys.map((key) => {
+              const event = weddingEvents[key];
+              const count = stats.byEvent[key];
+              return (
+                <div key={key} className="p-5 text-center" style={{ background: `${event.accent}12` }}>
+                  <p className="mb-2 text-[9px] uppercase tracking-[0.34em]" style={{ color: event.accent }}>
+                    {event.shortLabel} · {event.time}
+                  </p>
+                  <p className="font-serif text-2xl" style={{ color: event.ink }}>
+                    {count}
+                    <span className="text-sm font-sans font-normal text-foreground/40"> / {event.capacity}</span>
+                  </p>
+                  <p className="mt-1 text-[9px] text-foreground/35">
+                    {count >= event.capacity ? "Complet" : `${event.capacity - count} places restantes`}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </section>
 
@@ -813,7 +831,7 @@ export default function Admin() {
                   <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Cérémonie</label>
                   <PrettySelect
                     value={importCeremony}
-                    onChange={(value) => setImportCeremony(value as "both" | "civil" | "evening")}
+                    onChange={(value) => setImportCeremony(value)}
                     options={ceremonyOptions}
                     placeholder="Cérémonie"
                   />
@@ -1059,7 +1077,7 @@ export default function Admin() {
             />
             <PrettySelect
               value={ceremonyFilter}
-              onChange={(value) => setCeremonyFilter(value as "all" | "civil" | "evening" | "both")}
+              onChange={(value) => setCeremonyFilter(value as "all" | WeddingEventKey)}
               options={ceremonyFilterOptions}
               placeholder="Ceremonies"
             />
@@ -1137,18 +1155,14 @@ export default function Admin() {
                     <Badge
                       variant="outline"
                       className={`rounded-none border-0 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] ${
-                        (guest.ceremonyChoice || "both") === "both"
+                        getEventKeys(guest.ceremonyChoice).length > 1
                           ? "bg-purple-50 text-purple-700"
-                          : (guest.ceremonyChoice) === "civil"
-                          ? "bg-yellow-50 text-yellow-700"
-                          : "bg-violet-50 text-violet-700"
+                          : "bg-yellow-50 text-yellow-700"
                       }`}
                     >
-                      {(guest.ceremonyChoice || "both") === "both"
-                        ? "Les deux dates"
-                        : guest.ceremonyChoice === "civil"
-                        ? "27 août"
-                        : "29 août"}
+                      {getEventKeys(guest.ceremonyChoice).length > 1
+                        ? "Toutes"
+                        : weddingEvents[getEventKeys(guest.ceremonyChoice)[0]].shortLabel}
                     </Badge>
                     {guest.beverageChoice && (
                       <Badge

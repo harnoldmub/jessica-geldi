@@ -60,7 +60,7 @@ const FONT_PRESETS = [
   { value: "Lato", name: "Moderne (Lato)" },
 ];
 
-const CARD_CONFIG_KEY = "glodie_samuel_invitation_card_config_v3";
+const CARD_CONFIG_KEY = "jessica_geldi_invitation_card_config_v1";
 
 export default function CardGeneratorDialog({
   guest,
@@ -158,11 +158,12 @@ export default function CardGeneratorDialog({
       let cancelled = false;
       setIsImageLoading(true);
       const templateKind =
-        guest.ceremonyChoice === "civil"
-          ? "civil"
-          : guest.ceremonyChoice === "evening"
-          ? "evening"
-          : "both";
+        guest.ceremonyChoice === "customary" ||
+        guest.ceremonyChoice === "civil" ||
+        guest.ceremonyChoice === "religious" ||
+        guest.ceremonyChoice === "reception"
+          ? guest.ceremonyChoice
+          : "all";
 
       buildInvitationTemplate(templateKind)
         .then((dataUrl) => {

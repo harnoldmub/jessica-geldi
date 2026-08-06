@@ -15,7 +15,7 @@ declare global {
 export function setupAuth(app: Express) {
   const isProduction = process.env.NODE_ENV === "production";
   app.use(session({
-    secret: process.env.SESSION_SECRET || "glodie-samuel-secret-2026",
+    secret: process.env.SESSION_SECRET || "jessica-geldi-secret-2026",
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
@@ -134,7 +134,7 @@ export async function ensureAdminUser() {
   return storage.createUser({
     username,
     password: hashedPassword,
-    firstName: "Laeticia",
+    firstName: "Jessica",
     lastName: "Admin",
   });
 }
