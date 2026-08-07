@@ -24,9 +24,9 @@ export const allBeverageOptions = [
   ...beverageOptions.softDrinks,
 ] as const;
 
-export const eventChoices = ["customary", "civil", "religious", "reception", "all"] as const;
+export const eventChoices = ["customary", "civil", "religious", "reception"] as const;
 export type EventChoice = (typeof eventChoices)[number];
-export type WeddingEventKey = Exclude<EventChoice, "all">;
+export type WeddingEventKey = EventChoice;
 
 export const weddingEvents: Record<WeddingEventKey, {
   key: WeddingEventKey;
@@ -111,14 +111,22 @@ export const weddingEvents: Record<WeddingEventKey, {
 };
 
 export function getEventKeys(choice?: string | null): WeddingEventKey[] {
-  if (!choice || choice === "all" || choice === "both") {
+  if (choice == null || choice === "all" || choice === "both") {
     return ["customary", "civil", "religious", "reception"];
   }
+  if (!choice.trim()) return [];
   if (choice === "evening") return ["reception"];
-  if (choice === "customary" || choice === "civil" || choice === "religious" || choice === "reception") {
-    return [choice];
-  }
-  return ["customary", "civil", "religious", "reception"];
+  const keys = choice
+    .split(",")
+    .map((key) => key.trim())
+    .filter((key): key is WeddingEventKey =>
+      key === "customary" || key === "civil" || key === "religious" || key === "reception",
+    );
+  return Array.from(new Set(keys));
+}
+
+export function joinEventKeys(keys: WeddingEventKey[]) {
+  return Array.from(new Set(keys)).join(",");
 }
 
 export const JessicaGeldi = {

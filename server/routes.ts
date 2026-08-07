@@ -317,7 +317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: Bulk import guests (name only)
   app.post("/api/admin/guests/import", requireAuth, async (req, res) => {
     try {
-      const { guests: names, guestCount = 1, ceremonyChoice = "all" } = req.body as {
+      const { guests: names, guestCount = 1, ceremonyChoice = "civil" } = req.body as {
         guests: { firstName: string; lastName: string }[];
         guestCount?: number;
         ceremonyChoice?: string;

@@ -11,6 +11,22 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+const eventChoiceSchema = z
+  .string({
+    required_error: "Veuillez choisir votre participation",
+    invalid_type_error: "Veuillez choisir votre participation",
+  })
+  .trim()
+  .min(1, "Veuillez choisir au moins une célébration")
+  .max(100, "Trop de célébrations sélectionnées")
+  .refine(
+    (value) =>
+      value
+        .split(",")
+        .every((key) => ["customary", "civil", "religious", "reception", "all", "both", "evening"].includes(key.trim())),
+    "Veuillez choisir une célébration valide",
+  );
+
 // Session storage for Passport.js
 export const sessions = pgTable(
   "sessions",
@@ -43,7 +59,7 @@ export const rsvpResponses = pgTable("rsvp_responses", {
   // Status & Attendance
   status: varchar("status", { length: 50 }).notNull().default('pending'), // 'confirmed', 'declined', 'pending'
   guestCount: integer("guest_count").notNull().default(1),
-  ceremonyChoice: varchar("ceremony_choice", { length: 20 }).default('all'),
+  ceremonyChoice: varchar("ceremony_choice", { length: 100 }).default('civil'),
   mealChoice: varchar("meal_choice", { length: 100 }),
   beverageChoice: varchar("beverage_choice", { length: 100 }),
   message: text("message"), // Optional message from guest
@@ -101,10 +117,7 @@ export const insertRsvpSchema = createInsertSchema(rsvpResponses, {
     invalid_type_error: "Veuillez choisir votre réponse",
   }),
   guestCount: (schema) => schema.min(1, "Veuillez choisir le nombre de personnes").max(2, "Maximum 2 personnes"),
-  ceremonyChoice: () => z.enum(["customary", "civil", "religious", "reception", "all", "both", "evening"], {
-    required_error: "Veuillez choisir votre participation",
-    invalid_type_error: "Veuillez choisir votre participation",
-  }).optional(),
+  ceremonyChoice: () => eventChoiceSchema.optional(),
 }).omit({
   token: true,
   invitationSentAt: true,
@@ -115,7 +128,7 @@ export const insertRsvpSchema = createInsertSchema(rsvpResponses, {
 
 export const adminGuestSchema = insertRsvpSchema.extend({
   status: z.enum(["pending", "confirmed", "declined"]).default("pending"),
-  ceremonyChoice: z.enum(["customary", "civil", "religious", "reception", "all", "both", "evening"]).default("all"),
+  ceremonyChoice: eventChoiceSchema.default("civil"),
   tableNumber: z.number().int().min(1).max(200).nullable().optional(),
 });
 

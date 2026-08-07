@@ -4,47 +4,48 @@
 
 @layer base {
   :root {
-    /* ─── Palette moderne : ivoire chaud · encre prune · rose mauve · sauge · or ─── */
-    --background: 36 45% 96%;      /* ivoire chaud  #FBF6EF */
-    --foreground: 280 11% 16%;     /* encre prune   #2A2530 */
-    --primary: 346 24% 56%;        /* rose mauve    #AE7A88 */
-    --primary-foreground: 40 40% 98%;
-    --secondary: 12 42% 93%;       /* blush         #F6E7E2 */
-    --secondary-foreground: 280 11% 16%;
-    --accent: 39 46% 56%;          /* or doux       #C6A15B */
-    --accent-foreground: 280 11% 12%;
-    --muted: 34 34% 91%;
-    --muted-foreground: 300 6% 42%;
-    --border: 33 26% 84%;
-    --input: 34 30% 90%;
-    --ring: 346 24% 56%;
+    /* ─── Éditorial noir & blanc — papier chaud + encre ─── */
+    --background: 40 30% 95%;      /* papier chaud #F5F2EC */
+    --foreground: 30 9% 10%;       /* encre        #1B1815 */
+    --primary: 30 9% 11%;          /* encre (boutons / sélection) */
+    --primary-foreground: 40 30% 96%;
+    --secondary: 40 20% 91%;       /* gris papier */
+    --secondary-foreground: 30 9% 11%;
+    --accent: 30 6% 42%;           /* gris moyen */
+    --accent-foreground: 40 30% 96%;
+    --muted: 40 18% 90%;
+    --muted-foreground: 30 5% 40%;
+    --border: 36 14% 82%;
+    --input: 40 18% 90%;
+    --ring: 30 9% 20%;
     --radius: 0px;
 
-    /* couleurs additionnelles */
-    --sage: 86 15% 54%;            /* sauge   #8E9C7C */
-    --gold: 39 46% 56%;            /* or      #C6A15B */
-    --blush: 12 42% 93%;
-    --ink: 280 11% 16%;
+    /* alias neutres (plus de couleur) */
+    --sage: 30 6% 42%;
+    --gold: 30 9% 11%;
+    --blush: 40 20% 91%;
+    --ink: 30 9% 10%;
   }
 
   .dark {
-    --background: 26 14% 7%;        /* charbon chaud #151210 */
-    --foreground: 38 38% 90%;       /* ivoire */
-    --primary: 39 48% 62%;          /* or */
-    --primary-foreground: 26 20% 8%;
-    --secondary: 22 9% 13%;         /* surface sombre */
-    --secondary-foreground: 38 38% 90%;
-    --accent: 39 48% 62%;
-    --accent-foreground: 26 20% 8%;
-    --muted: 24 8% 15%;
-    --muted-foreground: 38 16% 70%;
-    --border: 39 14% 26%;
-    --input: 24 8% 15%;
-    --ring: 39 48% 62%;
-    --sage: 86 16% 60%;
-    --gold: 39 48% 62%;
-    --blush: 20 8% 15%;
-    --ink: 38 38% 90%;
+    /* sections sombres cinématographiques */
+    --background: 30 8% 6%;        /* presque noir chaud #100E0C */
+    --foreground: 40 24% 93%;      /* blanc cassé */
+    --primary: 40 24% 93%;
+    --primary-foreground: 30 9% 8%;
+    --secondary: 30 6% 12%;
+    --secondary-foreground: 40 24% 93%;
+    --accent: 40 10% 68%;
+    --accent-foreground: 30 9% 8%;
+    --muted: 30 6% 14%;
+    --muted-foreground: 40 8% 70%;
+    --border: 40 8% 24%;
+    --input: 30 6% 14%;
+    --ring: 40 24% 80%;
+    --sage: 40 10% 68%;
+    --gold: 40 24% 93%;
+    --blush: 30 6% 12%;
+    --ink: 40 24% 93%;
   }
 
   html {
@@ -52,47 +53,47 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased font-sans;
-    font-feature-settings: "ss01", "cv02";
+    @apply bg-background text-foreground antialiased font-body;
+    font-feature-settings: "liga", "dlig";
   }
 
   h1, h2, h3, h4 {
     @apply font-serif;
-    line-height: 1.05;
-    letter-spacing: -0.01em;
+    line-height: 1.06;
+    letter-spacing: -0.005em;
   }
 
   ::selection {
-    background: hsl(var(--primary) / 0.22);
-    color: hsl(var(--foreground));
+    background: hsl(var(--foreground) / 0.9);
+    color: hsl(var(--background));
   }
 }
 
 @layer utilities {
   .editorial-shadow {
-    box-shadow: 0 30px 70px -34px rgba(42, 37, 48, 0.32);
+    box-shadow: 0 34px 80px -40px rgba(20, 18, 15, 0.4);
   }
 
-  .editorial-shadow-warm {
-    box-shadow: 0 30px 70px -32px rgba(174, 122, 136, 0.34);
+  /* Grain argentique subtil (superposé aux visuels sombres) */
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
   }
 
-  .glass-ivory {
-    @apply bg-white/70 backdrop-blur-xl border border-white/50;
+  /* Cadre photo : placeholder cinématographique en attendant les vraies photos */
+  .photo-frame {
+    background-color: hsl(30 8% 9%);
+    background-image:
+      radial-gradient(120% 90% at 50% 20%, hsl(30 6% 20% / 0.9), transparent 60%),
+      linear-gradient(160deg, hsl(30 6% 14%), hsl(30 8% 7%));
   }
 
-  /* Texte or / dégradé chatoyant */
-  .text-shimmer {
-    background: linear-gradient(100deg, hsl(var(--gold)) 0%, #efd9a4 25%, hsl(var(--gold)) 50%, #efd9a4 75%, hsl(var(--gold)) 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: shimmer 3s linear infinite;
-  }
-
-  /* ─── Motif botanique : les PNG line-art transparents servent de masque,
-        colorés par la couleur de fond (n'importe quelle teinte). ─── */
   .botanical {
     -webkit-mask-repeat: no-repeat;
     mask-repeat: no-repeat;
@@ -104,60 +105,18 @@
   }
 }
 
-/* ─── Divider ornemental ───────────────────────────────── */
-.ornamental-divider {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-}
-.ornamental-divider::before,
-.ornamental-divider::after {
-  content: '';
-  flex: 1;
+/* ─── Divider fin ──────────────────────────────────────── */
+.rule-fine {
   height: 1px;
   background: linear-gradient(90deg, transparent, currentColor, transparent);
-  opacity: 0.28;
-}
-
-/* ─── Grain / texture papier subtile ───────────────────── */
-.paper-grain::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.5;
-  background-image: radial-gradient(hsl(var(--foreground) / 0.04) 1px, transparent 1px);
-  background-size: 4px 4px;
-}
-
-/* ─── Swatch or chatoyant ──────────────────────────────── */
-.gold-shimmer-swatch {
-  background: linear-gradient(135deg, #C9A227, #FFD700, #FFF8DC, #F0C040, #D4AF37, #FFD700);
-  background-size: 300% 300%;
-  animation: goldSwatch 2.4s ease-in-out infinite;
-}
-@keyframes goldSwatch {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.float-up {
-  animation: floatUp 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-@keyframes floatUp {
-  0% { transform: translateY(6px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+  opacity: 0.3;
 }
 
 /* ─── Scrollbar ────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: hsl(var(--background)); }
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.4);
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.6); }
+::-webkit-scrollbar-thumb { background: hsl(var(--foreground) / 0.35); }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--foreground) / 0.55); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, ChevronDown } from "lucide-react";
 import { insertRsvpSchema, type RsvpFormInput, type RsvpResponse } from "@shared/schema";
-import { beverageOptions, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
+import { beverageOptions, getEventKeys, joinEventKeys, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -39,7 +39,7 @@ const defaultValues: RsvpFormInput = {
   phone: "",
   status: undefined as any,
   guestCount: 0,
-  ceremonyChoice: "all" as any,
+  ceremonyChoice: "",
   mealChoice: "",
   beverageChoice: "",
   message: "",
@@ -325,7 +325,13 @@ export default function RsvpForm({
     staleTime: 30_000,
   });
   const isFull = (key: WeddingEventKey) => capacity ? (capacity[key] || 0) >= weddingEvents[key].capacity : false;
-  const allFull = eventKeys.some((key) => isFull(key));
+  function toggleEventChoice(value: string | null | undefined, key: WeddingEventKey) {
+    const selected = getEventKeys(value).filter((eventKey) => eventKey !== key);
+    if (!getEventKeys(value).includes(key)) {
+      selected.push(key);
+    }
+    return joinEventKeys(selected);
+  }
 
   const form = useForm<RsvpFormInput>({
     resolver: zodResolver(insertRsvpSchema),
@@ -348,10 +354,11 @@ export default function RsvpForm({
 
   const mutation = useMutation({
     mutationFn: async (data: RsvpFormInput) => {
+      const payload = data.status === "confirmed" ? data : { ...data, ceremonyChoice: undefined };
       const response = await apiRequest(
         submitEndpoint === "/api/rsvp" ? "POST" : "PATCH",
         submitEndpoint,
-        data,
+        payload,
       );
       return (await response.json()) as RsvpResponse;
     },
@@ -580,10 +587,10 @@ export default function RsvpForm({
                               <button
                                 key={key}
                                 type="button"
-                                aria-pressed={field.value === key}
-                                onClick={() => !full && field.onChange(key)}
+                                aria-pressed={getEventKeys(field.value).includes(key)}
+                                onClick={() => !full && field.onChange(toggleEventChoice(field.value, key))}
                                 disabled={full}
-                                className={`${choiceClassName} min-h-16 px-3 text-xs sm:text-sm ${full ? "opacity-40 cursor-not-allowed" : field.value === key ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                                className={`${choiceClassName} min-h-16 px-3 text-xs sm:text-sm ${full ? "opacity-40 cursor-not-allowed" : getEventKeys(field.value).includes(key) ? selectedChoiceClassName : unselectedChoiceClassName}`}
                               >
                                 <span className="block font-medium">{event.label}</span>
                                 {full
@@ -593,19 +600,6 @@ export default function RsvpForm({
                               </button>
                             );
                           })}
-                          <button
-                            type="button"
-                            aria-pressed={field.value === "all"}
-                            onClick={() => !allFull && field.onChange("all")}
-                            disabled={allFull}
-                            className={`${choiceClassName} min-h-16 px-3 text-xs sm:col-span-2 sm:text-sm ${allFull ? "opacity-40 cursor-not-allowed" : field.value === "all" ? selectedChoiceClassName : unselectedChoiceClassName}`}
-                          >
-                            <span className="block font-medium">Toutes les célébrations</span>
-                            {allFull
-                              ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Une cérémonie est complète</span>
-                              : <span className="block text-[10px] mt-0.5 opacity-70">11 février & 13 février</span>
-                            }
-                          </button>
                         </div>
                       </FormControl>
                       <FormMessage />

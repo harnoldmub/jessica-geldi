@@ -32,7 +32,7 @@ import {
   type RsvpResponse,
   type SafeUser,
 } from "@shared/schema";
-import { beverageOptions, getEventKeys, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
+import { beverageOptions, getEventKeys, joinEventKeys, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -62,7 +62,7 @@ const emptyGuestForm: GuestFormState = {
   phone: "",
   status: "pending",
   guestCount: 1,
-  ceremonyChoice: "all",
+  ceremonyChoice: "civil",
   mealChoice: "",
   beverageChoice: "",
   message: "",
@@ -85,16 +85,8 @@ const invitationFilterOptions = [
   { value: "sent", label: "Envoyées" },
 ];
 const eventKeys = Object.keys(weddingEvents) as WeddingEventKey[];
-const ceremonyOptions = [
-  { value: "all", label: "Toutes les célébrations", detail: "Les 4 invitations" },
-  ...eventKeys.map((key) => ({
-    value: key,
-    label: weddingEvents[key].label,
-    detail: `${weddingEvents[key].date} · ${weddingEvents[key].time}`,
-  })),
-];
 const ceremonyFilterOptions = [
-  { value: "all", label: "Toutes les célébrations" },
+  { value: "all", label: "Tous les événements" },
   ...eventKeys.map((key) => ({
     value: key,
     label: weddingEvents[key].shortLabel,
@@ -127,6 +119,50 @@ function getBeverageSelectValue(value?: string | null) {
 function getOtherBeverageValue(value?: string | null) {
   if (!value || getBeverageSelectValue(value) !== OTHER_BEVERAGE_VALUE) return "";
   return value.startsWith("Autre: ") ? value.slice(7) : value;
+}
+
+function toggleEvent(value: string | null | undefined, key: WeddingEventKey) {
+  const selected = getEventKeys(value).filter((eventKey) => eventKey !== key);
+  if (!getEventKeys(value).includes(key)) {
+    selected.push(key);
+  }
+  return joinEventKeys(selected);
+}
+
+function EventMultiPicker({
+  value,
+  onChange,
+}: {
+  value?: string | null;
+  onChange: (value: string) => void;
+}) {
+  const selected = getEventKeys(value);
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      {eventKeys.map((key) => {
+        const event = weddingEvents[key];
+        const active = selected.includes(key);
+        return (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(toggleEvent(value, key))}
+            className={`border p-3 text-left transition ${
+              active
+                ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                : "border-primary/15 bg-transparent text-foreground hover:border-primary/40"
+            }`}
+          >
+            <span className="block font-serif text-base">{event.shortLabel}</span>
+            <span className={`mt-1 block text-[9px] uppercase tracking-[0.24em] ${active ? "text-white/70" : "text-foreground/45"}`}>
+              {event.date.replace(" 2026", "")} · {event.time}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function getTransitInvitationUrl(guest: GuestRecord) {
@@ -180,7 +216,7 @@ export default function Admin() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
   const [importGuestCount, setImportGuestCount] = useState(1);
-  const [importCeremony, setImportCeremony] = useState<string>("all");
+  const [importCeremony, setImportCeremony] = useState<string>("civil");
   const MSG_PAGE_SIZE = 9;
   const [showPassword, setShowPassword] = useState(false);
 
@@ -520,7 +556,7 @@ export default function Admin() {
       phone: guest.phone || "",
       status: guest.status as GuestFormState["status"],
       guestCount: guest.guestCount || 1,
-      ceremonyChoice: (guest.ceremonyChoice as GuestFormState["ceremonyChoice"]) || "both",
+      ceremonyChoice: (guest.ceremonyChoice as GuestFormState["ceremonyChoice"]) || "civil",
       mealChoice: guest.mealChoice || "",
       beverageChoice: guest.beverageChoice || "",
       message: guest.message || "",
@@ -829,12 +865,7 @@ export default function Admin() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Cérémonie</label>
-                  <PrettySelect
-                    value={importCeremony}
-                    onChange={(value) => setImportCeremony(value)}
-                    options={ceremonyOptions}
-                    placeholder="Cérémonie"
-                  />
+                  <EventMultiPicker value={importCeremony} onChange={setImportCeremony} />
                 </div>
               </div>
             </div>
@@ -843,7 +874,7 @@ export default function Admin() {
               <Button
                 type="button"
                 onClick={() => importGuestsMutation.mutate()}
-                disabled={importGuestsMutation.isPending || !importText.trim().includes(" ")}
+                disabled={importGuestsMutation.isPending || !importText.trim().includes(" ") || !importCeremony}
                 className="rounded-none bg-primary px-7 py-6 text-[10px] uppercase tracking-[0.35em] text-primary-foreground hover:bg-foreground"
               >
                 {importGuestsMutation.isPending ? "Import en cours..." : "Importer"}
@@ -951,11 +982,9 @@ export default function Admin() {
 
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Participe à</label>
-                  <PrettySelect
-                    value={guestForm.ceremonyChoice || "both"}
-                    onChange={(value) => setGuestForm((c) => ({ ...c, ceremonyChoice: value as GuestFormState["ceremonyChoice"] }))}
-                    options={ceremonyOptions}
-                    placeholder="Participation"
+                  <EventMultiPicker
+                    value={guestForm.ceremonyChoice}
+                    onChange={(value) => setGuestForm((c) => ({ ...c, ceremonyChoice: value }))}
                   />
                 </div>
 
@@ -1160,9 +1189,9 @@ export default function Admin() {
                           : "bg-yellow-50 text-yellow-700"
                       }`}
                     >
-                      {getEventKeys(guest.ceremonyChoice).length > 1
-                        ? "Toutes"
-                        : weddingEvents[getEventKeys(guest.ceremonyChoice)[0]].shortLabel}
+                      {getEventKeys(guest.ceremonyChoice)
+                        .map((key) => weddingEvents[key].shortLabel)
+                        .join(", ")}
                     </Badge>
                     {guest.beverageChoice && (
                       <Badge
