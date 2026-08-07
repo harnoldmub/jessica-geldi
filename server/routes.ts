@@ -256,7 +256,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.get("/api/admin/guests/export", requireAuth, asyncRoute(async (req, res) => {
-    const guests = await storage.getAllRsvps();
+    // Export UNIQUEMENT par événement — pas d'export général.
+    const event = String(req.query.event || "") as WeddingEventKey;
+    if (!event || !(event in weddingEvents)) {
+      return res.status(400).json({ message: "Veuillez choisir une célébration à exporter." });
+    }
+    const allGuests = await storage.getAllRsvps();
+    const guests = allGuests.filter((g) => getEventKeys(g.ceremonyChoice).includes(event));
     const sort = String(req.query.sort || "");
     const sortedGuests = [...guests].sort((a, b) => {
       if (sort === "table") {
@@ -309,7 +315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .status(200)
       .set({
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="jessica-geldi-rsvp${sort ? `-${sort}` : ""}.csv"`,
+        "Content-Disposition": `attachment; filename="jessica-geldi-${event}${sort ? `-${sort}` : ""}.csv"`,
       })
       .send([header.join(","), ...rows].join("\n"));
   }));

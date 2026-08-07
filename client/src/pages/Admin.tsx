@@ -85,13 +85,10 @@ const invitationFilterOptions = [
   { value: "sent", label: "Envoyées" },
 ];
 const eventKeys = Object.keys(weddingEvents) as WeddingEventKey[];
-const ceremonyFilterOptions = [
-  { value: "all", label: "Tous les événements" },
-  ...eventKeys.map((key) => ({
-    value: key,
-    label: weddingEvents[key].shortLabel,
-  })),
-];
+const ceremonyFilterOptions = eventKeys.map((key) => ({
+  value: key,
+  label: `${weddingEvents[key].shortLabel} · ${weddingEvents[key].time}`,
+}));
 const guestCountOptions = [
   { value: "1", label: "Seul(e)", detail: "1 personne" },
   { value: "2", label: "En couple", detail: "2 personnes" },
@@ -202,7 +199,7 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "confirmed" | "declined">("all");
   const [invitationFilter, setInvitationFilter] = useState<"all" | "draft" | "sent">("all");
-  const [ceremonyFilter, setCeremonyFilter] = useState<"all" | WeddingEventKey>("all");
+  const [ceremonyFilter, setCeremonyFilter] = useState<"" | WeddingEventKey>("");
   const [credentials, setCredentials] = useState({
     username: "",
     password: "",
@@ -477,14 +474,15 @@ export default function Admin() {
   const filteredGuests = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
 
+    // Notion d'événement : tant qu'aucune célébration n'est choisie, on n'affiche rien.
+    if (!ceremonyFilter) return [];
+
     return guests.filter((guest) => {
       const matchesStatus = statusFilter === "all" || guest.status === statusFilter;
       const matchesInvitation =
         invitationFilter === "all" || guest.invitationStatus === invitationFilter;
       const guestEvents = getEventKeys(guest.ceremonyChoice);
-      const matchesCeremony =
-        ceremonyFilter === "all" ||
-        guestEvents.includes(ceremonyFilter);
+      const matchesCeremony = guestEvents.includes(ceremonyFilter);
 
       if (!matchesStatus || !matchesInvitation || !matchesCeremony) {
         return false;
@@ -746,32 +744,26 @@ export default function Admin() {
               <UserPlus className="mr-2 h-4 w-4" strokeWidth={1.6} />
               Importer liste
             </Button>
+            {/* Export UNIQUEMENT par événement (pas d'export général) */}
             <Button
               type="button"
               variant="outline"
-              onClick={() => window.open("/api/admin/guests/export", "_blank")}
-              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
+              disabled={!ceremonyFilter}
+              onClick={() => ceremonyFilter && window.open(`/api/admin/guests/export?event=${ceremonyFilter}&sort=name`, "_blank")}
+              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Download className="mr-2 h-4 w-4" strokeWidth={1.6} />
-              Export CSV
+              {ceremonyFilter ? `Export ${weddingEvents[ceremonyFilter].shortLabel} (nom)` : "Export (choisir une célébration)"}
             </Button>
             <Button
               type="button"
               variant="outline"
-              onClick={() => window.open("/api/admin/guests/export?sort=table", "_blank")}
-              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
+              disabled={!ceremonyFilter}
+              onClick={() => ceremonyFilter && window.open(`/api/admin/guests/export?event=${ceremonyFilter}&sort=table`, "_blank")}
+              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Download className="mr-2 h-4 w-4" strokeWidth={1.6} />
-              Export par table
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => window.open("/api/admin/guests/export?sort=name", "_blank")}
-              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
-            >
-              <Download className="mr-2 h-4 w-4" strokeWidth={1.6} />
-              Export par nom
+              {ceremonyFilter ? `Export ${weddingEvents[ceremonyFilter].shortLabel} (table)` : "Export par table"}
             </Button>
             <Button
               type="button"
@@ -1106,9 +1098,9 @@ export default function Admin() {
             />
             <PrettySelect
               value={ceremonyFilter}
-              onChange={(value) => setCeremonyFilter(value as "all" | WeddingEventKey)}
+              onChange={(value) => setCeremonyFilter(value as "" | WeddingEventKey)}
               options={ceremonyFilterOptions}
-              placeholder="Ceremonies"
+              placeholder="Choisir une célébration"
             />
           </div>
 
@@ -1275,9 +1267,18 @@ export default function Admin() {
               ))}
 
               {filteredGuests.length === 0 && (
-                <p className="py-16 text-center font-serif text-2xl text-foreground/55">
-                  Aucun invité ne correspond à cette recherche.
-                </p>
+                <div className="py-20 text-center">
+                  {!ceremonyFilter ? (
+                    <>
+                      <p className="font-serif text-2xl text-foreground/70">Choisissez une célébration</p>
+                      <p className="mx-auto mt-3 max-w-md text-sm text-foreground/45">
+                        Sélectionnez un événement ci-dessus pour afficher ses invités. La liste et l'export sont propres à chaque célébration.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="font-serif text-2xl text-foreground/55">Aucun invité ne correspond à cette recherche.</p>
+                  )}
+                </div>
               )}
             </div>
           )}
