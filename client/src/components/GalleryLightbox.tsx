@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
+import { MonogramMark } from "@/components/Monogram";
 
 type GalleryItem = {
-  src: string;
+  src?: string;
   alt: string;
   caption: string;
 };
@@ -43,11 +44,17 @@ export default function GalleryLightbox({ item, onClose }: GalleryLightboxProps)
             className="w-full max-w-5xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <img
-              src={item.src}
-              alt={item.alt}
-              className="max-h-[78vh] w-full object-cover shadow-2xl"
-            />
+            {item.src ? (
+              <img
+                src={item.src}
+                alt={item.alt}
+                className="max-h-[78vh] w-full object-cover shadow-2xl"
+              />
+            ) : (
+              <div className="photo-frame grain relative flex aspect-[4/5] max-h-[78vh] w-full items-center justify-center shadow-2xl">
+                <MonogramMark className="h-24 w-auto text-white/15" />
+              </div>
+            )}
             <div className="border border-t-0 border-white/12 bg-white/8 p-6 text-white">
               <p className="text-[10px] uppercase tracking-[0.45em] text-white/60">
                 Jessica & Geldi

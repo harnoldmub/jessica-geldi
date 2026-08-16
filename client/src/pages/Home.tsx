@@ -1,9 +1,12 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
+import Lenis from "lenis";
 import { JessicaGeldi, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 import RsvpForm from "@/components/RsvpForm";
 import Countdown from "@/components/Countdown";
+import GalleryLightbox from "@/components/GalleryLightbox";
+import { MonogramMark, MonogramLogo } from "@/components/Monogram";
 
 import flowerStem from "../../images/pattern/flower-stem.png";
 
@@ -13,27 +16,6 @@ const schedule = (Object.keys(weddingEvents) as WeddingEventKey[])
   .sort((a, b) => new Date(a.iso).getTime() - new Date(b.iso).getTime());
 
 const ease = [0.22, 1, 0.36, 1] as const;
-
-/* ─── Monogramme JG (icône) ─── */
-function MonogramMark({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 200 250" className={className} fill="none" aria-hidden>
-      <ellipse cx="100" cy="118" rx="94" ry="116" stroke="currentColor" strokeWidth="1.4" />
-      <ellipse cx="100" cy="118" rx="84" ry="104" stroke="currentColor" strokeWidth="2" strokeDasharray="0.5 7" strokeLinecap="round" opacity="0.85" />
-      <text x="101" y="156" textAnchor="middle" fontFamily="'Playfair Display', Georgia, serif" fontStyle="italic" fontSize="118" fill="currentColor" letterSpacing="-6">JG</text>
-    </svg>
-  );
-}
-
-/* ─── Logo complet (icône + nom script) ─── */
-function MonogramLogo({ className = "" }: { className?: string }) {
-  return (
-    <div className={`flex flex-col items-center ${className}`}>
-      <MonogramMark className="h-28 w-auto" />
-      <p className="mt-3 font-script text-4xl leading-none">Jessica &amp; Geldi</p>
-    </div>
-  );
-}
 
 /* ─── Placeholder photo cinématographique (prêt à recevoir les vraies photos N&B) ─── */
 function PhotoFrame({ className = "", children }: { className?: string; children?: ReactNode }) {
@@ -121,6 +103,8 @@ function Nav() {
 }
 
 /* ─── Page ─── */
+type GalleryPreview = { alt: string; caption: string } | null;
+
 export default function Home() {
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
@@ -129,6 +113,25 @@ export default function Home() {
   const heroFade = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
   const isUpcoming = JessicaGeldi.weddingDate.getTime() > Date.now();
+
+  const [galleryItem, setGalleryItem] = useState<GalleryPreview>(null);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const lenis = new Lenis({ duration: 1.15, smoothWheel: true });
+    let frame: number;
+    const raf = (time: number) => {
+      lenis.raf(time);
+      frame = requestAnimationFrame(raf);
+    };
+    frame = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      lenis.destroy();
+    };
+  }, []);
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
@@ -213,6 +216,36 @@ export default function Home() {
                     <p className="mt-5 text-lg leading-8 text-muted-foreground">{chapter.body}</p>
                   </div>
                 </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════ AMBIANCES (galerie unique) ══════════════ */}
+      <section id="ambiances" className="px-6 py-24 md:px-10 md:py-32">
+        <div className="mx-auto max-w-5xl">
+          <Reveal className="text-center">
+            <Label className="text-muted-foreground">Aperçu</Label>
+            <h2 className="mt-6 font-serif text-4xl md:text-6xl">Quatre célébrations, une promesse</h2>
+            <p className="mx-auto mt-6 max-w-xl font-serif text-xl italic leading-8 text-muted-foreground md:text-2xl">
+              {JessicaGeldi.tagline}
+            </p>
+            <Ornament className="mt-10 text-foreground/40" />
+          </Reveal>
+
+          <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {schedule.map((event, i) => (
+              <Reveal key={event.key} delay={i * 0.06}>
+                <button
+                  type="button"
+                  onClick={() => setGalleryItem({ alt: event.label, caption: `${event.label} · ${event.theme}` })}
+                  className="group block w-full text-left"
+                >
+                  <PhotoFrame className="aspect-[3/4] w-full transition-transform duration-500 group-hover:scale-[1.02]" />
+                  <p className="mt-4 font-body text-[10px] uppercase tracking-[0.32em] text-muted-foreground">{event.shortLabel}</p>
+                  <p className="mt-1 font-serif text-lg">{event.theme}</p>
+                </button>
               </Reveal>
             ))}
           </div>
@@ -317,6 +350,8 @@ export default function Home() {
           <p className="mx-auto mt-8 max-w-md text-lg italic leading-8 text-white/70">{JessicaGeldi.couple.statement}</p>
         </div>
       </footer>
+
+      <GalleryLightbox item={galleryItem} onClose={() => setGalleryItem(null)} />
     </main>
   );
 }

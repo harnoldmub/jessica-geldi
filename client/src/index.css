@@ -48,10 +48,6 @@
     --ink: 40 24% 93%;
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
-
   body {
     @apply bg-background text-foreground antialiased font-body;
     font-feature-settings: "liga", "dlig";
