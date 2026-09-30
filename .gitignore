@@ -10,6 +10,8 @@ venv/
 # Build
 dist/
 build/
+output/playwright/
+.playwright-cli/
 
 # OS
 .DS_Store

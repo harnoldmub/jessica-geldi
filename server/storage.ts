@@ -10,6 +10,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { desc, eq } from "drizzle-orm";
+import { and, ne, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -22,7 +23,7 @@ export interface IStorage {
   getRsvpByToken(token: string): Promise<RsvpResponse | undefined>;
   createRsvp(rsvp: InsertRsvpResponse & { token: string }): Promise<RsvpResponse>;
   getAllRsvps(): Promise<RsvpResponse[]>;
-  updateGuest(id: number, guest: UpdateGuestInput): Promise<RsvpResponse>;
+  updateGuest(id: number, guest: UpdateGuestInput, expectedRevision?: number): Promise<RsvpResponse>;
   regenerateGuestToken(id: number, token: string): Promise<RsvpResponse>;
   markInvitationSent(id: number): Promise<RsvpResponse>;
   deleteGuest(id: number): Promise<void>;
@@ -35,6 +36,8 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPassword(id: string, password: string): Promise<User>;
+  updateUserAccount(id: string, username: string, password?: string): Promise<User>;
+  revokeOtherSessions(currentSid: string): Promise<void>;
   
   sessionStore: session.Store;
 }
@@ -68,16 +71,24 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(rsvpResponses).orderBy(desc(rsvpResponses.createdAt));
   }
 
-  async updateGuest(id: number, guest: UpdateGuestInput): Promise<RsvpResponse> {
+  async updateGuest(id: number, guest: UpdateGuestInput, expectedRevision?: number): Promise<RsvpResponse> {
+    const { revision: _revision, ...changes } = guest;
+    const condition = expectedRevision
+      ? and(eq(rsvpResponses.id, id), eq(rsvpResponses.revision, expectedRevision))
+      : eq(rsvpResponses.id, id);
     const [rsvp] = await db
       .update(rsvpResponses)
       .set({
-        ...guest,
+        ...changes,
+        revision: sql`${rsvpResponses.revision} + 1`,
         updatedAt: new Date(),
       })
-      .where(eq(rsvpResponses.id, id))
+      .where(condition)
       .returning();
 
+    if (!rsvp) {
+      throw new Error("Cette fiche a été modifiée ailleurs. Actualisez la liste avant de réessayer.");
+    }
     return rsvp;
   }
 
@@ -86,6 +97,7 @@ export class DatabaseStorage implements IStorage {
       .update(rsvpResponses)
       .set({
         token,
+        revision: sql`${rsvpResponses.revision} + 1`,
         updatedAt: new Date(),
       })
       .where(eq(rsvpResponses.id, id))
@@ -99,6 +111,7 @@ export class DatabaseStorage implements IStorage {
       .update(rsvpResponses)
       .set({
         invitationSentAt: new Date(),
+        revision: sql`${rsvpResponses.revision} + 1`,
         updatedAt: new Date(),
       })
       .where(eq(rsvpResponses.id, id))
@@ -113,15 +126,16 @@ export class DatabaseStorage implements IStorage {
 
   async checkInGuest(id: number): Promise<RsvpResponse> {
     const [rsvp] = await db.update(rsvpResponses)
-      .set({ checkedInAt: new Date(), updatedAt: new Date() })
-      .where(eq(rsvpResponses.id, id))
+      .set({ checkedInAt: new Date(), revision: sql`${rsvpResponses.revision} + 1`, updatedAt: new Date() })
+      .where(and(eq(rsvpResponses.id, id), eq(rsvpResponses.status, "confirmed")))
       .returning();
+    if (!rsvp) throw new Error("Seuls les invités confirmés peuvent être enregistrés à l’accueil.");
     return rsvp;
   }
 
   async uncheckInGuest(id: number): Promise<RsvpResponse> {
     const [rsvp] = await db.update(rsvpResponses)
-      .set({ checkedInAt: null, updatedAt: new Date() })
+      .set({ checkedInAt: null, revision: sql`${rsvpResponses.revision} + 1`, updatedAt: new Date() })
       .where(eq(rsvpResponses.id, id))
       .returning();
     return rsvp;
@@ -154,6 +168,19 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+
+  async updateUserAccount(id: string, username: string, password?: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ username, ...(password ? { password } : {}) })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async revokeOtherSessions(currentSid: string): Promise<void> {
+    await db.delete(sessions).where(ne(sessions.sid, currentSid));
   }
 }
 

@@ -16,7 +16,7 @@ async function ensureFontsLoaded() {
   try {
     await Promise.all([
       document.fonts.load('88px "Great Vibes"'),
-      document.fonts.load('82px "Playfair Display"'),
+      document.fonts.load('82px "Bodoni Moda"'),
       document.fonts.load('34px "Cormorant Garamond"'),
       document.fonts.load('24px "Lato"'),
     ]);
@@ -47,7 +47,7 @@ function drawMonogram(ctx: CanvasRenderingContext2D, color: string) {
   ctx.font = '76px "Great Vibes", cursive';
   ctx.fillText("J&G", CARD_WIDTH / 2, 266);
   ctx.font = '18px "Lato", sans-serif';
-  ctx.fillText("2026", CARD_WIDTH / 2, 303);
+  ctx.fillText("2027", CARD_WIDTH / 2, 303);
   ctx.restore();
 }
 
@@ -94,7 +94,7 @@ function drawTile(
   ctx.textAlign = "left";
   ctx.fillText(eyebrow.toUpperCase(), x + 28, y + 44);
   ctx.fillStyle = palette.ink;
-  ctx.font = '32px "Playfair Display", serif';
+  ctx.font = '32px "Bodoni Moda", Didot, serif';
   ctx.fillText(title, x + 28, y + 90);
   ctx.fillStyle = `${palette.ink}cc`;
   ctx.font = '21px "Lato", sans-serif';
@@ -120,7 +120,7 @@ function drawEventCard(ctx: CanvasRenderingContext2D, kind: WeddingEventKey, opt
   const gradient = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT);
   gradient.addColorStop(0, event.background);
   gradient.addColorStop(0.55, event.palette[0]);
-  gradient.addColorStop(1, kind === "reception" ? "#050505" : `${event.accent}55`);
+  gradient.addColorStop(1, `${event.accent}55`);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
@@ -132,7 +132,7 @@ function drawEventCard(ctx: CanvasRenderingContext2D, kind: WeddingEventKey, opt
   ctx.fillStyle = event.ink;
   ctx.font = '24px "Lato", sans-serif';
   ctx.fillText("INVITATION OFFICIELLE", CARD_WIDTH / 2, 410);
-  ctx.font = '72px "Playfair Display", serif';
+  ctx.font = '72px "Bodoni Moda", Didot, serif';
   ctx.fillText(event.label, CARD_WIDTH / 2, 520);
   ctx.font = '36px "Cormorant Garamond", serif';
   ctx.fillText(event.theme, CARD_WIDTH / 2, 586);
@@ -140,7 +140,7 @@ function drawEventCard(ctx: CanvasRenderingContext2D, kind: WeddingEventKey, opt
   drawGuestName(ctx, options, 750, event.ink);
 
   const tilePalette = {
-    fill: kind === "reception" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.62)",
+    fill: "rgba(255,255,255,0.62)",
     stroke: `${event.accent}66`,
     accent: event.accent,
     ink: event.ink,
@@ -166,16 +166,16 @@ function drawAllCard(ctx: CanvasRenderingContext2D, options: CardOptions) {
   ctx.fillText("LE MARIAGE DE", CARD_WIDTH / 2, 410);
   ctx.font = '92px "Great Vibes", cursive';
   ctx.fillText("Jessica & Geldi", CARD_WIDTH / 2, 530);
-  ctx.font = '46px "Playfair Display", serif';
-  ctx.fillText("Quatre célébrations", CARD_WIDTH / 2, 612);
+  ctx.font = '46px "Bodoni Moda", Didot, serif';
+  ctx.fillText("Trois célébrations", CARD_WIDTH / 2, 612);
   drawGuestName(ctx, options, 760, "#3B261F");
 
   const keys = Object.keys(weddingEvents) as WeddingEventKey[];
   keys.forEach((key, index) => {
     const event = weddingEvents[key];
-    const x = index % 2 === 0 ? 126 : 556;
-    const y = index < 2 ? 920 : 1168;
-    drawTile(ctx, x, y, 398, event.date.replace(" 2026", ""), event.shortLabel, [`${event.time}`, event.theme], {
+    const x = 148;
+    const y = 850 + index * 220;
+    drawTile(ctx, x, y, 784, event.date.replace(" 2027", ""), event.shortLabel, [`${event.time} · ${event.theme}`], {
       fill: "rgba(255,255,255,0.64)",
       stroke: `${event.accent}66`,
       accent: event.accent,
@@ -185,7 +185,7 @@ function drawAllCard(ctx: CanvasRenderingContext2D, options: CardOptions) {
 
   ctx.fillStyle = "#3B261F";
   ctx.font = '24px "Lato", sans-serif';
-  ctx.fillText("Avec joie, nous vous attendons.", CARD_WIDTH / 2, 1490);
+  ctx.fillText("Avec joie, nous vous attendons.", CARD_WIDTH / 2, 1570);
 }
 
 export async function buildInvitationCanvas(

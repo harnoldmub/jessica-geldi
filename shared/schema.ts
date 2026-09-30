@@ -7,6 +7,7 @@ import {
   varchar,
   text,
   integer,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -23,7 +24,7 @@ const eventChoiceSchema = z
     (value) =>
       value
         .split(",")
-        .every((key) => ["customary", "civil", "religious", "reception", "all", "both", "evening"].includes(key.trim())),
+        .every((key) => ["customary", "civil", "religious", "all", "both"].includes(key.trim())),
     "Veuillez choisir une célébration valide",
   );
 
@@ -59,16 +60,25 @@ export const rsvpResponses = pgTable("rsvp_responses", {
   // Status & Attendance
   status: varchar("status", { length: 50 }).notNull().default('pending'), // 'confirmed', 'declined', 'pending'
   guestCount: integer("guest_count").notNull().default(1),
+  invitedCount: integer("invited_count").notNull().default(1),
   ceremonyChoice: varchar("ceremony_choice", { length: 100 }).default('civil'),
+  invitedCeremonyChoice: varchar("invited_ceremony_choice", { length: 100 }).default('civil'),
   mealChoice: varchar("meal_choice", { length: 100 }),
   beverageChoice: varchar("beverage_choice", { length: 100 }),
   message: text("message"), // Optional message from guest
+  allergies: text("allergies"),
+  notes: text("notes"),
+  party: varchar("party", { length: 20 }).notNull().default("commun"),
+  country: varchar("country", { length: 2 }),
+  city: varchar("city", { length: 120 }),
   
   // Invitation & Check-in
   tableNumber: integer("table_number"),
   token: varchar("token").unique().notNull(), // For personalized invitation links
   invitationSentAt: timestamp("invitation_sent_at"),
   checkedInAt: timestamp("checked_in_at"),
+  respondedAt: timestamp("responded_at"),
+  revision: integer("revision").notNull().default(1),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -110,18 +120,29 @@ export const insertRsvpSchema = createInsertSchema(rsvpResponses, {
       .trim()
       .optional()
       .transform((value) => (value ? value : null)),
+  allergies: () =>
+    z.string().trim().max(1000, "Les allergies doivent faire moins de 1000 caractères").optional()
+      .transform((value) => (value ? value : null)),
   firstName: (schema) => schema.min(1, "Prénom requis"),
   lastName: (schema) => schema.min(1, "Nom requis"),
   status: () => z.enum(["pending", "confirmed", "declined"], {
     required_error: "Veuillez choisir votre réponse",
     invalid_type_error: "Veuillez choisir votre réponse",
   }),
-  guestCount: (schema) => schema.min(1, "Veuillez choisir le nombre de personnes").max(2, "Maximum 2 personnes"),
+  guestCount: (schema) => schema.min(1, "Veuillez choisir le nombre de personnes").max(10, "Maximum 10 personnes"),
   ceremonyChoice: () => eventChoiceSchema.optional(),
 }).omit({
   token: true,
   invitationSentAt: true,
   checkedInAt: true,
+  invitedCount: true,
+  invitedCeremonyChoice: true,
+  notes: true,
+  party: true,
+  country: true,
+  city: true,
+  respondedAt: true,
+  revision: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -129,10 +150,32 @@ export const insertRsvpSchema = createInsertSchema(rsvpResponses, {
 export const adminGuestSchema = insertRsvpSchema.extend({
   status: z.enum(["pending", "confirmed", "declined"]).default("pending"),
   ceremonyChoice: eventChoiceSchema.default("civil"),
+  invitedCeremonyChoice: eventChoiceSchema.default("civil"),
+  guestCount: z.number().int().min(1).max(10).default(1),
   tableNumber: z.number().int().min(1).max(200).nullable().optional(),
+  invitedCount: z.number().int().min(1).max(10).default(1),
+  party: z.enum(["jessica", "geldi", "commun"]).default("commun"),
+  country: z.string().trim().max(2).nullable().optional(),
+  city: z.string().trim().max(120).nullable().optional(),
+  notes: z.string().trim().max(2000).nullable().optional(),
+  revision: z.number().int().positive().optional(),
+}).refine((guest) => guest.invitedCount >= guest.guestCount, {
+  message: "Les places réservées doivent couvrir les personnes confirmées",
+  path: ["invitedCount"],
 });
 
-export const updateGuestSchema = adminGuestSchema.partial();
+export const updateGuestSchema = adminGuestSchema.innerType().partial().extend({
+  checkedInAt: z.date().nullable().optional(),
+  respondedAt: z.date().nullable().optional(),
+});
+
+export const siteSettings = pgTable("site_settings", {
+  id: integer("id").primaryKey().default(1),
+  value: jsonb("value").notNull(),
+  revision: integer("revision").notNull().default(1),
+  published: boolean("published").notNull().default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 export const insertUserSchema = createInsertSchema(users);
 

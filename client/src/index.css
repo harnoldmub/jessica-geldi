@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    position: relative;
+  }
+
   :root {
     /* ─── Éditorial noir & blanc — papier chaud + encre ─── */
     --background: 40 30% 95%;      /* papier chaud #F5F2EC */
@@ -56,7 +60,7 @@
   h1, h2, h3, h4 {
     @apply font-serif;
     line-height: 1.06;
-    letter-spacing: -0.005em;
+    letter-spacing: 0;
   }
 
   ::selection {
@@ -98,6 +102,36 @@
     -webkit-mask-position: center;
     mask-position: center;
     pointer-events: none;
+  }
+
+  .invitation-paper {
+    background-color: #f8f4ed;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.28)),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
+    box-shadow: 0 1px 2px rgb(34 25 20 / 0.12), 0 30px 90px -32px rgb(34 25 20 / 0.42);
+  }
+
+  .invitation-cover-title {
+    font-size: clamp(3.25rem, 16vw, 5.25rem);
+    line-height: 0.86;
+  }
+
+  .pearl {
+    display: block;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    border: 1px solid rgb(132 115 101 / 0.25);
+    border-radius: 999px;
+    background: radial-gradient(circle at 34% 28%, #fff 0 17%, #f4eee6 34%, #d8cbbd 70%, #9c8b7e 100%);
+    box-shadow: inset -2px -2px 3px rgb(79 64 54 / 0.2), 0 2px 4px rgb(54 42 34 / 0.17);
+  }
+
+  .pearl-small {
+    width: 13px;
+    height: 13px;
+    flex-basis: 13px;
   }
 }
 

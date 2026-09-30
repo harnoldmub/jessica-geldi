@@ -158,11 +158,10 @@ export default function CardGeneratorDialog({
       let cancelled = false;
       setIsImageLoading(true);
       const templateKind =
-        guest.ceremonyChoice === "customary" ||
-        guest.ceremonyChoice === "civil" ||
-        guest.ceremonyChoice === "religious" ||
-        guest.ceremonyChoice === "reception"
-          ? guest.ceremonyChoice
+        guest.invitedCeremonyChoice === "customary" ||
+        guest.invitedCeremonyChoice === "civil" ||
+        guest.invitedCeremonyChoice === "religious"
+          ? guest.invitedCeremonyChoice
           : "all";
 
       buildInvitationTemplate(templateKind)

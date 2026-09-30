@@ -30,6 +30,8 @@ type RsvpFormProps = {
   successTitle?: string;
   successDescription?: string;
   onSubmitted?: (guest: RsvpResponse) => void;
+  maxGuests?: number;
+  allowedEvents?: WeddingEventKey[];
 };
 
 const defaultValues: RsvpFormInput = {
@@ -42,6 +44,7 @@ const defaultValues: RsvpFormInput = {
   ceremonyChoice: "",
   mealChoice: "",
   beverageChoice: "",
+  allergies: "",
   message: "",
 };
 
@@ -311,6 +314,8 @@ export default function RsvpForm({
   successTitle = "Votre réponse est enregistrée",
   successDescription = "Merci, votre réponse a bien été prise en compte.",
   onSubmitted,
+  maxGuests = 2,
+  allowedEvents,
 }: RsvpFormProps) {
   const [submitted, setSubmitted] = useState(false);
   const [countryOpen, setCountryOpen] = useState(false);
@@ -319,7 +324,7 @@ export default function RsvpForm({
   const countrySelectorRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const eventKeys = Object.keys(weddingEvents) as WeddingEventKey[];
+  const eventKeys = allowedEvents?.length ? allowedEvents : Object.keys(weddingEvents) as WeddingEventKey[];
   const { data: capacity } = useQuery<Record<string, number>>({
     queryKey: ["/api/capacity"],
     staleTime: 30_000,
@@ -595,7 +600,7 @@ export default function RsvpForm({
                                 <span className="block font-medium">{event.label}</span>
                                 {full
                                   ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
-                                  : <span className="block text-[10px] mt-0.5 opacity-70">{event.date.replace(" 2026", "")} · {event.time}</span>
+                                  : <span className="block text-[10px] mt-0.5 opacity-70">{event.date.replace(" 2027", "")} · {event.time}</span>
                                 }
                               </button>
                             );
@@ -614,23 +619,18 @@ export default function RsvpForm({
                     <FormItem className="space-y-3">
                       <FormLabel className={labelClassName}>👥 Je viens</FormLabel>
                       <FormControl>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            type="button"
-                            aria-pressed={field.value === 1}
-                            onClick={() => field.onChange(1)}
-                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === 1 ? selectedChoiceClassName : unselectedChoiceClassName}`}
-                          >
-                            <span className="mr-2 text-base">🙋</span> Seul(e)
-                          </button>
-                          <button
-                            type="button"
-                            aria-pressed={field.value === 2}
-                            onClick={() => field.onChange(2)}
-                            className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === 2 ? selectedChoiceClassName : unselectedChoiceClassName}`}
-                          >
-                            <span className="mr-2 text-base">💑</span> En couple
-                          </button>
+                        <div className={`grid gap-2 ${maxGuests > 2 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"}`}>
+                          {Array.from({ length: Math.max(1, Math.min(10, maxGuests)) }, (_, index) => index + 1).map((count) => (
+                            <button
+                              key={count}
+                              type="button"
+                              aria-pressed={field.value === count}
+                              onClick={() => field.onChange(count)}
+                              className={`${choiceClassName} min-h-14 px-3 text-center text-xs sm:text-sm ${field.value === count ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                            >
+                              {count} personne{count > 1 ? "s" : ""}
+                            </button>
+                          ))}
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -664,6 +664,39 @@ export default function RsvpForm({
                             />
                           )}
                         </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="mealChoice"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel className={labelClassName}>Repas ou régime particulier</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} className={inputClassName} placeholder="Végétarien, sans porc…" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="allergies"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel className={labelClassName}>Allergies ou restrictions alimentaires</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          value={field.value || ""}
+                          className="min-h-[90px] rounded-none border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-primary/25"
+                          placeholder="Indiquez uniquement ce que l’équipe doit prévoir"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -42,8 +42,8 @@ export default {
         ink: "hsl(var(--ink))",
       },
       fontFamily: {
-        serif: ["'Playfair Display'", "'Cormorant Garamond'", "serif"],
-        body: ["'Cormorant Garamond'", "'Playfair Display'", "serif"],
+        serif: ["'Bodoni Moda'", "Didot", "'Times New Roman'", "serif"],
+        body: ["'Cormorant Garamond'", "Garamond", "serif"],
         script: ["'Great Vibes'", "cursive"],
         sans: ["'Jost'", "'Lato'", "system-ui", "sans-serif"],
       },

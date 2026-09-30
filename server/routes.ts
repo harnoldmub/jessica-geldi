@@ -6,6 +6,11 @@ import { nanoid } from "nanoid";
 import { sendRsvpConfirmationEmail } from "./email";
 import { ensureAdminUser, setupAuth } from "./auth";
 import { getEventKeys, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
+import { siteSettingsSchema } from "@shared/siteSettings";
+import { ensureApplicationSchema } from "./migrations";
+import { getStoredSiteSettings, saveStoredSiteSettings } from "./siteSettings";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
@@ -30,7 +35,8 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 function escapeCsvValue(value: unknown) {
-  const stringValue = value == null ? "" : String(value);
+  const rawValue = value == null ? "" : String(value);
+  const stringValue = /^[=+\-@]/.test(rawValue) ? `'${rawValue}` : rawValue;
   return `"${stringValue.replaceAll(`"`, `""`)}"`;
 }
 
@@ -78,6 +84,7 @@ function rsvpRateLimitKey(req: Request) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  await ensureApplicationSchema();
   setupAuth(app);
   await ensureAdminUser();
   
@@ -128,6 +135,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = insertRsvpSchema.parse(req.body);
 
+      if (data.guestCount > 2) {
+        return res.status(400).json({ message: "Une nouvelle réponse publique est limitée à 2 personnes." });
+      }
+
       const capacityError = await checkCapacity(data);
       if (capacityError) {
         return res.status(409).json({ message: capacityError });
@@ -139,6 +150,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const rsvp = await storage.createRsvp({
         ...data,
         token,
+        invitedCount: data.guestCount,
+        invitedCeremonyChoice: data.ceremonyChoice,
+        respondedAt: data.status === "pending" ? null : new Date(),
         status: data.status || 'confirmed',
       });
 
@@ -161,8 +175,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!guest) {
       return res.status(404).json({ message: "Invitation introuvable" });
     }
+    const { notes: _notes, ...publicGuest } = guest;
     res.json({
-      ...guest,
+      ...publicGuest,
       invitationUrl: buildInvitationLink(req, guest.token),
       invitationStatus: getInvitationStatus(guest),
     });
@@ -182,6 +197,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = insertRsvpSchema.parse(req.body);
 
+      if (data.guestCount > guest.invitedCount) {
+        return res.status(400).json({ message: `Votre invitation prévoit ${guest.invitedCount} place(s).` });
+      }
+      const invitedEvents = getEventKeys(guest.invitedCeremonyChoice || guest.ceremonyChoice);
+      const selectedEvents = getEventKeys(data.ceremonyChoice);
+      if (data.status === "confirmed" && selectedEvents.some((key) => !invitedEvents.includes(key))) {
+        return res.status(400).json({ message: "Cette célébration ne fait pas partie de votre invitation." });
+      }
+
       const capacityError = await checkCapacity(data, guest.id);
       if (capacityError) {
         return res.status(409).json({ message: capacityError });
@@ -189,8 +213,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedGuest = await storage.updateGuest(guest.id, {
         ...data,
+        respondedAt: new Date(),
+        checkedInAt: data.status === "confirmed" ? guest.checkedInAt : null,
         ceremonyChoice: data.ceremonyChoice === null ? undefined : data.ceremonyChoice,
-      });
+      }, guest.revision);
 
       if (updatedGuest.email) {
         sendRsvpConfirmationEmail(updatedGuest).catch((err) => {
@@ -229,7 +255,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: capacityError });
       }
 
-      const updatedGuest = await storage.updateGuest(guest.id, { status });
+      const updatedGuest = await storage.updateGuest(guest.id, {
+        status,
+        respondedAt: status === "pending" ? null : new Date(),
+        checkedInAt: status === "confirmed" ? guest.checkedInAt : null,
+      }, guest.revision);
 
       if (status === "confirmed" && updatedGuest.email) {
         sendRsvpConfirmationEmail(updatedGuest).catch((err) => {
@@ -285,10 +315,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       "phone",
       "status",
       "guestCount",
+      "invitedCount",
       "ceremonyChoice",
+      "invitedCeremonyChoice",
+      "party",
+      "country",
+      "city",
+      "mealChoice",
       "beverageChoice",
+      "allergies",
       "message",
+      "notes",
       "checkedInAt",
+      "respondedAt",
       "createdAt",
     ];
 
@@ -301,10 +340,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         guest.phone,
         guest.status,
         guest.guestCount,
+        guest.invitedCount,
         guest.ceremonyChoice,
+        guest.invitedCeremonyChoice,
+        guest.party,
+        guest.country,
+        guest.city,
+        guest.mealChoice,
         guest.beverageChoice,
+        guest.allergies,
         guest.message,
+        guest.notes,
         guest.checkedInAt?.toISOString(),
+        guest.respondedAt?.toISOString(),
         guest.createdAt?.toISOString(),
       ]
         .map(escapeCsvValue)
@@ -320,32 +368,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .send([header.join(","), ...rows].join("\n"));
   }));
 
-  // Admin: Bulk import guests (name only)
+  // Admin: CSV/structured bulk import with duplicate protection.
   app.post("/api/admin/guests/import", requireAuth, async (req, res) => {
     try {
-      const { guests: names, guestCount = 1, ceremonyChoice = "civil" } = req.body as {
-        guests: { firstName: string; lastName: string }[];
+      const payload = req.body as {
+        guests?: unknown[];
         guestCount?: number;
         ceremonyChoice?: string;
-      };
+        party?: "jessica" | "geldi" | "commun";
+      } | unknown[];
+      const names = Array.isArray(payload) ? payload : payload.guests;
 
       if (!Array.isArray(names) || names.length === 0) {
         return res.status(400).json({ message: "Aucun invité à importer" });
       }
+      if (names.length > 500) {
+        return res.status(400).json({ message: "L’import est limité à 500 invitations." });
+      }
 
+      const existing = await storage.getAllRsvps();
+      const duplicateKeys = new Set(existing.map((guest) =>
+        `${guest.firstName}|${guest.lastName}|${guest.email || guest.phone || ""}`.toLocaleLowerCase("fr"),
+      ));
       const created = [];
-      for (const { firstName, lastName } of names) {
-        if (!firstName?.trim() || !lastName?.trim()) continue;
+      let skipped = 0;
+      for (const rawGuest of names) {
+        const defaults = Array.isArray(payload) ? {} : {
+          guestCount: payload.guestCount ?? 1,
+          invitedCount: payload.guestCount ?? 1,
+          ceremonyChoice: payload.ceremonyChoice ?? "civil",
+          invitedCeremonyChoice: payload.ceremonyChoice ?? "civil",
+          party: payload.party ?? "commun",
+        };
+        const parsed = adminGuestSchema.parse({ ...defaults, ...(rawGuest as object) });
+        const key = `${parsed.firstName}|${parsed.lastName}|${parsed.email || parsed.phone || ""}`.toLocaleLowerCase("fr");
+        if (duplicateKeys.has(key)) {
+          skipped += 1;
+          continue;
+        }
         const guest = await storage.createRsvp({
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          email: null,
-          phone: null,
-          status: "pending",
-          guestCount,
-          ceremonyChoice,
+          ...parsed,
           token: nanoid(10),
         });
+        duplicateKeys.add(key);
         created.push({
           ...guest,
           invitationUrl: buildInvitationLink(req, guest.token),
@@ -353,7 +418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      return res.status(201).json(created);
+      return res.status(201).json({ added: created.length, skipped, guests: created });
     } catch (error: any) {
       return res.status(400).json({ message: error.message || "Erreur lors de l'import" });
     }
@@ -381,7 +446,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = Number.parseInt(req.params.id, 10);
       const data = updateGuestSchema.parse(req.body);
-      const guest = await storage.updateGuest(id, data);
+      const { revision, ...changes } = data;
+      const guest = await storage.updateGuest(id, changes, revision);
 
       return res.json({
         ...guest,
@@ -421,6 +487,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendStatus(204);
   }));
 
+  app.get("/api/site-settings", asyncRoute(async (_req, res) => {
+    const stored = await getStoredSiteSettings();
+    res.json(stored.settings);
+  }));
+
+  app.get("/api/admin/settings", requireAuth, asyncRoute(async (_req, res) => {
+    res.json(await getStoredSiteSettings());
+  }));
+
+  app.put("/api/admin/settings", requireAuth, async (req, res) => {
+    try {
+      const payload = z.object({ settings: siteSettingsSchema, revision: z.number().int().min(0) }).parse(req.body);
+      res.json(await saveStoredSiteSettings(payload.settings, payload.revision));
+    } catch (error: any) {
+      res.status(409).json({ message: error.message || "Impossible d’enregistrer les réglages." });
+    }
+  });
+
+  app.get("/api/admin/backup", requireAuth, asyncRoute(async (_req, res) => {
+    const [guests, settings] = await Promise.all([
+      storage.getAllRsvps(),
+      getStoredSiteSettings(),
+    ]);
+    res
+      .status(200)
+      .set({
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Disposition": `attachment; filename="jessica-geldi-sauvegarde-${new Date().toISOString().slice(0, 10)}.json"`,
+      })
+      .send(JSON.stringify({ exportedAt: new Date().toISOString(), guests, site: settings }, null, 2));
+  }));
+
+  app.put("/api/admin/account", requireAuth, async (req, res) => {
+    try {
+      const payload = z.object({
+        username: z.string().trim().min(3).max(80),
+        currentPassword: z.string().min(1),
+        newPassword: z.string().min(10).max(200).optional().or(z.literal("")),
+      }).parse(req.body);
+      const currentUser = await storage.getUser(req.user!.id);
+      if (!currentUser || !(await bcrypt.compare(payload.currentPassword, currentUser.password))) {
+        return res.status(403).json({ message: "Le mot de passe actuel est incorrect." });
+      }
+      const password = payload.newPassword ? await bcrypt.hash(payload.newPassword, 10) : undefined;
+      const user = await storage.updateUserAccount(currentUser.id, payload.username, password);
+      await storage.revokeOtherSessions(req.sessionID);
+      const { password: _password, ...safeUser } = user;
+      return res.json(safeUser);
+    } catch (error: any) {
+      return res.status(400).json({ message: error.message || "Impossible de modifier le compte." });
+    }
+  });
+
   // Admin: Check-in (requires full admin auth)
   app.patch("/api/rsvp/:id/check-in", requireAuth, asyncRoute(async (req, res) => {
     const id = parseInt(req.params.id);
@@ -429,7 +548,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // ── Check-in page endpoints (protected by a lighter code) ──────────────
-  const CHECKIN_CODE = "JGCheckin2026";
+  const CHECKIN_CODE = "JGCheckin2027";
 
   function requireCheckinCode(req: Request, res: Response, next: NextFunction) {
     const code = req.headers["x-checkin-code"];

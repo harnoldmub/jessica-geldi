@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Check, Loader2, UserCheck, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const CHECKIN_CODE = "JGCheckin2026";
+const CHECKIN_CODE = "JGCheckin2027";
 const PAGE_SIZE = 15;
 
 export default function CheckIn() {
@@ -78,9 +78,9 @@ export default function CheckIn() {
     (currentPage + 1) * PAGE_SIZE,
   );
 
-  const CAPACITY = 350;
-  const checkedInCount = guests.filter((g) => g.checkedInAt).length;
-  const waitingCount = guests.length - checkedInCount;
+  const checkedInCount = guests.filter((g) => g.checkedInAt).reduce((total, guest) => total + guest.guestCount, 0);
+  const expectedCount = guests.reduce((total, guest) => total + guest.guestCount, 0);
+  const waitingCount = expectedCount - checkedInCount;
 
   return (
     <div className="min-h-screen bg-[#F7F7F5] flex flex-col pb-24">
@@ -89,7 +89,7 @@ export default function CheckIn() {
         <div className="flex items-center justify-center gap-2 text-primary/60 mb-2">
           <UserCheck className="w-4 h-4" strokeWidth={1.5} />
           <p className="text-[9px] font-sans tracking-[0.5em] uppercase">
-            Accueil invités · 13 février 2026
+            Accueil invités · 10, 12 & 14 février 2027
           </p>
         </div>
         <p className="font-script text-2xl text-foreground/70 leading-none">
@@ -113,7 +113,7 @@ export default function CheckIn() {
           <div>
             <p className="font-serif text-3xl text-foreground">
               {checkedInCount}
-              <span className="text-lg text-foreground/30"> / {CAPACITY}</span>
+              <span className="text-lg text-foreground/30"> / {expectedCount}</span>
             </p>
             <p className="text-[9px] uppercase tracking-[0.4em] text-foreground/40 mt-0.5">
               Capacité
@@ -261,7 +261,7 @@ export default function CheckIn() {
       )}
 
       <footer className="mt-auto py-8 text-center opacity-15 pointer-events-none">
-        <p className="font-script text-3xl text-primary lowercase">m&m</p>
+        <p className="font-script text-3xl text-primary lowercase">j&amp;g</p>
       </footer>
     </div>
   );

@@ -25,6 +25,8 @@ import {
   UserPlus,
   Users,
   XCircle,
+  Settings,
+  DatabaseBackup,
 } from "lucide-react";
 import { Link } from "wouter";
 import {
@@ -40,6 +42,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import PrettySelect from "@/components/PrettySelect";
+import AdminSettingsPanel from "@/components/AdminSettingsPanel";
+import AdminAccountPanel from "@/components/AdminAccountPanel";
 import {
   Dialog,
   DialogContent,
@@ -62,10 +66,17 @@ const emptyGuestForm: GuestFormState = {
   phone: "",
   status: "pending",
   guestCount: 1,
+  invitedCount: 1,
   ceremonyChoice: "civil",
+  invitedCeremonyChoice: "civil",
   mealChoice: "",
   beverageChoice: "",
   message: "",
+  allergies: "",
+  notes: "",
+  party: "commun",
+  country: "CD",
+  city: "Kinshasa",
   tableNumber: null,
 };
 
@@ -89,10 +100,51 @@ const ceremonyFilterOptions = eventKeys.map((key) => ({
   value: key,
   label: `${weddingEvents[key].shortLabel} · ${weddingEvents[key].time}`,
 }));
-const guestCountOptions = [
-  { value: "1", label: "Seul(e)", detail: "1 personne" },
-  { value: "2", label: "En couple", detail: "2 personnes" },
+const guestCountOptions = Array.from({ length: 10 }, (_, index) => ({
+  value: String(index + 1),
+  label: `${index + 1} personne${index ? "s" : ""}`,
+}));
+const partyOptions = [
+  { value: "commun", label: "En commun" },
+  { value: "jessica", label: "Liste Jessica" },
+  { value: "geldi", label: "Liste Geldi" },
 ];
+
+function parseImportRows(text: string, defaults: { guestCount: number; ceremonyChoice: string; party: string }) {
+  const rows = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  return rows.flatMap((line, index) => {
+    if (index === 0 && /pr[ée]nom/i.test(line) && /nom/i.test(line)) return [];
+    const separator = line.includes(";") ? ";" : line.includes("\t") ? "\t" : line.includes(",") ? "," : null;
+    const columns = separator ? line.split(separator).map((value) => value.trim().replace(/^"|"$/g, "")) : [];
+    const fullName = separator ? "" : line;
+    const firstSpace = fullName.indexOf(" ");
+    const firstName = separator ? columns[0] : fullName.slice(0, firstSpace);
+    const lastName = separator ? columns[1] : fullName.slice(firstSpace + 1);
+    const contact = columns[2] || "";
+    const count = Math.min(10, Math.max(1, Number(columns[3]) || defaults.guestCount));
+    if (!firstName?.trim() || !lastName?.trim()) return [];
+    return [{
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: contact.includes("@") ? contact : "",
+      phone: contact && !contact.includes("@") ? contact : "",
+      status: "pending",
+      guestCount: count,
+      invitedCount: count,
+      ceremonyChoice: defaults.ceremonyChoice,
+      invitedCeremonyChoice: defaults.ceremonyChoice,
+      party: defaults.party,
+      country: "CD",
+      city: "Kinshasa",
+      mealChoice: "",
+      beverageChoice: "",
+      allergies: "",
+      message: "",
+      notes: "",
+      tableNumber: null,
+    }];
+  });
+}
 const pageSizeOptions = [
   { value: "10", label: "10 / page" },
   { value: "20", label: "20 / page" },
@@ -153,7 +205,7 @@ function EventMultiPicker({
           >
             <span className="block font-serif text-base">{event.shortLabel}</span>
             <span className={`mt-1 block text-[9px] uppercase tracking-[0.24em] ${active ? "text-white/70" : "text-foreground/45"}`}>
-              {event.date.replace(" 2026", "")} · {event.time}
+              {event.date.replace(" 2027", "")} · {event.time}
             </span>
           </button>
         );
@@ -214,6 +266,8 @@ export default function Admin() {
   const [importText, setImportText] = useState("");
   const [importGuestCount, setImportGuestCount] = useState(1);
   const [importCeremony, setImportCeremony] = useState<string>("civil");
+  const [importParty, setImportParty] = useState("commun");
+  const [partyFilter, setPartyFilter] = useState("all");
   const MSG_PAGE_SIZE = 9;
   const [showPassword, setShowPassword] = useState(false);
 
@@ -229,6 +283,7 @@ export default function Admin() {
   const { data: guests = [], isLoading: isLoadingGuests } = useQuery<GuestRecord[]>({
     queryKey: ["/api/admin/guests"],
     enabled: Boolean(user),
+    refetchInterval: user && document.visibilityState === "visible" ? 15_000 : false,
   });
 
   // Tables dynamiques : le nombre de tables disponibles est le maximum entre
@@ -395,17 +450,10 @@ export default function Admin() {
 
   const importGuestsMutation = useMutation({
     mutationFn: async () => {
-      const lines = importText
-        .split("\n")
-        .map((l) => l.trim())
-        .filter((l) => l.includes(" "));
-
-      const guests = lines.map((line) => {
-        const idx = line.indexOf(" ");
-        return {
-          firstName: line.slice(0, idx),
-          lastName: line.slice(idx + 1),
-        };
+      const guests = parseImportRows(importText, {
+        guestCount: importGuestCount,
+        ceremonyChoice: importCeremony,
+        party: importParty,
       });
 
       const response = await apiRequest("POST", "/api/admin/guests/import", {
@@ -415,11 +463,11 @@ export default function Admin() {
       });
       return response.json();
     },
-    onSuccess: (created: GuestRecord[]) => {
+    onSuccess: (result: { added: number; skipped: number; guests: GuestRecord[] }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
       toast({
-        title: `${created.length} invité${created.length > 1 ? "s" : ""} importé${created.length > 1 ? "s" : ""}`,
-        description: "Les liens d'invitation sont prêts.",
+        title: `${result.added} invité${result.added > 1 ? "s" : ""} importé${result.added > 1 ? "s" : ""}`,
+        description: result.skipped ? `${result.skipped} doublon(s) ignoré(s).` : "Les liens d'invitation sont prêts.",
       });
       setImportText("");
       setIsImportOpen(false);
@@ -481,10 +529,11 @@ export default function Admin() {
       const matchesStatus = statusFilter === "all" || guest.status === statusFilter;
       const matchesInvitation =
         invitationFilter === "all" || guest.invitationStatus === invitationFilter;
-      const guestEvents = getEventKeys(guest.ceremonyChoice);
+      const matchesParty = partyFilter === "all" || guest.party === partyFilter;
+      const guestEvents = getEventKeys(guest.invitedCeremonyChoice || guest.ceremonyChoice);
       const matchesCeremony = guestEvents.includes(ceremonyFilter);
 
-      if (!matchesStatus || !matchesInvitation || !matchesCeremony) {
+      if (!matchesStatus || !matchesInvitation || !matchesCeremony || !matchesParty) {
         return false;
       }
 
@@ -499,13 +548,16 @@ export default function Admin() {
         guest.phone || "",
         guest.status,
         guest.beverageChoice || "",
+        guest.city || "",
+        guest.allergies || "",
+        guest.notes || "",
         guest.invitationStatus || "",
       ]
         .join(" ")
         .toLowerCase()
         .includes(term);
     });
-  }, [guests, invitationFilter, searchTerm, statusFilter, ceremonyFilter]);
+  }, [guests, invitationFilter, searchTerm, statusFilter, ceremonyFilter, partyFilter]);
 
   const totalPages = Math.ceil(filteredGuests.length / pageSize);
   const paginatedGuests = filteredGuests.slice(
@@ -526,7 +578,7 @@ export default function Admin() {
 
   function shareViaWhatsApp(guest: GuestRecord) {
     const url = getTransitInvitationUrl(guest);
-    const dateLines = getEventKeys(guest.ceremonyChoice)
+    const dateLines = getEventKeys(guest.invitedCeremonyChoice || guest.ceremonyChoice)
       .map((key) => {
         const event = weddingEvents[key];
         return `${event.date} à ${event.time} : ${event.label} (${event.theme}).`;
@@ -554,10 +606,18 @@ export default function Admin() {
       phone: guest.phone || "",
       status: guest.status as GuestFormState["status"],
       guestCount: guest.guestCount || 1,
+      invitedCount: guest.invitedCount || guest.guestCount || 1,
       ceremonyChoice: (guest.ceremonyChoice as GuestFormState["ceremonyChoice"]) || "civil",
+      invitedCeremonyChoice: (guest.invitedCeremonyChoice as GuestFormState["invitedCeremonyChoice"]) || guest.ceremonyChoice || "civil",
       mealChoice: guest.mealChoice || "",
       beverageChoice: guest.beverageChoice || "",
       message: guest.message || "",
+      allergies: guest.allergies || "",
+      notes: guest.notes || "",
+      party: (guest.party as GuestFormState["party"]) || "commun",
+      country: guest.country || "CD",
+      city: guest.city || "Kinshasa",
+      revision: guest.revision,
       tableNumber: guest.tableNumber ?? null,
     });
     setIsFormOpen(true);
@@ -768,6 +828,24 @@ export default function Admin() {
             <Button
               type="button"
               variant="outline"
+              onClick={() => document.getElementById("site-settings")?.scrollIntoView({ behavior: "smooth" })}
+              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
+            >
+              <Settings className="mr-2 h-4 w-4" strokeWidth={1.6} />
+              Réglages du site
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => document.getElementById("account-backup")?.scrollIntoView({ behavior: "smooth" })}
+              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
+            >
+              <DatabaseBackup className="mr-2 h-4 w-4" strokeWidth={1.6} />
+              Compte & sauvegarde
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => logoutMutation.mutate()}
               className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
             >
@@ -824,7 +902,7 @@ export default function Admin() {
               <p className="text-[10px] uppercase tracking-[0.4em] text-primary/55">Import rapide</p>
               <DialogTitle>Importer une liste d'invités</DialogTitle>
               <p className="text-xs text-muted-foreground mt-1">
-                Un invité par ligne, format : <span className="font-mono">Prénom Nom</span>
+                Collez une liste ou un CSV : <span className="font-mono">Prénom;Nom;Contact;Personnes</span>
               </p>
             </DialogHeader>
 
@@ -832,12 +910,12 @@ export default function Admin() {
               <Textarea
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
-                placeholder={"Jean Dupont\nMarie Martin\nPierre Jean Paul"}
+                placeholder={"Prénom;Nom;Contact;Personnes\nJean;Dupont;jean@email.com;2\nMarie;Martin;+243000000000;1"}
                 className="min-h-[180px] rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20 font-mono text-sm"
               />
 
               {importText.trim() && (() => {
-                const count = importText.split("\n").filter((l) => l.trim().includes(" ")).length;
+                const count = parseImportRows(importText, { guestCount: importGuestCount, ceremonyChoice: importCeremony, party: importParty }).length;
                 return (
                   <p className="text-[10px] uppercase tracking-[0.3em] text-primary/60">
                     {count} invité{count > 1 ? "s" : ""} détecté{count > 1 ? "s" : ""}
@@ -845,9 +923,22 @@ export default function Admin() {
                 );
               })()}
 
-              <div className="grid grid-cols-2 gap-4">
+              <label className="block space-y-2">
+                <span className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Fichier CSV</span>
+                <Input type="file" accept=".csv,text/csv,text/plain" className="h-12 rounded-none border-primary/15" onChange={async (event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 512000) {
+                    toast({ title: "Fichier trop volumineux", description: "Maximum 500 Ko.", variant: "destructive" });
+                    return;
+                  }
+                  setImportText(await file.text());
+                }} />
+              </label>
+
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Personnes</label>
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Places par défaut</label>
                   <PrettySelect
                     value={importGuestCount}
                     onChange={(value) => setImportGuestCount(Number(value))}
@@ -856,9 +947,13 @@ export default function Admin() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Cérémonie</label>
-                  <EventMultiPicker value={importCeremony} onChange={setImportCeremony} />
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Liste</label>
+                  <PrettySelect value={importParty} onChange={setImportParty} options={partyOptions} placeholder="Liste" />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Célébrations</label>
+                <EventMultiPicker value={importCeremony} onChange={setImportCeremony} />
               </div>
             </div>
 
@@ -866,7 +961,7 @@ export default function Admin() {
               <Button
                 type="button"
                 onClick={() => importGuestsMutation.mutate()}
-                disabled={importGuestsMutation.isPending || !importText.trim().includes(" ") || !importCeremony}
+                disabled={importGuestsMutation.isPending || parseImportRows(importText, { guestCount: importGuestCount, ceremonyChoice: importCeremony, party: importParty }).length === 0 || !importCeremony}
                 className="rounded-none bg-primary px-7 py-6 text-[10px] uppercase tracking-[0.35em] text-primary-foreground hover:bg-foreground"
               >
                 {importGuestsMutation.isPending ? "Import en cours..." : "Importer"}
@@ -965,18 +1060,37 @@ export default function Admin() {
                     <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Nombre de personnes</label>
                     <PrettySelect
                       value={guestForm.guestCount}
-                      onChange={(value) => setGuestForm((c) => ({ ...c, guestCount: Number.parseInt(value, 10) }))}
+                      onChange={(value) => setGuestForm((c) => {
+                        const guestCount = Number.parseInt(value, 10);
+                        return { ...c, guestCount, invitedCount: Math.max(c.invitedCount, guestCount) };
+                      })}
                       options={guestCountOptions}
                       placeholder="Nombre de personnes"
                     />
                   </div>
                 </div>
 
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Places réservées</label>
+                    <PrettySelect value={guestForm.invitedCount} onChange={(value) => setGuestForm((c) => ({ ...c, invitedCount: Number(value) }))} options={guestCountOptions} placeholder="Places" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Liste d’origine</label>
+                    <PrettySelect value={guestForm.party} onChange={(value) => setGuestForm((c) => ({ ...c, party: value as GuestFormState["party"] }))} options={partyOptions} placeholder="Liste" />
+                  </div>
+                </div>
+
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <label className="space-y-2"><span className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Pays</span><Input value={guestForm.country || ""} maxLength={2} onChange={(e) => setGuestForm((c) => ({ ...c, country: e.target.value.toUpperCase() }))} className="h-12 rounded-none border-primary/15" placeholder="CD" /></label>
+                  <label className="space-y-2"><span className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Ville</span><Input value={guestForm.city || ""} onChange={(e) => setGuestForm((c) => ({ ...c, city: e.target.value }))} className="h-12 rounded-none border-primary/15" placeholder="Kinshasa" /></label>
+                </div>
+
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Participe à</label>
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Invité aux célébrations</label>
                   <EventMultiPicker
-                    value={guestForm.ceremonyChoice}
-                    onChange={(value) => setGuestForm((c) => ({ ...c, ceremonyChoice: value }))}
+                    value={guestForm.invitedCeremonyChoice}
+                    onChange={(value) => setGuestForm((c) => ({ ...c, invitedCeremonyChoice: value, ceremonyChoice: value }))}
                   />
                 </div>
 
@@ -1009,12 +1123,26 @@ export default function Admin() {
                 </div>
 
                 <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Repas / régime</label>
+                  <Input value={guestForm.mealChoice || ""} onChange={(e) => setGuestForm((c) => ({ ...c, mealChoice: e.target.value }))} className="h-12 rounded-none border-primary/15" />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Allergies</label>
+                  <Textarea value={guestForm.allergies || ""} onChange={(e) => setGuestForm((c) => ({ ...c, allergies: e.target.value }))} className="min-h-[90px] rounded-none border-primary/15" />
+                </div>
+
+                <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Note</label>
                   <Textarea
                     value={guestForm.message || ""}
                     onChange={(e) => setGuestForm((c) => ({ ...c, message: e.target.value }))}
                     className="min-h-[110px] rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
                   />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Notes privées</label>
+                  <Textarea value={guestForm.notes || ""} onChange={(e) => setGuestForm((c) => ({ ...c, notes: e.target.value }))} className="min-h-[90px] rounded-none border-primary/15" placeholder="Visible uniquement dans l’administration" />
                 </div>
               </div>
 
@@ -1083,7 +1211,7 @@ export default function Admin() {
           </div>
 
           {/* Filtres */}
-          <div className="mb-6 grid gap-3 sm:grid-cols-3">
+          <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <PrettySelect
               value={statusFilter}
               onChange={(value) => setStatusFilter(value as "all" | "pending" | "confirmed" | "declined")}
@@ -1095,6 +1223,12 @@ export default function Admin() {
               onChange={(value) => setInvitationFilter(value as "all" | "draft" | "sent")}
               options={invitationFilterOptions}
               placeholder="Invitations"
+            />
+            <PrettySelect
+              value={partyFilter}
+              onChange={setPartyFilter}
+              options={[{ value: "all", label: "Toutes les listes" }, ...partyOptions]}
+              placeholder="Liste"
             />
             <PrettySelect
               value={ceremonyFilter}
@@ -1126,7 +1260,7 @@ export default function Admin() {
                         {guest.email || "—"} · {guest.phone || "—"}
                       </p>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/35">
-                        {(guest.guestCount || 1) > 1 ? "En couple" : "Seul(e)"} ·{" "}
+                        {guest.guestCount || 1} présent(s) sur {guest.invitedCount || guest.guestCount || 1} place(s) · {partyOptions.find((item) => item.value === guest.party)?.label || "En commun"} ·{" "}
                         {guest.tableNumber ? `Table ${guest.tableNumber} · ` : ""}
                         {guest.createdAt
                           ? format(new Date(guest.createdAt), "d MMM yyyy", { locale: fr })
@@ -1176,12 +1310,12 @@ export default function Admin() {
                     <Badge
                       variant="outline"
                       className={`rounded-none border-0 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] ${
-                        getEventKeys(guest.ceremonyChoice).length > 1
+                        getEventKeys(guest.invitedCeremonyChoice || guest.ceremonyChoice).length > 1
                           ? "bg-purple-50 text-purple-700"
                           : "bg-yellow-50 text-yellow-700"
                       }`}
                     >
-                      {getEventKeys(guest.ceremonyChoice)
+                      {getEventKeys(guest.invitedCeremonyChoice || guest.ceremonyChoice)
                         .map((key) => weddingEvents[key].shortLabel)
                         .join(", ")}
                     </Badge>
@@ -1193,6 +1327,8 @@ export default function Admin() {
                         {guest.beverageChoice}
                       </Badge>
                     )}
+                    {guest.allergies && <Badge variant="outline" className="rounded-none border-0 bg-rose-50 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] text-rose-700">Allergies</Badge>}
+                    {(guest.city || guest.country) && <span className="text-[10px] text-foreground/45">{[guest.city, guest.country].filter(Boolean).join(", ")}</span>}
                     {guest.invitationSentAt && (
                       <span className="text-[10px] text-foreground/40">
                         {format(new Date(guest.invitationSentAt), "d MMM, HH:mm", { locale: fr })}
@@ -1442,6 +1578,9 @@ export default function Admin() {
             </section>
           );
         })()}
+
+        <AdminSettingsPanel />
+        <AdminAccountPanel user={user} />
       </div>
     </main>
   );

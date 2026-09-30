@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
 import Lenis from "lenis";
+import { useQuery } from "@tanstack/react-query";
 import { JessicaGeldi, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
+import { defaultSiteSettings, type SiteSettings } from "@shared/siteSettings";
 import RsvpForm from "@/components/RsvpForm";
 import Countdown from "@/components/Countdown";
 import GalleryLightbox from "@/components/GalleryLightbox";
@@ -106,6 +108,7 @@ function Nav() {
 type GalleryPreview = { alt: string; caption: string } | null;
 
 export default function Home() {
+  const { data: siteSettings = defaultSiteSettings } = useQuery<SiteSettings>({ queryKey: ["/api/site-settings"] });
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.12]);
@@ -150,11 +153,11 @@ export default function Home() {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.4, ease, delay: 0.2 }}>
             <MonogramMark className="h-40 w-auto md:h-52" />
           </motion.div>
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.4, delay: 0.7 }} className="mt-6 font-serif text-2xl uppercase tracking-[0.4em] md:text-3xl">
+          <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.4, delay: 0.7 }} className="mt-6 font-serif text-2xl uppercase tracking-[0.4em] md:text-3xl">
             Jessica &amp; Geldi
-          </motion.p>
+          </motion.h1>
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.4, delay: 0.9 }} className="mt-4 font-body text-sm uppercase tracking-[0.5em] text-white/75">
-            11 · 13 Février 2026
+            {siteSettings.heroSubtitle}
           </motion.p>
         </motion.div>
 
@@ -174,10 +177,10 @@ export default function Home() {
             <p className="font-script text-5xl md:text-6xl">Vous êtes invités</p>
             <Ornament className="mt-8 text-foreground/40 md:justify-start" />
             <p className="mx-auto mt-8 max-w-md text-lg leading-8 text-muted-foreground md:mx-0">
-              Avec nos familles, nous, <span className="text-foreground">Jessica &amp; Geldi</span>, avons la joie de vous convier à célébrer notre union.
+              {siteSettings.invitationText}
             </p>
-            <p className="mt-8 font-serif text-2xl md:text-3xl">Mercredi 11 &amp; Vendredi 13 Février 2026</p>
-            <p className="mt-3 font-body text-xs uppercase tracking-[0.4em] text-muted-foreground">Kinshasa · République Démocratique du Congo</p>
+            <p className="mt-8 font-serif text-2xl md:text-3xl">10, 12 &amp; 14 Février 2027</p>
+            <p className="mt-3 font-body text-xs uppercase tracking-[0.4em] text-muted-foreground">Kinshasa · RD Congo</p>
           </Reveal>
         </div>
       </section>
@@ -201,7 +204,7 @@ export default function Home() {
           <Reveal className="text-center">
             <Label className="text-muted-foreground">Notre histoire</Label>
             <h2 className="mt-6 font-serif text-4xl md:text-6xl">Comment tout a commencé</h2>
-            <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-muted-foreground">{JessicaGeldi.couple.narrative}</p>
+            <p className="mx-auto mt-8 max-w-2xl whitespace-pre-line text-lg leading-8 text-muted-foreground">{siteSettings.storyText}</p>
             <Ornament className="mt-10 text-foreground/40" />
           </Reveal>
 
@@ -227,7 +230,7 @@ export default function Home() {
         <div className="mx-auto max-w-5xl">
           <Reveal className="text-center">
             <Label className="text-muted-foreground">Aperçu</Label>
-            <h2 className="mt-6 font-serif text-4xl md:text-6xl">Quatre célébrations, une promesse</h2>
+            <h2 className="mt-6 font-serif text-4xl md:text-6xl">Trois célébrations, une promesse</h2>
             <p className="mx-auto mt-6 max-w-xl font-serif text-xl italic leading-8 text-muted-foreground md:text-2xl">
               {JessicaGeldi.tagline}
             </p>
@@ -259,23 +262,24 @@ export default function Home() {
             <Label className="text-muted-foreground">Le déroulé des festivités</Label>
             <h2 className="mt-6 font-serif text-4xl md:text-6xl">Le programme</h2>
             <p className="mx-auto mt-6 max-w-lg text-lg leading-8 text-muted-foreground">
-              Quatre rendez-vous sur deux journées. Votre invitation personnalisée précise les célébrations prévues pour vous.
+              Trois rendez-vous à Kinshasa. Votre invitation personnalisée précise les célébrations prévues pour vous.
             </p>
           </Reveal>
 
           <div className="divide-y divide-border border-y border-border">
-            {schedule.map((event, i) => {
+            {siteSettings.program.map((item, i) => {
+              const event = weddingEvents[item.event];
               const [day, ...rest] = event.date.split(" ");
               return (
-                <Reveal key={event.key} delay={i * 0.06}>
+                <Reveal key={`${item.event}-${i}`} delay={i * 0.06}>
                   <div className="grid grid-cols-[auto_1fr] items-baseline gap-6 py-8 md:grid-cols-[8rem_1fr_auto] md:gap-10">
                     <div className="text-center md:text-left">
-                      <p className="font-serif text-3xl leading-none md:text-4xl">{event.time}</p>
-                      <p className="mt-2 font-body text-[10px] uppercase tracking-[0.32em] text-muted-foreground">{day} {rest.join(" ").replace(" 2026", "")}</p>
+                      <p className="font-serif text-3xl leading-none md:text-4xl">{item.time}</p>
+                      <p className="mt-2 font-body text-[10px] uppercase tracking-[0.32em] text-muted-foreground">{day} {rest.join(" ").replace(" 2027", "")}</p>
                     </div>
                     <div className="col-span-1">
-                      <h3 className="font-serif text-2xl uppercase tracking-[0.12em] md:text-3xl">{event.label}</h3>
-                      <p className="mt-2 text-base leading-7 text-muted-foreground">Thème : {event.theme} · Lieu à confirmer, Kinshasa.</p>
+                      <h3 className="font-serif text-2xl uppercase tracking-[0.12em] md:text-3xl">{item.title}</h3>
+                      <p className="mt-2 text-base leading-7 text-muted-foreground">{item.text}</p>
                     </div>
                     <p className="hidden font-body text-[10px] uppercase tracking-[0.32em] text-muted-foreground md:block">{event.shortLabel}</p>
                   </div>
@@ -312,18 +316,28 @@ export default function Home() {
       </section>
 
       {/* ══════════════ PRÉSENCE & CONTRIBUTION ══════════════ */}
-      <section className="dark relative overflow-hidden bg-background px-6 py-24 text-center text-foreground md:px-10 md:py-28">
+      {siteSettings.contribution.enabled && <section className="dark relative overflow-hidden bg-background px-6 py-24 text-center text-foreground md:px-10 md:py-28">
         <PhotoFrame className="absolute inset-0" />
         <div className="absolute inset-0 bg-black/60" />
         <Reveal className="relative z-10 mx-auto max-w-2xl text-white">
           <Label className="text-white/70">Présence &amp; contribution</Label>
-          <p className="mt-8 font-serif text-3xl leading-snug md:text-5xl">Votre présence est notre plus beau cadeau.</p>
+          <p className="mt-8 font-serif text-3xl leading-snug md:text-5xl">{siteSettings.contribution.title}</p>
           <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-white/75">
-            Pour celles et ceux qui souhaitent nous témoigner une attention, une contribution
-            en espèces pourra se faire directement lors des célébrations.
+            {siteSettings.contribution.message}
           </p>
         </Reveal>
-      </section>
+      </section>}
+
+      {siteSettings.practical.length > 0 && (
+        <section className="bg-secondary/50 px-6 py-24 md:px-10 md:py-28">
+          <div className="mx-auto max-w-4xl">
+            <Reveal className="text-center"><Label className="text-muted-foreground">Votre venue</Label><h2 className="mt-6 font-serif text-4xl md:text-5xl">Informations pratiques</h2></Reveal>
+            <div className="mt-12 grid gap-px border border-border bg-border md:grid-cols-2">
+              {siteSettings.practical.map((item, index) => <Reveal key={`${item.title}-${index}`} delay={index * 0.04} className="bg-background p-7"><h3 className="font-serif text-2xl">{item.title}</h3><p className="mt-4 whitespace-pre-line text-base leading-7 text-muted-foreground">{item.text}</p></Reveal>)}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ══════════════ FAQ ══════════════ */}
       <section id="faq" className="px-6 py-24 md:px-10 md:py-32">
@@ -346,8 +360,8 @@ export default function Home() {
       <footer className="dark relative overflow-hidden bg-background px-6 py-20 text-center text-foreground md:px-10">
         <div className="relative">
           <MonogramLogo className="text-white" />
-          <p className="mt-6 font-body text-[10px] uppercase tracking-[0.5em] text-white/55">11 &amp; 13 Février 2026 · Kinshasa</p>
-          <p className="mx-auto mt-8 max-w-md text-lg italic leading-8 text-white/70">{JessicaGeldi.couple.statement}</p>
+          <p className="mt-6 font-body text-[10px] uppercase tracking-[0.5em] text-white/55">10 · 12 · 14 Février 2027 · Kinshasa</p>
+          <p className="mx-auto mt-8 max-w-md whitespace-pre-line text-lg italic leading-8 text-white/70">{siteSettings.footerText}</p>
         </div>
       </footer>
 
