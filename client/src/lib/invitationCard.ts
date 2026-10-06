@@ -167,7 +167,7 @@ function drawAllCard(ctx: CanvasRenderingContext2D, options: CardOptions) {
   ctx.font = '92px "Great Vibes", cursive';
   ctx.fillText("Jessica & Geldi", CARD_WIDTH / 2, 530);
   ctx.font = '46px "Bodoni Moda", Didot, serif';
-  ctx.fillText("Trois célébrations", CARD_WIDTH / 2, 612);
+  ctx.fillText("Trois rendez-vous", CARD_WIDTH / 2, 612);
   drawGuestName(ctx, options, 760, "#3B261F");
 
   const keys = Object.keys(weddingEvents) as WeddingEventKey[];

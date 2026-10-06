@@ -1,16 +1,23 @@
 import type { Express, NextFunction, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { adminGuestSchema, insertRsvpSchema, updateGuestSchema } from "@shared/schema";
+import { adminGuestSchema, insertRsvpSchema, publicRsvpSchema, updateGuestSchema } from "@shared/schema";
 import { nanoid } from "nanoid";
 import { sendRsvpConfirmationEmail } from "./email";
 import { ensureAdminUser, setupAuth } from "./auth";
-import { getEventKeys, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
+import { getEventKeys, getGuestEvent, isWeddingEventKey, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 import { siteSettingsSchema } from "@shared/siteSettings";
 import { ensureApplicationSchema } from "./migrations";
-import { getStoredSiteSettings, saveStoredSiteSettings } from "./siteSettings";
+import { ensureStoredSiteSettings, getStoredSiteSettings, saveStoredSiteSettings } from "./siteSettings";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { createHash, timingSafeEqual } from "crypto";
+
+declare module "express-session" {
+  interface SessionData {
+    siteAccessKey?: string;
+  }
+}
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
@@ -85,6 +92,7 @@ function rsvpRateLimitKey(req: Request) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await ensureApplicationSchema();
+  await ensureStoredSiteSettings();
   setupAuth(app);
   await ensureAdminUser();
   
@@ -122,6 +130,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return null;
   }
 
+  // Code d'accès de la page d'accueil (aiguillage vers les 3 événements), surchargeable par SITE_ACCESS_CODE.
+  const SITE_ACCESS_CODE = process.env.SITE_ACCESS_CODE || "LoveJG2026";
+  const siteAccessKey = createHash("sha256").update(SITE_ACCESS_CODE).digest("hex");
+
+  app.get("/api/site-access", (req, res) => {
+    return res.json({ granted: req.session.siteAccessKey === siteAccessKey });
+  });
+
+  app.post("/api/site-access", (req, res) => {
+    if (isRateLimited(`${rsvpRateLimitKey(req)}:access`)) {
+      return res.status(429).json({ message: "Trop de tentatives. Merci de réessayer dans un instant." });
+    }
+    const code = typeof req.body?.code === "string" ? req.body.code.trim() : "";
+    const candidate = Buffer.from(createHash("sha256").update(code).digest("hex"));
+    const expected = Buffer.from(siteAccessKey);
+    if (!timingSafeEqual(candidate, expected)) {
+      return res.status(401).json({ message: "Code d'accès incorrect." });
+    }
+    req.session.siteAccessKey = siteAccessKey;
+    return res.json({ ok: true });
+  });
+
   app.get("/api/capacity", asyncRoute(async (_req, res) => {
     res.json(await getCapacity());
   }));
@@ -133,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(429).json({ message: "Trop de tentatives RSVP. Merci de réessayer dans un instant." });
       }
 
-      const data = insertRsvpSchema.parse(req.body);
+      const data = publicRsvpSchema.parse(req.body);
 
       if (data.guestCount > 2) {
         return res.status(400).json({ message: "Une nouvelle réponse publique est limitée à 2 personnes." });
@@ -144,17 +174,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: capacityError });
       }
 
-      // Generate a unique token for the guest
-      const token = nanoid(10);
-      
-      const rsvp = await storage.createRsvp({
-        ...data,
-        token,
-        invitedCount: data.guestCount,
-        invitedCeremonyChoice: data.ceremonyChoice,
-        respondedAt: data.status === "pending" ? null : new Date(),
-        status: data.status || 'confirmed',
-      });
+      // Chaque événement a ses propres invités : une réponse couvrant plusieurs
+      // célébrations crée une invitation (et un lien) par célébration.
+      // Sans célébration explicite, getEventKeys renverrait les trois : on exige un choix.
+      const events = data.ceremonyChoice ? getEventKeys(data.ceremonyChoice) : [];
+      if (!events.length) {
+        return res.status(400).json({ message: "Veuillez choisir au moins une célébration." });
+      }
+      const created = [];
+      for (const event of events) {
+        created.push(await storage.createRsvp({
+          ...data,
+          token: nanoid(10),
+          ceremonyChoice: event,
+          invitedCount: data.guestCount,
+          invitedCeremonyChoice: event,
+          respondedAt: data.status === "pending" ? null : new Date(),
+          status: data.status || 'confirmed',
+        }));
+      }
+      const rsvp = created[0];
 
       // Send confirmation email asynchronously
       if (rsvp.email) {
@@ -292,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: "Veuillez choisir une célébration à exporter." });
     }
     const allGuests = await storage.getAllRsvps();
-    const guests = allGuests.filter((g) => getEventKeys(g.ceremonyChoice).includes(event));
+    const guests = allGuests.filter((g) => getGuestEvent(g) === event);
     const sort = String(req.query.sort || "");
     const sortedGuests = [...guests].sort((a, b) => {
       if (sort === "table") {
@@ -386,10 +425,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "L’import est limité à 500 invitations." });
       }
 
+      const event = Array.isArray(payload) ? undefined : payload.ceremonyChoice;
+      const party = Array.isArray(payload) ? undefined : payload.party;
+      if (party !== "jessica" && party !== "geldi") {
+        return res.status(400).json({ message: "Choisissez la liste (Jessica ou Geldi) de ces invités." });
+      }
+      if (!isWeddingEventKey(event)) {
+        return res.status(400).json({ message: "Choisissez l'événement auquel rattacher ces invités." });
+      }
+      // Les doublons s'apprécient par événement : un même invité peut figurer sur plusieurs listes.
+      const dedupeKey = (g: { firstName: string; lastName: string; email?: string | null; phone?: string | null }) =>
+        `${event}|${g.firstName}|${g.lastName}|${g.email || g.phone || ""}`.toLocaleLowerCase("fr");
       const existing = await storage.getAllRsvps();
-      const duplicateKeys = new Set(existing.map((guest) =>
-        `${guest.firstName}|${guest.lastName}|${guest.email || guest.phone || ""}`.toLocaleLowerCase("fr"),
-      ));
+      const duplicateKeys = new Set(existing.filter((guest) => getGuestEvent(guest) === event).map(dedupeKey));
       const created = [];
       let skipped = 0;
       for (const rawGuest of names) {
@@ -400,8 +448,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           invitedCeremonyChoice: payload.ceremonyChoice ?? "civil",
           party: payload.party ?? "commun",
         };
-        const parsed = adminGuestSchema.parse({ ...defaults, ...(rawGuest as object) });
-        const key = `${parsed.firstName}|${parsed.lastName}|${parsed.email || parsed.phone || ""}`.toLocaleLowerCase("fr");
+        const parsed = adminGuestSchema.parse({ ...defaults, ...(rawGuest as object), ceremonyChoice: event, invitedCeremonyChoice: event });
+        const key = dedupeKey(parsed);
         if (duplicateKeys.has(key)) {
           skipped += 1;
           continue;
@@ -427,8 +475,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/guests", requireAuth, async (req, res) => {
     try {
       const data = adminGuestSchema.parse(req.body);
+      if (data.party !== "jessica" && data.party !== "geldi") {
+        return res.status(400).json({ message: "Choisissez la liste de l'invité : Jessica ou Geldi." });
+      }
+      const event = getGuestEvent({ invitedCeremonyChoice: data.invitedCeremonyChoice });
+      if (!event) {
+        return res.status(400).json({ message: "Une invitation appartient à un seul événement." });
+      }
       const guest = await storage.createRsvp({
         ...data,
+        ceremonyChoice: event,
+        invitedCeremonyChoice: event,
         token: nanoid(10),
       });
 
@@ -447,6 +504,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = Number.parseInt(req.params.id, 10);
       const data = updateGuestSchema.parse(req.body);
       const { revision, ...changes } = data;
+      if (changes.party !== undefined && changes.party !== "jessica" && changes.party !== "geldi") {
+        return res.status(400).json({ message: "Choisissez la liste de l'invité : Jessica ou Geldi." });
+      }
+      if (changes.invitedCeremonyChoice !== undefined) {
+        const event = getGuestEvent({ invitedCeremonyChoice: changes.invitedCeremonyChoice });
+        if (!event) {
+          return res.status(400).json({ message: "Une invitation appartient à un seul événement." });
+        }
+        changes.invitedCeremonyChoice = event;
+        changes.ceremonyChoice = event;
+      }
       const guest = await storage.updateGuest(id, changes, revision);
 
       return res.json({
@@ -456,6 +524,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       return res.status(400).json({ message: error.message || "Impossible de mettre à jour l'invité" });
+    }
+  });
+
+  // Répartit une invitation héritée (plusieurs célébrations ou aucune) :
+  // la fiche d'origine garde son lien pour le premier événement, une copie est créée pour chacun des autres.
+  app.post("/api/admin/guests/:id/split", requireAuth, async (req, res) => {
+    try {
+      const id = Number.parseInt(req.params.id, 10);
+      const events = z.array(z.enum(["customary", "civil", "evening"])).min(1).max(3).parse(req.body?.events);
+      const unique = Array.from(new Set(events));
+      const guest = await storage.getRsvp(id);
+      if (!guest) {
+        return res.status(404).json({ message: "Invité introuvable" });
+      }
+      const [first, ...others] = unique;
+      const updated = await storage.updateGuest(id, { ceremonyChoice: first, invitedCeremonyChoice: first });
+      const copies = [];
+      for (const event of others) {
+        const { id: _id, token: _token, createdAt: _createdAt, updatedAt: _updatedAt, revision: _revision, checkedInAt: _checkedInAt, invitationSentAt: _sent, tableNumber: _table, ...rest } = guest as typeof guest & Record<string, unknown>;
+        copies.push(await storage.createRsvp({
+          ...(rest as typeof guest),
+          ceremonyChoice: event,
+          invitedCeremonyChoice: event,
+          tableNumber: null,
+          token: nanoid(10),
+        }));
+      }
+      return res.json({ guest: updated, copies: copies.length });
+    } catch (error: any) {
+      return res.status(400).json({ message: error.message || "Impossible de répartir l'invitation" });
     }
   });
 
@@ -547,6 +645,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(guest);
   }));
 
+  app.patch("/api/rsvp/:id/uncheck", requireAuth, asyncRoute(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const guest = await storage.uncheckInGuest(id);
+    res.json(guest);
+  }));
+
   // ── Check-in page endpoints (protected by a lighter code) ──────────────
   const CHECKIN_CODE = "JGCheckin2027";
 
@@ -567,7 +671,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get confirmed guests only (for the check-in page)
   app.get("/api/checkin/guests", requireCheckinCode, asyncRoute(async (_req, res) => {
     const guests = await storage.getAllRsvps();
-    res.json(guests.filter((g) => g.status === "confirmed"));
+    const event = isWeddingEventKey(_req.query.event) ? _req.query.event : null;
+    res.json(guests.filter((g) => g.status === "confirmed" && (!event || getGuestEvent(g) === event)));
   }));
 
   // Check-in a guest via the check-in page

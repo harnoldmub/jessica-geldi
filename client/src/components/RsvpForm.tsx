@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { CheckCircle2, ChevronDown } from "lucide-react";
-import { insertRsvpSchema, type RsvpFormInput, type RsvpResponse } from "@shared/schema";
-import { beverageOptions, getEventKeys, joinEventKeys, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
+import { publicRsvpSchema, type RsvpFormInput, type RsvpResponse } from "@shared/schema";
+import { beverageCategories, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -46,6 +46,7 @@ const defaultValues: RsvpFormInput = {
   beverageChoice: "",
   allergies: "",
   message: "",
+  party: undefined,
 };
 
 const COUNTRY_CODES_BASE = [
@@ -268,23 +269,6 @@ const FLAGS_BY_COUNTRY: Record<string, string> = {
   Zimbabwe: "🇿🇼",
 };
 
-const OTHER_BEVERAGE_VALUE = "__other_beverage__";
-const beverageSelectOptions = [
-  ...beverageOptions.beers.map((drink) => ({ value: drink, label: drink, group: "Bières" })),
-  ...beverageOptions.softDrinks.map((drink) => ({ value: drink, label: drink, group: "Boissons sucrées" })),
-  { value: OTHER_BEVERAGE_VALUE, label: "Autre boisson", detail: "Préciser votre choix", group: "Autre" },
-];
-
-function getBeverageSelectValue(value?: string | null) {
-  if (!value) return "";
-  return beverageSelectOptions.some((option) => option.value === value) ? value : OTHER_BEVERAGE_VALUE;
-}
-
-function getOtherBeverageValue(value?: string | null) {
-  if (!value || getBeverageSelectValue(value) !== OTHER_BEVERAGE_VALUE) return "";
-  return value.startsWith("Autre: ") ? value.slice(7) : value;
-}
-
 const getFlag = (country: string) => FLAGS_BY_COUNTRY[country] || "🏳";
 
 function splitPhone(value?: string | null) {
@@ -325,31 +309,20 @@ export default function RsvpForm({
   const { toast } = useToast();
 
   const eventKeys = allowedEvents?.length ? allowedEvents : Object.keys(weddingEvents) as WeddingEventKey[];
-  const { data: capacity } = useQuery<Record<string, number>>({
-    queryKey: ["/api/capacity"],
-    staleTime: 30_000,
-  });
-  const isFull = (key: WeddingEventKey) => capacity ? (capacity[key] || 0) >= weddingEvents[key].capacity : false;
-  function toggleEventChoice(value: string | null | undefined, key: WeddingEventKey) {
-    const selected = getEventKeys(value).filter((eventKey) => eventKey !== key);
-    if (!getEventKeys(value).includes(key)) {
-      selected.push(key);
-    }
-    return joinEventKeys(selected);
-  }
-
+  // Chaque événement a sa page : le formulaire répond toujours pour un seul événement, jamais de choix à faire.
+  const forcedEvent = eventKeys[0];
   const form = useForm<RsvpFormInput>({
-    resolver: zodResolver(insertRsvpSchema),
-    defaultValues: { ...defaultValues, ...initialValues },
+    resolver: zodResolver(publicRsvpSchema),
+    defaultValues: { ...defaultValues, ...initialValues, ...(forcedEvent ? { ceremonyChoice: forcedEvent } : {}) },
   });
   const status = form.watch("status");
   const isAttending = status === "confirmed";
 
   useEffect(() => {
-    form.reset({ ...defaultValues, ...initialValues });
+    form.reset({ ...defaultValues, ...initialValues, ...(forcedEvent ? { ceremonyChoice: forcedEvent } : {}) });
     setSelectedCountryKey(splitPhone(initialValues?.phone).key);
     setCountryQuery("");
-  }, [form, initialValues]);
+  }, [form, initialValues, forcedEvent]);
 
   useEffect(() => {
     if (!isAttending) {
@@ -359,7 +332,9 @@ export default function RsvpForm({
 
   const mutation = useMutation({
     mutationFn: async (data: RsvpFormInput) => {
-      const payload = data.status === "confirmed" ? data : { ...data, ceremonyChoice: undefined };
+      const payload = forcedEvent
+        ? { ...data, ceremonyChoice: forcedEvent }
+        : data.status === "confirmed" ? data : { ...data, ceremonyChoice: undefined };
       const response = await apiRequest(
         submitEndpoint === "/api/rsvp" ? "POST" : "PATCH",
         submitEndpoint,
@@ -542,6 +517,36 @@ export default function RsvpForm({
             />
           </div>
 
+          {/* De qui est-on l'invité */}
+          <FormField
+            control={form.control}
+            name="party"
+            render={({ field }) => (
+              <FormItem className="space-y-3">
+                <FormLabel className={labelClassName}>💐 Je suis invité(e) de</FormLabel>
+                <FormControl>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      ["jessica", "Jessica"],
+                      ["geldi", "Geldi"],
+                    ] as const).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={field.value === value}
+                        onClick={() => field.onChange(value)}
+                        className={`${choiceClassName} min-h-14 px-3 text-xs sm:text-sm ${field.value === value ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           {/* Présence & Nombre */}
           <div className="grid gap-5">
             <FormField
@@ -577,40 +582,7 @@ export default function RsvpForm({
 
             {isAttending && (
               <>
-                <FormField
-                  control={form.control}
-                  name="ceremonyChoice"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel className={labelClassName}>📅 Je participe à</FormLabel>
-                      <FormControl>
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                          {eventKeys.map((key) => {
-                            const event = weddingEvents[key];
-                            const full = isFull(key);
-                            return (
-                              <button
-                                key={key}
-                                type="button"
-                                aria-pressed={getEventKeys(field.value).includes(key)}
-                                onClick={() => !full && field.onChange(toggleEventChoice(field.value, key))}
-                                disabled={full}
-                                className={`${choiceClassName} min-h-16 px-3 text-xs sm:text-sm ${full ? "opacity-40 cursor-not-allowed" : getEventKeys(field.value).includes(key) ? selectedChoiceClassName : unselectedChoiceClassName}`}
-                              >
-                                <span className="block font-medium">{event.label}</span>
-                                {full
-                                  ? <span className="block text-[10px] mt-0.5 text-rose-500 font-medium">Complet</span>
-                                  : <span className="block text-[10px] mt-0.5 opacity-70">{event.date.replace(" 2027", "")} · {event.time}</span>
-                                }
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
 
                 <FormField
                   control={form.control}
@@ -645,58 +617,19 @@ export default function RsvpForm({
                     <FormItem className="space-y-3">
                       <FormLabel className={labelClassName}>🍹 Boisson souhaitée</FormLabel>
                       <FormControl>
-                        <div className="space-y-3">
-                          <PrettySelect
-                            value={getBeverageSelectValue(field.value)}
-                            onChange={(value) => {
-                              field.onChange(value === OTHER_BEVERAGE_VALUE ? "Autre: " : value);
-                            }}
-                            options={beverageSelectOptions}
-                            placeholder="Choisir une boisson"
-                            buttonClassName="border-border text-foreground focus:ring-primary/20"
-                          />
-                          {getBeverageSelectValue(field.value) === OTHER_BEVERAGE_VALUE && (
-                            <Input
-                              value={getOtherBeverageValue(field.value)}
-                              onChange={(event) => field.onChange(event.target.value ? `Autre: ${event.target.value}` : "Autre: ")}
-                              className={inputClassName}
-                              placeholder="Précisez la boisson souhaitée"
-                            />
-                          )}
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                          {beverageCategories.map((drink) => (
+                            <button
+                              key={drink}
+                              type="button"
+                              aria-pressed={field.value === drink}
+                              onClick={() => field.onChange(field.value === drink ? "" : drink)}
+                              className={`${choiceClassName} min-h-12 px-3 text-center text-xs sm:text-sm ${field.value === drink ? selectedChoiceClassName : unselectedChoiceClassName}`}
+                            >
+                              {drink}
+                            </button>
+                          ))}
                         </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="mealChoice"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel className={labelClassName}>Repas ou régime particulier</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} className={inputClassName} placeholder="Végétarien, sans porc…" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="allergies"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel className={labelClassName}>Allergies ou restrictions alimentaires</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          value={field.value || ""}
-                          className="min-h-[90px] rounded-none border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus-visible:ring-primary/25"
-                          placeholder="Indiquez uniquement ce que l’équipe doit prévoir"
-                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

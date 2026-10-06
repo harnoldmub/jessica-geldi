@@ -160,7 +160,7 @@ export default function CardGeneratorDialog({
       const templateKind =
         guest.invitedCeremonyChoice === "customary" ||
         guest.invitedCeremonyChoice === "civil" ||
-        guest.invitedCeremonyChoice === "religious"
+        guest.invitedCeremonyChoice === "evening"
           ? guest.invitedCeremonyChoice
           : "all";
 

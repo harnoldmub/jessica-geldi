@@ -156,3 +156,63 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ─── Faire-part : bordeaux & crème par défaut, recoloré par événement (lib/eventThemes.ts) ─── */
+:root {
+  --band: 110 20 32;
+  --band-deep: 74 13 21;
+  --band-ink: 243 233 228;
+  --lace: 217 163 166;
+  --paper: 239 235 228;
+  --ink: 58 16 21;
+  --accent: 110 20 32;
+  --seal-light: #c23a46;
+  --seal-mid: #8e1a26;
+  --seal-dark: #4d0811;
+}
+
+.wine-band {
+  background-color: rgb(var(--band));
+  background-image:
+    radial-gradient(120% 70% at 50% 0%, rgb(255 255 255 / 0.06), transparent 60%),
+    radial-gradient(90% 60% at 50% 110%, rgb(0 0 0 / 0.28), transparent 70%);
+  color: rgb(var(--band-ink));
+}
+
+.cream-band {
+  background-color: rgb(var(--paper));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");
+  color: rgb(var(--ink));
+}
+
+/* Photo noir & blanc en attente des vrais clichés */
+.mono-photo {
+  background-color: #2a2624;
+  background-image:
+    radial-gradient(110% 80% at 30% 25%, rgb(255 255 255 / 0.22), transparent 55%),
+    linear-gradient(165deg, #5a5552, #1e1b1a);
+}
+
+.mono-photo > img {
+  filter: grayscale(1) contrast(1.05);
+}
+
+.wine-photo {
+  background-color: rgb(var(--band-deep));
+  background-image:
+    radial-gradient(100% 80% at 50% 30%, rgb(255 255 255 / 0.16), transparent 60%),
+    linear-gradient(170deg, rgb(var(--band)), rgb(var(--band-deep)));
+}
+
+.signature {
+  font-family: 'Pinyon Script', 'Great Vibes', cursive;
+  font-weight: 400;
+  line-height: 0.8;
+  letter-spacing: 0;
+}
+
+.display-caps {
+  font-family: 'Italiana', 'Bodoni Moda', serif;
+  letter-spacing: 0.04em;
+  line-height: 0.9;
+}

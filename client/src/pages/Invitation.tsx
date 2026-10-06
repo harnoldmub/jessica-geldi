@@ -1,133 +1,250 @@
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Link, useRoute } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowLeft, CalendarDays, Clock, ExternalLink, MapPin } from "lucide-react";
+import { ArrowLeft, Heart, Mail } from "lucide-react";
 import { type RsvpResponse } from "@shared/schema";
 import { getEventKeys, JessicaGeldi, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 import { defaultSiteSettings, type SiteSettings } from "@shared/siteSettings";
-import RsvpForm from "@/components/RsvpForm";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DrumIcon, GlassesIcon, RingsIcon, Wreath } from "@/components/Stationery";
+
+import flowerStem from "../../images/pattern/flower-stem.png";
+import peony from "../../images/pattern/peony.png";
+import roseBud from "../../images/pattern/rose-bud.png";
 
 type InvitationGuest = RsvpResponse & { invitationUrl: string };
 
 const eventKeys = Object.keys(weddingEvents) as WeddingEventKey[];
-const reveal = { duration: 0.8, ease: [0.22, 1, 0.36, 1] as const };
+const reveal = { duration: 0.9, ease: [0.22, 1, 0.36, 1] as const };
 
-function PearlStrand({ small = false, className = "" }: { small?: boolean; className?: string }) {
+/*
+ * Une invitation par célébration : même faire-part, déclinée dans les couleurs du thème.
+ * band = bandeaux pleins, paper = papier, wash = lavis d'aquarelle de la couverture.
+ */
+const inviteThemes: Record<WeddingEventKey, {
+  band: string;
+  bandInk: string;
+  bandAccent: string;
+  paper: string;
+  ink: string;
+  accent: string;
+  soft: string;
+  wash: [string, string];
+  botanical: string;
+  Icon: (props: { className?: string }) => JSX.Element;
+}> = {
+  customary: {
+    band: "#7a3f2a",
+    bandInk: "#f6e9dc",
+    bandAccent: "#e3b98f",
+    paper: "#f6efe4",
+    ink: "#3b261f",
+    accent: "#b66e4b",
+    soft: "#d8a677",
+    wash: ["#ead6bd", "#d8b896"],
+    botanical: flowerStem,
+    Icon: DrumIcon,
+  },
+  civil: {
+    band: "#b87a8c",
+    bandInk: "#fff6f8",
+    bandAccent: "#fbe3ea",
+    paper: "#fff8f8",
+    ink: "#3a2a33",
+    accent: "#c88fa0",
+    soft: "#dcc6e8",
+    wash: ["#f8d7da", "#f3c3cb"],
+    botanical: peony,
+    Icon: RingsIcon,
+  },
+  evening: {
+    band: "#161514",
+    bandInk: "#f7f0e6",
+    bandAccent: "#c9a45c",
+    paper: "#f8f5ef",
+    ink: "#171717",
+    accent: "#a8843f",
+    soft: "#c9a45c",
+    wash: ["#ece5d8", "#ddd2bd"],
+    botanical: roseBud,
+    Icon: GlassesIcon,
+  },
+};
+
+const tz = "Africa/Kinshasa";
+/* Bord festonné : une pastille par feston sur la marge, le centre reste plein. */
+const scallopMask = "radial-gradient(circle, #000 7px, transparent 7.5px) 0 0 / 16px 16px round, linear-gradient(#000 0 0) content-box";
+const fmt = (date: Date, options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("fr-FR", { timeZone: tz, ...options }).format(date);
+
+function Botanical({ src, color, className = "", style }: { src: string; color: string; className?: string; style?: CSSProperties }) {
   return (
-    <div className={`flex items-center justify-center gap-0.5 ${className}`} aria-hidden="true">
-      {Array.from({ length: 17 }, (_, index) => (
-        <span
-          key={index}
-          className={`pearl ${small ? "pearl-small" : ""}`}
-          style={{ transform: `translateY(${Math.sin((index / 16) * Math.PI) * 20}px) scale(${0.82 + Math.sin((index / 16) * Math.PI) * 0.18})` }}
-        />
-      ))}
-    </div>
+    <span
+      aria-hidden
+      className={`botanical pointer-events-none absolute block ${className}`}
+      style={{ WebkitMaskImage: `url(${src})`, maskImage: `url(${src})`, backgroundColor: color, ...style }}
+    />
   );
 }
 
-function Ornament({ color }: { color: string }) {
+function Panel({ children, className = "", style }: { children: ReactNode; className?: string; style?: CSSProperties }) {
   return (
-    <div className="flex items-center justify-center gap-4" aria-hidden="true">
-      <span className="h-px flex-1" style={{ background: `linear-gradient(to right, transparent, ${color})` }} />
-      <span className="font-serif text-xs italic" style={{ color }}>J &amp; G</span>
-      <span className="h-px flex-1" style={{ background: `linear-gradient(to left, transparent, ${color})` }} />
-    </div>
+    <motion.section
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={reveal}
+      className={`relative overflow-hidden px-7 py-14 text-center sm:px-12 ${className}`}
+      style={style}
+    >
+      {children}
+    </motion.section>
   );
 }
 
-function Monogram({ color }: { color: string }) {
+function Caps({ children, className = "", style }: { children: ReactNode; className?: string; style?: CSSProperties }) {
+  return <p className={`font-sans text-[10px] uppercase leading-5 tracking-[0.28em] ${className}`} style={style}>{children}</p>;
+}
+
+function OutlineLink({ href, children, color }: { href: string; children: ReactNode; color: string }) {
   return (
-    <div className="mx-auto grid h-20 w-20 place-items-center rounded-full border" style={{ borderColor: `${color}88`, color }}>
-      <div className="text-center">
-        <p className="font-script text-4xl leading-none">J&amp;G</p>
-        <p className="mt-1 font-sans text-[8px] uppercase tracking-[0.3em]">2027</p>
+    <a href={href} target="_blank" rel="noreferrer" className="mt-7 inline-flex min-h-11 items-center justify-center border px-8 font-sans text-[10px] uppercase tracking-[0.3em] transition-opacity hover:opacity-70" style={{ borderColor: color, color }}>
+      {children}
+    </a>
+  );
+}
+
+/* Calendrier du mois, jour de la célébration marqué d'un cœur */
+function MonthCalendar({ date, accent, ink }: { date: Date; accent: string; ink: string }) {
+  const year = Number(fmt(date, { year: "numeric" }));
+  const month = Number(fmt(date, { month: "numeric" })) - 1;
+  const day = Number(fmt(date, { day: "numeric" }));
+  const firstWeekday = (new Date(Date.UTC(year, month, 1)).getUTCDay() + 6) % 7; // lundi = 0
+  const days = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const cells = [...Array.from({ length: firstWeekday }, () => 0), ...Array.from({ length: days }, (_, i) => i + 1)];
+  return (
+    <div className="mx-auto mt-6 max-w-[300px]" style={{ color: ink }}>
+      <div className="grid grid-cols-7 gap-y-3 font-sans text-[10px] uppercase tracking-[0.1em] opacity-60">
+        {["L", "M", "M", "J", "V", "S", "D"].map((d, i) => <span key={i}>{d}</span>)}
+      </div>
+      <div className="mt-3 grid grid-cols-7 gap-y-2 font-serif text-[15px]">
+        {cells.map((n, i) => (
+          <span key={i} className="relative grid h-8 place-items-center">
+            {n === day ? (
+              <>
+                <Heart className="absolute h-8 w-8" style={{ color: accent, fill: accent }} strokeWidth={0} aria-hidden />
+                <span className="relative text-white">{n}</span>
+                <span className="sr-only">jour de la célébration</span>
+              </>
+            ) : n ? n : ""}
+          </span>
+        ))}
       </div>
     </div>
   );
 }
 
-function InvitationArt({ eventKey }: { eventKey: WeddingEventKey }) {
-  const event = weddingEvents[eventKey];
-  const [weekday, day, month] = event.date.replace(" 2027", "").split(" ");
-
-  return (
-    <figure
-      className="relative aspect-[4/5] overflow-hidden border invitation-paper editorial-shadow"
-      style={{ borderColor: `${event.accent}55`, backgroundColor: event.background }}
-    >
-      <div className="absolute -left-20 top-8 w-72 -rotate-[34deg]"><PearlStrand small /></div>
-      <div className="absolute -right-24 bottom-24 w-80 rotate-[28deg]"><PearlStrand /></div>
-      <div className="absolute inset-5 border" style={{ borderColor: `${event.accent}3f` }} />
-
-      <figcaption className="relative z-10 flex h-full flex-col items-center px-8 pb-9 pt-10 text-center" style={{ color: event.ink }}>
-        <p className="font-sans text-[8px] uppercase tracking-[0.38em]" style={{ color: event.accent }}>
-          Invitation officielle
-        </p>
-        <p className="mt-7 font-serif text-[11px] uppercase tracking-[0.26em]">Le mariage de</p>
-        <h1 className="invitation-cover-title mt-3 font-serif font-medium uppercase">
-          Jessica<br />Geldi
-        </h1>
-        <p className="mt-2 font-script text-5xl leading-none" style={{ color: event.accent }}>Notre grand jour</p>
-
-        <div className="mt-auto w-full border-y py-5" style={{ borderColor: `${event.accent}42` }}>
-          <p className="font-serif text-2xl">{event.shortLabel}</p>
-          <p className="mt-2 font-sans text-[9px] uppercase tracking-[0.28em]" style={{ color: event.accent }}>
-            {weekday} {day} {month} · {event.time}
-          </p>
-          <p className="mt-2 font-serif text-sm italic">{event.theme}</p>
-        </div>
-      </figcaption>
-    </figure>
-  );
-}
-
-function Countdown({ target, color, ink }: { target: Date; color: string; ink: string }) {
+function Countdown({ target, color }: { target: Date; color: string }) {
   const [now, setNow] = useState(() => Date.now());
-
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
-
   const diff = Math.max(0, target.getTime() - now);
+  if (!diff) return null;
   const cells: [string, number][] = [
     ["Jours", Math.floor(diff / 86400000)],
     ["Heures", Math.floor(diff / 3600000) % 24],
     ["Min", Math.floor(diff / 60000) % 60],
     ["Sec", Math.floor(diff / 1000) % 60],
   ];
-
   return (
-    <div className="grid grid-cols-4 border-y py-5" style={{ borderColor: `${color}42` }} aria-label="Compte à rebours">
-      {cells.map(([label, value], index) => (
-        <div key={label} className={`text-center ${index ? "border-l" : ""}`} style={{ borderColor: `${color}42` }}>
-          <p className="font-serif text-xl tabular-nums sm:text-2xl" style={{ color: ink }}>{String(value).padStart(2, "0")}</p>
-          <p className="mt-1 font-sans text-[7px] uppercase tracking-[0.18em]" style={{ color }}>{label}</p>
+    <div className="mx-auto mt-8 grid max-w-xs grid-cols-4" aria-label="Compte à rebours">
+      {cells.map(([label, value]) => (
+        <div key={label}>
+          <p className="font-serif text-2xl tabular-nums">{String(value).padStart(2, "0")}</p>
+          <p className="mt-1 font-sans text-[8px] uppercase tracking-[0.2em]" style={{ color }}>{label}</p>
         </div>
       ))}
     </div>
   );
 }
 
+/* Seule action de l'invitation : confirmer sa présence ou son absence (modifiable à tout moment). */
+function PresenceConfirm({ guest, token, accent, ink }: { guest: InvitationGuest; token: string; accent: string; ink: string }) {
+  const { toast } = useToast();
+  const [editing, setEditing] = useState(guest.status === "pending");
+  const mutation = useMutation({
+    mutationFn: async (status: "confirmed" | "declined") => {
+      const response = await apiRequest("PATCH", `/api/invitation/${token}/status`, { status });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/invitation/${token}`] });
+      setEditing(false);
+    },
+    onError: (error: Error) => toast({ title: "Réponse non enregistrée", description: error.message, variant: "destructive" }),
+  });
+  const answered = guest.status === "confirmed" || guest.status === "declined";
+
+  if (answered && !editing) {
+    return (
+      <div aria-live="polite">
+        <h2 className="signature text-5xl" style={{ color: accent }}>{guest.status === "confirmed" ? "Merci !" : "Vous nous manquerez"}</h2>
+        <Caps className="mx-auto mt-5 max-w-xs">
+          {guest.status === "confirmed" ? "Votre présence est confirmée. Nous avons hâte de vous retrouver." : "Votre absence est bien notée. Merci de nous avoir prévenus."}
+        </Caps>
+        <button type="button" onClick={() => setEditing(true)} className="mt-6 min-h-11 font-sans text-[10px] uppercase tracking-[0.28em] underline underline-offset-4" style={{ color: ink }}>
+          Modifier ma réponse
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2 className="signature text-5xl" style={{ color: accent }}>Confirmer ma présence</h2>
+      <Caps className="mx-auto mt-4 max-w-xs">Merci de nous répondre au plus tôt.</Caps>
+      <div className="mx-auto mt-8 grid max-w-xs gap-3">
+        {([
+          ["confirmed", "Je serai là"],
+          ["declined", "Je serai absent(e)"],
+        ] as const).map(([status, label]) => {
+          const active = guest.status === status;
+          return (
+            <button
+              key={status}
+              type="button"
+              disabled={mutation.isPending}
+              onClick={() => mutation.mutate(status)}
+              className="min-h-12 border px-6 font-sans text-[11px] uppercase tracking-[0.3em] transition-opacity hover:opacity-80 disabled:opacity-50"
+              style={status === "confirmed" || active ? { background: accent, borderColor: accent, color: "#fff" } : { borderColor: ink, color: ink }}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Page de transit : une carte par date ─── */
 function DateCard({ token, eventKey }: { token: string; eventKey: WeddingEventKey }) {
   const event = weddingEvents[eventKey];
+  const theme = inviteThemes[eventKey];
+  const date = new Date(event.iso);
   return (
-    <Link href={`/invitation/${token}/${eventKey}`} className="group block focus-visible:outline-none focus-visible:ring-2" style={{ color: event.ink }}>
-      <article className="border bg-white/60 p-5 transition-transform duration-300 group-hover:-translate-y-1 group-active:scale-[0.99]" style={{ borderColor: `${event.accent}55` }}>
-        <div className="flex items-center gap-5">
-          <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full border" style={{ borderColor: event.accent }}>
-            <span className="h-11 w-11 rounded-full" style={{ background: event.palette[0], boxShadow: `inset 0 0 0 10px ${event.palette[1]}55` }} />
-          </div>
-          <div className="min-w-0">
-            <p className="font-serif text-xl">{event.label}</p>
-            <p className="mt-1 font-sans text-[9px] uppercase leading-5 tracking-[0.2em]" style={{ color: event.accent }}>
-              {event.date}<br />{event.time} · {event.theme}
-            </p>
-          </div>
-        </div>
+    <Link href={`/invitation/${token}/${eventKey}`} className="group block focus-visible:outline-none focus-visible:ring-2" style={{ color: theme.ink }}>
+      <article className="relative overflow-hidden p-6 transition-transform duration-300 group-hover:-translate-y-1 group-active:scale-[0.99]" style={{ background: `radial-gradient(120% 90% at 20% 10%, ${theme.wash[0]}, ${theme.paper} 70%)` }}>
+        <Botanical src={theme.botanical} color={theme.accent} className="-bottom-4 -right-6 h-32 w-24 opacity-40" />
+        <p className="font-serif text-5xl leading-none opacity-30" style={{ color: theme.accent }}>{fmt(date, { day: "2-digit" })}.{fmt(date, { month: "2-digit" })}</p>
+        <p className="signature -mt-5 text-4xl">Save the Date</p>
+        <p className="mt-3 font-sans text-[10px] uppercase tracking-[0.3em]">{event.label}</p>
+        <p className="mt-1 font-sans text-[10px] uppercase tracking-[0.2em] opacity-60">{event.date} · {event.time}</p>
+        <p className="mt-4 font-sans text-[10px] uppercase tracking-[0.3em]" style={{ color: theme.accent }}>Ouvrir l'invitation →</p>
       </article>
     </Link>
   );
@@ -135,21 +252,18 @@ function DateCard({ token, eventKey }: { token: string; eventKey: WeddingEventKe
 
 function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: string; dates: WeddingEventKey[] }) {
   return (
-    <main className="min-h-dvh bg-[#b5a99e] px-4 py-8 sm:py-12">
-      <div className="invitation-paper mx-auto max-w-lg border border-white/40 px-6 py-10 sm:px-12 sm:py-14">
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={reveal} className="text-center">
-          <Monogram color="#8b6e5d" />
-          <p className="mt-8 font-sans text-[9px] uppercase tracking-[0.45em] text-[#8b6e5d]">Vos invitations</p>
-          <h1 className="mt-5 font-serif text-5xl uppercase leading-[0.92] sm:text-6xl">Jessica<br />Geldi</h1>
-          <p className="mt-2 font-script text-4xl text-[#8b6e5d]">Notre grand jour</p>
-          <PearlStrand small className="mx-auto mt-8 max-w-[270px]" />
-          <p className="mt-12 font-serif text-base italic text-muted-foreground">À l'attention de</p>
+    <main className="min-h-dvh bg-[#2b2522] px-4 py-8 sm:py-12">
+      <div className="mx-auto max-w-md">
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={reveal} className="cream-band px-7 py-12 text-center">
+          <Caps className="opacity-60">Vos invitations</Caps>
+          <p className="signature mt-5 text-6xl">Jessica &amp; Geldi</p>
+          <p className="mt-8 font-serif text-base italic opacity-70">À l'attention de</p>
           <p className="mt-1 font-serif text-2xl">{guest.firstName} {guest.lastName}</p>
-          <p className="mx-auto mt-5 max-w-sm text-base leading-7 text-muted-foreground">
-            Nous avons la joie de vous convier à plusieurs temps de notre mariage. Ouvrez chaque faire-part pour découvrir ses détails.
+          <p className="mx-auto mt-5 max-w-sm text-base leading-7 opacity-75">
+            Nous avons la joie de vous convier à {dates.length > 1 ? "plusieurs temps" : "un temps"} de notre mariage. Chaque célébration a son faire-part : ouvrez-les un à un.
           </p>
         </motion.div>
-        <div className="mt-9 space-y-4">
+        <div className="mt-4 space-y-4">
           {dates.map((key) => <DateCard key={key} token={token} eventKey={key} />)}
         </div>
       </div>
@@ -157,136 +271,146 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
   );
 }
 
+/* ─── Le faire-part d'une célébration ─── */
 function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest: InvitationGuest; token: string; eventKey: WeddingEventKey; settings: SiteSettings; showBack?: boolean }) {
   const event = weddingEvents[eventKey];
+  const theme = inviteThemes[eventKey];
   const details = settings.events[eventKey];
   const program = settings.program.filter((item) => item.event === eventKey);
-  const eventDate = new Date(event.iso);
-  const day = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", timeZone: "Africa/Kinshasa" }).format(eventDate);
-  const month = new Intl.DateTimeFormat("fr-FR", { month: "long", timeZone: "Africa/Kinshasa" }).format(eventDate);
-  const weekday = new Intl.DateTimeFormat("fr-FR", { weekday: "long", timeZone: "Africa/Kinshasa" }).format(eventDate);
+  const date = new Date(event.iso);
+  const dd = fmt(date, { day: "2-digit" });
+  const mm = fmt(date, { month: "2-digit" });
+  const yy = fmt(date, { year: "2-digit" });
+  const monthName = fmt(date, { month: "long" });
+  const seats = guest.invitedCount || 1;
+  const Icon = theme.Icon;
+
+  const band: CSSProperties = { background: theme.band, color: theme.bandInk };
+  const paper: CSSProperties = { background: theme.paper, color: theme.ink };
 
   return (
-    <main className="min-h-dvh overflow-x-hidden px-0 py-0 sm:px-5 sm:py-10" style={{ background: `${event.accent}66`, color: event.ink }}>
-      <div className="mx-auto w-full max-w-[540px]">
+    <main className="min-h-dvh overflow-x-hidden bg-[#2b2522] sm:px-5 sm:py-10">
+      <div className="mx-auto w-full max-w-[480px]">
         {showBack && (
-          <Link href={`/invitation/${token}`} className="mx-5 mb-5 inline-flex min-h-11 items-center gap-2 font-sans text-[9px] uppercase tracking-[0.24em] sm:mx-0" style={{ color: event.ink }}>
+          <Link href={`/invitation/${token}`} className="mx-5 mb-4 mt-4 inline-flex min-h-11 items-center gap-2 font-sans text-[10px] uppercase tracking-[0.24em] text-white/75 sm:mx-0 sm:mt-0">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Toutes mes invitations
           </Link>
         )}
 
-        <article className="invitation-paper overflow-hidden sm:border sm:border-white/50">
-          <motion.header initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={reveal} className="p-5 sm:p-8">
-            <InvitationArt eventKey={eventKey} />
+        <article className="shadow-[0_40px_90px_-40px_rgba(0,0,0,0.7)]">
+          {/* 1 · Couverture « Save the Date » : grande date en filigrane, lavis, végétal */}
+          <motion.header
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.2 }}
+            className="relative overflow-hidden px-6 pb-14 pt-16 text-center"
+            style={{ ...paper, background: `radial-gradient(70% 55% at 18% 18%, ${theme.wash[0]}, transparent 70%), radial-gradient(60% 50% at 85% 85%, ${theme.wash[1]}, transparent 70%), ${theme.paper}` }}
+          >
+            <Botanical src={theme.botanical} color={theme.accent} className={eventKey === "civil" ? "-right-10 bottom-0 h-56 w-48 opacity-50" : "-bottom-6 -left-8 h-64 w-36 opacity-45"} />
+            <p className="font-serif text-[clamp(4.2rem,22vw,6.5rem)] font-normal leading-none tracking-[0.04em]" style={{ color: theme.accent, opacity: 0.55 }}>
+              {dd}.{mm}.{yy}
+            </p>
+            <h1 className="signature relative -mt-[0.45em] text-[clamp(3.6rem,17vw,5rem)]">Save the Date</h1>
+            <div className="mx-auto mt-6 flex max-w-[220px] items-center gap-3" aria-hidden>
+              <span className="h-px flex-1" style={{ background: `${theme.accent}80` }} />
+              <Heart className="h-3.5 w-3.5" style={{ color: theme.accent, fill: theme.accent }} strokeWidth={0} />
+              <span className="h-px flex-1" style={{ background: `${theme.accent}80` }} />
+            </div>
+            <p className="mt-4 font-serif text-3xl">Jessica &amp; Geldi</p>
+            <Caps className="mt-3 tracking-[0.34em]">{event.label}</Caps>
+            <Caps className="tracking-[0.34em]">{details.venue} · Kinshasa, Congo</Caps>
           </motion.header>
 
-          <section className="px-7 pb-12 pt-7 text-center sm:px-12" aria-labelledby="guest-name">
-            <p className="font-sans text-[8px] uppercase tracking-[0.35em]" style={{ color: event.accent }}>Une invitation rien que pour vous</p>
-            <h2 id="guest-name" className="mt-5 font-script text-5xl leading-none" style={{ color: event.accent }}>{guest.firstName}</h2>
-            <p className="mx-auto mt-5 max-w-sm text-lg leading-8 text-black/70">{settings.invitationText}</p>
-            <p className="mt-6 inline-block border-y px-4 py-2 font-sans text-[8px] uppercase tracking-[0.22em]" style={{ borderColor: `${event.accent}55` }}>
-              Invitation pour {guest.invitedCount || 1} personne{(guest.invitedCount || 1) > 1 ? "s" : ""}
+          {/* 2 · Médaillon & monogramme sur bandeau */}
+          <Panel style={band} className="py-16">
+            <p className="signature text-5xl" style={{ color: theme.bandAccent }}>{event.shortLabel}</p>
+            <Wreath className="mx-auto mt-6 aspect-[200/240] w-48" >
+              <span className="signature text-6xl" style={{ color: theme.bandAccent }}>JG</span>
+            </Wreath>
+            <p className="signature mt-6 text-5xl" style={{ color: theme.bandAccent }}>Jessica &amp; Geldi</p>
+            <Caps className="mt-3 opacity-80">{dd} / {mm} / 20{yy} · {details.venue}</Caps>
+          </Panel>
+
+          {/* 3 · Chers invités */}
+          <Panel style={paper}>
+            <h2 className="signature text-5xl" style={{ color: theme.accent }}>Cher(e) {guest.firstName}&nbsp;!</h2>
+            <p className="mx-auto mt-6 max-w-sm font-sans text-[11px] uppercase leading-6 tracking-[0.16em]">{settings.invitationText}</p>
+            <p className="mx-auto mt-6 max-w-sm font-sans text-[11px] uppercase leading-6 tracking-[0.16em]">
+              Nous serons heureux de vous accueillir {details.venue && details.venue !== "Lieu à confirmer" ? <>à «&nbsp;{details.venue}&nbsp;», </> : null}{details.address}.
             </p>
-          </section>
-
-          <section className="px-7 pb-12 sm:px-12"><Countdown target={eventDate} color={event.accent} ink={event.ink} /></section>
-
-          <section className="border-y px-7 py-14 text-center sm:px-12" style={{ borderColor: `${event.accent}3d`, background: `${event.palette[0]}99` }} aria-labelledby="date-title">
-            <p className="font-script text-5xl leading-none" style={{ color: event.accent }}>{month}</p>
-            <p id="date-title" className="mt-4 font-serif text-[5rem] leading-none sm:text-[6rem]">{day}</p>
-            <p className="mt-4 font-sans text-[9px] uppercase tracking-[0.34em]">{weekday} · {event.time} · 2027</p>
-            <div className="mt-9 grid grid-cols-3 border-y" style={{ borderColor: `${event.accent}48` }}>
-              {eventKeys.map((key) => {
-                const item = weddingEvents[key];
-                const active = key === eventKey;
-                return (
-                  <div key={key} className="py-4 text-center" style={{ background: active ? event.accent : "transparent", color: active ? "#fff" : event.ink }}>
-                    <p className="font-sans text-[7px] uppercase tracking-[0.18em]">{item.shortLabel}</p>
-                    <p className="mt-1 font-serif text-xl">{new Date(item.iso).getDate()}</p>
-                  </div>
-                );
-              })}
+            <Icon className="mx-auto mt-10 h-32 w-32 opacity-80" />
+            {details.mapsUrl && <OutlineLink href={details.mapsUrl} color={theme.ink}>Ouvrir la carte</OutlineLink>}
+            <div>
+              <p className="mt-8 inline-block border-y px-4 py-2 font-sans text-[9px] uppercase tracking-[0.24em]" style={{ borderColor: `${theme.accent}55` }}>
+                Invitation pour {seats} personne{seats > 1 ? "s" : ""}
+              </p>
             </div>
-          </section>
+          </Panel>
 
-          <section className="px-7 py-14 sm:px-12" aria-labelledby="event-title">
-            <div className="text-center">
-              <Ornament color={event.accent} />
-              <h2 id="event-title" className="mt-7 font-serif text-3xl sm:text-4xl">{event.label}</h2>
-              <p className="mt-3 font-script text-4xl" style={{ color: event.accent }}>{event.theme}</p>
-              <p className="mx-auto mt-5 max-w-sm text-lg leading-8 text-black/65">{details.note || event.themeNote}</p>
-            </div>
+          {/* 4 · Calendrier du mois */}
+          <Panel style={{ ...paper, background: theme.wash[0] }}>
+            <h2 className="signature text-6xl capitalize">{monthName}</h2>
+            <MonthCalendar date={date} accent={theme.accent} ink={theme.ink} />
+            <Caps className="mt-6">{event.date} · {event.time}</Caps>
+            <Countdown target={date} color={theme.accent} />
+          </Panel>
 
-            <div className="mt-10 border-y py-7" style={{ borderColor: `${event.accent}42` }}>
-              <p className="flex items-start gap-4 text-base leading-7"><CalendarDays className="mt-1 h-4 w-4 shrink-0" aria-hidden="true" /> {event.date}</p>
-              <p className="mt-4 flex items-start gap-4 text-base"><Clock className="h-4 w-4 shrink-0" aria-hidden="true" /> {event.time}</p>
-              <p className="mt-4 flex items-start gap-4 text-base leading-7"><MapPin className="mt-1 h-4 w-4 shrink-0" aria-hidden="true" /> <span>{details.venue}<br />{details.address}</span></p>
-              {details.mapsUrl && (
-                <a href={details.mapsUrl} target="_blank" rel="noreferrer" className="mt-6 inline-flex min-h-11 items-center gap-2 font-sans text-[9px] uppercase tracking-[0.22em] underline underline-offset-4" style={{ color: event.accent }}>
-                  Voir l'itinéraire <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                </a>
-              )}
-            </div>
-          </section>
-
-          {program.length > 0 && (
-            <section className="px-7 pb-14 sm:px-12" aria-labelledby="program-title">
-              <p className="text-center font-script text-5xl" style={{ color: event.accent }}>Programme</p>
-              <h2 id="program-title" className="sr-only">Programme de la célébration</h2>
-              <div className="mt-8 border-y" style={{ borderColor: `${event.accent}42` }}>
-                {program.map((item, index) => (
-                  <div key={`${item.time}-${index}`} className="grid grid-cols-[76px_1fr] gap-5 border-b py-5 last:border-b-0" style={{ borderColor: `${event.accent}32` }}>
-                    <p className="font-serif text-2xl" style={{ color: event.accent }}>{item.time}</p>
-                    <div><h3 className="font-serif text-xl">{item.title}</h3>{item.text && <p className="mt-2 text-base leading-6 text-black/60">{item.text}</p>}</div>
+          {/* 5 · Programme sur carte festonnée */}
+          <Panel style={band} className="py-16">
+            <div className="relative mx-auto max-w-[330px] p-[8px]" style={{ background: theme.paper, color: theme.ink, WebkitMask: scallopMask, mask: scallopMask }}>
+              <div className="relative px-7 py-12">
+              <div className="absolute inset-2 border" style={{ borderColor: `${theme.accent}55` }} />
+              <h2 className="signature relative text-5xl" style={{ color: theme.accent }}>Programme</h2>
+              <Caps className="relative opacity-70">de la journée</Caps>
+              <div className="relative mt-8 space-y-6">
+                {(program.length ? program : [{ time: event.time, title: event.label, text: "" }]).map((item, index) => (
+                  <div key={`${item.time}-${index}`}>
+                    <p className="font-serif text-3xl italic" style={{ color: theme.accent }}>{item.time}</p>
+                    <Caps className="mt-1">{item.title}</Caps>
+                    {item.text && <p className="mx-auto mt-1 max-w-[240px] text-sm leading-6 opacity-70">{item.text}</p>}
                   </div>
                 ))}
               </div>
-            </section>
-          )}
+              </div>
+            </div>
+          </Panel>
 
-          <section className="border-y px-7 py-14 text-center sm:px-12" style={{ borderColor: `${event.accent}3d`, background: `${event.palette[0]}8f` }} aria-labelledby="dress-title">
-            <h2 id="dress-title" className="font-serif text-3xl">Tenue &amp; couleurs</h2>
-            <p className="mt-2 font-script text-4xl" style={{ color: event.accent }}>{event.theme}</p>
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
+          {/* 6 · Dress code */}
+          <Panel style={paper}>
+            <h2 className="signature text-6xl" style={{ color: theme.accent }}>Dress code</h2>
+            <Caps className="mx-auto mt-5 max-w-xs">Nous serons ravis si vos tenues accompagnent notre palette&nbsp;: {event.theme}.</Caps>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
               {event.palette.map((color, index) => (
-                <div key={color} className="flex w-12 flex-col items-center gap-2">
-                  <span className="h-10 w-10 rounded-full border border-black/10 shadow-sm" style={{ background: color }} />
-                  <span className="font-sans text-[7px] uppercase leading-3 tracking-[0.12em] opacity-65">{event.colorNames[index]}</span>
+                <div key={color} className="flex w-14 flex-col items-center gap-2">
+                  <span className="h-11 w-11 rounded-full border border-black/10 shadow-sm" style={{ background: color }} />
+                  <span className="font-sans text-[8px] uppercase leading-3 tracking-[0.12em] opacity-65">{event.colorNames[index]}</span>
                 </div>
               ))}
             </div>
-          </section>
+            <p className="mx-auto mt-8 max-w-xs text-base italic leading-7 opacity-75">{details.note || event.themeNote}</p>
+          </Panel>
 
-          <section className="px-5 py-14 sm:px-9" aria-label="Réponse à l'invitation">
-            <RsvpForm
-              variant="invitation"
-              submitEndpoint={`/api/invitation/${token}/rsvp`}
-              maxGuests={guest.invitedCount || 1}
-              allowedEvents={getEventKeys(guest.invitedCeremonyChoice || guest.ceremonyChoice)}
-              initialValues={{
-                firstName: guest.firstName,
-                lastName: guest.lastName,
-                email: guest.email || "",
-                phone: guest.phone || "",
-                status: guest.status as "pending" | "confirmed" | "declined",
-                guestCount: guest.guestCount,
-                ceremonyChoice: guest.ceremonyChoice || eventKey,
-                mealChoice: guest.mealChoice || "",
-                beverageChoice: guest.beverageChoice || "",
-                allergies: guest.allergies || "",
-                message: guest.message || "",
-              }}
-              title="Serez-vous des nôtres ?"
-              description={`Votre invitation prévoit jusqu'à ${guest.invitedCount || 1} personne(s). Vous pourrez modifier votre réponse à tout moment.`}
-              submitLabel="Enregistrer ma réponse"
-            />
-          </section>
+          {/* 7 · Attentions */}
+          {settings.contribution.enabled && (
+            <Panel style={{ ...paper, borderTop: `1px solid ${theme.accent}30` }}>
+              <h2 className="signature text-5xl" style={{ color: theme.accent }}>Vos attentions</h2>
+              <Mail className="mx-auto mt-6 h-7 w-7 opacity-70" strokeWidth={1.2} aria-hidden />
+              <Caps className="mx-auto mt-4 max-w-xs">{settings.contribution.title}</Caps>
+              <p className="mx-auto mt-3 max-w-xs text-sm leading-6 opacity-70">{settings.contribution.message}</p>
+            </Panel>
+          )}
 
-          <footer className="border-t px-7 py-14 text-center sm:px-12" style={{ borderColor: `${event.accent}3d` }}>
-            <PearlStrand small className="mx-auto max-w-[270px]" />
-            <p className="mt-12 font-script text-5xl" style={{ color: event.accent }}>Jessica &amp; Geldi</p>
-            <p className="mt-4 font-sans text-[8px] uppercase tracking-[0.34em] opacity-60">Kinshasa · 2027</p>
-          </footer>
+          {/* 8 · Réponse */}
+          <Panel style={{ ...paper, background: theme.wash[0] }}>
+            <PresenceConfirm guest={guest} token={token} accent={theme.accent} ink={theme.ink} />
+          </Panel>
+
+          {/* 9 · Clôture */}
+          <Panel style={band} className="py-16">
+            <p className="signature text-5xl leading-tight" style={{ color: theme.bandAccent }}>Avec impatience de vous retrouver&nbsp;!</p>
+            <p className="signature mt-10 text-5xl" style={{ color: theme.bandAccent }}>Jessica &amp; Geldi</p>
+            <Caps className="mt-3 opacity-80">{dd} / {mm} / 20{yy} · Kinshasa</Caps>
+          </Panel>
         </article>
       </div>
     </main>
@@ -307,7 +431,7 @@ export default function Invitation() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-[#b5a99e] p-6">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-[#2b2522] p-6">
         <Skeleton className="h-10 w-64 rounded-none" />
         <Skeleton className="h-[540px] w-full max-w-md rounded-none" />
       </div>
@@ -316,11 +440,10 @@ export default function Invitation() {
 
   if (error || !guest || !token) {
     return (
-      <div className="invitation-paper flex min-h-dvh flex-col items-center justify-center gap-7 p-6 text-center">
-        <Monogram color="#8b6e5d" />
-        <p className="font-script text-6xl">{JessicaGeldi.brand}</p>
+      <div className="cream-band flex min-h-dvh flex-col items-center justify-center gap-6 p-6 text-center">
+        <p className="signature text-6xl">{JessicaGeldi.brand}</p>
         <h1 className="font-serif text-2xl">Invitation introuvable</h1>
-        <p className="max-w-sm text-base leading-7 text-muted-foreground">Ce lien semble invalide ou a expiré. Veuillez contacter les mariés directement.</p>
+        <p className="max-w-sm text-base leading-7 opacity-70">Ce lien semble invalide ou a expiré. Veuillez contacter les mariés directement.</p>
       </div>
     );
   }

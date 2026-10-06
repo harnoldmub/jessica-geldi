@@ -1,40 +1,19 @@
-export const beverageOptions = {
-  beers: [
-    "Nkoyi Likofi",
-    "Nkoyi normal",
-    "Beaufort",
-    "Castel",
-    "Heineken",
-    "Primus",
-    "Tembo",
-    "Savanna",
-  ],
-  softDrinks: [
-    "Coca",
-    "Fanta",
-    "Maltina",
-    "Sprite",
-    "Energy malt",
-    "Vitalo",
-  ],
-};
+// Boissons proposées par catégorie (et non plus par marque).
+export const beverageCategories = ["Soft", "Bière", "Vin", "Champagne", "Whisky"] as const;
 
-export const allBeverageOptions = [
-  ...beverageOptions.beers,
-  ...beverageOptions.softDrinks,
-] as const;
-
-export const eventChoices = ["customary", "civil", "religious"] as const;
+export const eventChoices = ["customary", "civil", "evening"] as const;
 export type EventChoice = (typeof eventChoices)[number];
 export type WeddingEventKey = EventChoice;
 
 export const weddingEvents: Record<WeddingEventKey, {
   key: WeddingEventKey;
+  slug: string;
   label: string;
   shortLabel: string;
   date: string;
   iso: string;
   time: string;
+  venue: string;
   theme: string;
   themeNote: string;
   capacity: number;
@@ -46,11 +25,13 @@ export const weddingEvents: Record<WeddingEventKey, {
 }> = {
   customary: {
     key: "customary",
+    slug: "coutumier",
     label: "Mariage coutumier",
     shortLabel: "Coutumier",
     date: "Mercredi 10 février 2027",
     iso: "2027-02-10T18:00:00+01:00",
     time: "18H",
+    venue: "Pullman Hotel",
     theme: "Bohème chic",
     themeNote: "Matières naturelles, touches terracotta, ivoire et esprit floral libre.",
     capacity: 400,
@@ -62,11 +43,13 @@ export const weddingEvents: Record<WeddingEventKey, {
   },
   civil: {
     key: "civil",
-    label: "Mariage civil",
-    shortLabel: "Civil",
+    slug: "civil",
+    label: "Mariage civil & bénédiction",
+    shortLabel: "Civil & bénédiction",
     date: "Vendredi 12 février 2027",
     iso: "2027-02-12T11:00:00+01:00",
     time: "11H",
+    venue: "Hilton Hotel",
     theme: "Pastel",
     themeNote: "Une palette douce et lumineuse, rose poudré, bleu ciel, lilas et crème.",
     capacity: 200,
@@ -76,15 +59,17 @@ export const weddingEvents: Record<WeddingEventKey, {
     background: "#FFF8FA",
     ink: "#3A2A33",
   },
-  religious: {
-    key: "religious",
-    label: "Mariage religieux",
-    shortLabel: "Religieux",
-    date: "Dimanche 14 février 2027",
-    iso: "2027-02-14T11:00:00+01:00",
-    time: "11H",
+  evening: {
+    key: "evening",
+    slug: "soiree",
+    label: "Soirée dansante",
+    shortLabel: "Soirée",
+    date: "Samedi 13 février 2027",
+    iso: "2027-02-13T20:00:00+01:00",
+    time: "Heure à confirmer",
+    venue: "Fleuve Congo Hotel",
     theme: "Chic et Élégant",
-    themeNote: "Noir profond, ivoire et touches dorées pour une cérémonie solennelle et raffinée.",
+    themeNote: "Noir profond, ivoire et touches dorées pour une soirée raffinée.",
     capacity: 200,
     palette: ["#111111", "#F7F0E6", "#C9A45C", "#6F7277", "#FFFFFF"],
     colorNames: ["Noir", "Ivoire", "Or", "Gris chic", "Blanc"],
@@ -96,17 +81,26 @@ export const weddingEvents: Record<WeddingEventKey, {
 
 export function getEventKeys(choice?: string | null): WeddingEventKey[] {
   if (choice == null || choice === "all" || choice === "both") {
-    return ["customary", "civil", "religious"];
+    return ["customary", "civil", "evening"];
   }
   if (!choice.trim()) return [];
-  if (choice === "evening") return [];
   const keys = choice
     .split(",")
     .map((key) => key.trim())
     .filter((key): key is WeddingEventKey =>
-      key === "customary" || key === "civil" || key === "religious",
+      key === "customary" || key === "civil" || key === "evening",
     );
   return Array.from(new Set(keys));
+}
+
+/** L'événement auquel appartient une invitation (une invitation = un seul événement), ou null si elle est à répartir. */
+export function getGuestEvent(guest: { invitedCeremonyChoice?: string | null; ceremonyChoice?: string | null }): WeddingEventKey | null {
+  const keys = getEventKeys(guest.invitedCeremonyChoice || guest.ceremonyChoice);
+  return keys.length === 1 ? keys[0] : null;
+}
+
+export function isWeddingEventKey(value: unknown): value is WeddingEventKey {
+  return value === "customary" || value === "civil" || value === "evening";
 }
 
 export function joinEventKeys(keys: WeddingEventKey[]) {
@@ -116,7 +110,7 @@ export function joinEventKeys(keys: WeddingEventKey[]) {
 export const JessicaGeldi = {
   brand: "Jessica & Geldi",
   title: "Jessica & Geldi",
-  tagline: "Trois célébrations, trois ambiances, une même promesse d'amour.",
+  tagline: "Trois rendez-vous, trois ambiances, une même promesse d'amour.",
   weddingDate: new Date(weddingEvents.customary.iso),
   date: {
     display: weddingEvents.customary.date,
@@ -136,7 +130,7 @@ export const JessicaGeldi = {
     statement:
       "Nous serons heureux de vous compter parmi nous pour célébrer notre union, entourés de nos familles et de ceux que nous aimons.",
     narrative:
-      "Notre mariage se vivra en trois temps: la chaleur du coutumier, la douceur du civil et la grâce du religieux.",
+      "Notre mariage se vivra en trois temps : la chaleur du coutumier, la douceur du civil et de la bénédiction, puis la fête d'une soirée dansante.",
   },
   hero: {
     eyebrow: "Invitation officielle",
@@ -145,35 +139,35 @@ export const JessicaGeldi = {
   },
   story: [
     {
-      period: "10 février · 18H",
+      period: "10 février · Pullman Hotel",
       title: "Mariage coutumier",
       body: "Une ambiance bohème chic, familiale et chaleureuse pour honorer nos traditions.",
       image: null as null | string,
     },
     {
-      period: "12 février · 11H",
-      title: "Mariage civil",
-      body: "Une célébration pastel, douce et lumineuse pour officialiser notre union.",
+      period: "12 février · Hilton Hotel",
+      title: "Mariage civil & bénédiction",
+      body: "Une célébration pastel, douce et lumineuse pour officialiser et bénir notre union.",
       image: null as null | string,
     },
     {
-      period: "14 février · 11H",
-      title: "Mariage religieux",
-      body: "Un moment chic et élégant pour recevoir la bénédiction et célébrer notre foi.",
+      period: "13 février · Fleuve Congo Hotel",
+      title: "Soirée dansante",
+      body: "Une soirée chic et élégante pour danser et célébrer ensemble jusqu'au bout de la nuit.",
       image: null as null | string,
     },
   ],
   programme: Object.values(weddingEvents).map((event) => ({
     time: `${event.date} · ${event.time}`,
     title: event.label,
-    body: `${event.theme} · lieu à confirmer.`,
+    body: `${event.theme} · ${event.venue}, Kinshasa.`,
     theme: event.key,
   })),
   dresscode: weddingEvents,
   venues: Object.values(weddingEvents).map((event) => ({
     label: event.label,
-    name: "Lieu à confirmer",
-    address: "Adresse à confirmer",
+    name: event.venue,
+    address: "Kinshasa",
     city: "Kinshasa",
     time: `${event.date} · ${event.time}`,
     note: event.themeNote,
@@ -195,11 +189,11 @@ export const JessicaGeldi = {
     },
     {
       q: "Quels sont les thèmes ?",
-      a: "Le coutumier est Bohème chic, le civil Pastel et le religieux Chic et Élégant.",
+      a: "Le coutumier est Bohème chic, le civil et la bénédiction Pastel, la soirée dansante Chic et Élégant.",
     },
     {
       q: "Quels sont les horaires ?",
-      a: "Le coutumier aura lieu le 10 février 2027 à 18H, le civil le 12 février 2027 à 11H et le religieux le 14 février 2027 à 11H.",
+      a: "Le coutumier aura lieu le mercredi 10 février 2027 au Pullman Hotel, le civil et la bénédiction le vendredi 12 février 2027 au Hilton Hotel, et la soirée dansante le samedi 13 février 2027 au Fleuve Congo Hotel.",
     },
     {
       q: "Puis-je venir accompagné(e) ?",

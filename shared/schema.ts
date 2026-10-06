@@ -24,7 +24,7 @@ const eventChoiceSchema = z
     (value) =>
       value
         .split(",")
-        .every((key) => ["customary", "civil", "religious", "all", "both"].includes(key.trim())),
+        .every((key) => ["customary", "civil", "evening", "all", "both"].includes(key.trim())),
     "Veuillez choisir une célébration valide",
   );
 
@@ -147,6 +147,14 @@ export const insertRsvpSchema = createInsertSchema(rsvpResponses, {
   updatedAt: true,
 });
 
+// Réponse publique (page d'un événement) : l'invité indique de qui il est l'invité.
+export const publicRsvpSchema = insertRsvpSchema.extend({
+  party: z.enum(["jessica", "geldi"], {
+    required_error: "Indiquez si vous êtes invité(e) de Jessica ou de Geldi",
+    invalid_type_error: "Indiquez si vous êtes invité(e) de Jessica ou de Geldi",
+  }),
+});
+
 export const adminGuestSchema = insertRsvpSchema.extend({
   status: z.enum(["pending", "confirmed", "declined"]).default("pending"),
   ceremonyChoice: eventChoiceSchema.default("civil"),
@@ -185,6 +193,7 @@ export type SafeUser = Omit<User, "password">;
 export type InsertUser = typeof users.$inferInsert;
 export type RsvpResponse = typeof rsvpResponses.$inferSelect;
 export type InsertRsvpResponse = typeof rsvpResponses.$inferInsert;
-export type RsvpFormInput = z.infer<typeof insertRsvpSchema>;
+export type RsvpFormInput = z.infer<typeof insertRsvpSchema> & { party?: "jessica" | "geldi" };
+export type PublicRsvpInput = z.infer<typeof publicRsvpSchema>;
 export type AdminGuestInput = z.infer<typeof adminGuestSchema>;
 export type UpdateGuestInput = z.infer<typeof updateGuestSchema>;

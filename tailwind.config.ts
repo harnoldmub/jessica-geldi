@@ -40,11 +40,28 @@ export default {
         gold: "hsl(var(--gold))",
         blush: "hsl(var(--blush))",
         ink: "hsl(var(--ink))",
+        wine: {
+          DEFAULT: "#6e1420",
+          deep: "#4a0d15",
+          soft: "#8a2a35",
+        },
+        cream: "#efebe4",
+        // Couleurs de thème des pages d'événement (variables RVB, voir lib/eventThemes.ts)
+        tband: "rgb(var(--band) / <alpha-value>)",
+        tdeep: "rgb(var(--band-deep) / <alpha-value>)",
+        tbandink: "rgb(var(--band-ink) / <alpha-value>)",
+        tlace: "rgb(var(--lace) / <alpha-value>)",
+        tpaper: "rgb(var(--paper) / <alpha-value>)",
+        tink: "rgb(var(--ink) / <alpha-value>)",
+        taccent: "rgb(var(--accent) / <alpha-value>)",
+        lace: "#d9a3a6",
       },
       fontFamily: {
         serif: ["'Bodoni Moda'", "Didot", "'Times New Roman'", "serif"],
         body: ["'Cormorant Garamond'", "Garamond", "serif"],
         script: ["'Great Vibes'", "cursive"],
+        signature: ["'Pinyon Script'", "'Great Vibes'", "cursive"],
+        display: ["'Italiana'", "'Bodoni Moda'", "serif"],
         sans: ["'Jost'", "'Lato'", "system-ui", "sans-serif"],
       },
       animation: {

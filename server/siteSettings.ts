@@ -1,12 +1,19 @@
 import { eq } from "drizzle-orm";
 import { siteSettings } from "@shared/schema";
-import { defaultSiteSettings, siteSettingsSchema, type SiteSettings } from "@shared/siteSettings";
+import { defaultSiteSettings, normalizeStoredSiteSettings, siteSettingsSchema, type SiteSettings } from "@shared/siteSettings";
 import { db } from "./db";
+
+export async function ensureStoredSiteSettings() {
+  await db
+    .insert(siteSettings)
+    .values({ id: 1, value: defaultSiteSettings, revision: 1 })
+    .onConflictDoNothing({ target: siteSettings.id });
+}
 
 export async function getStoredSiteSettings() {
   const [row] = await db.select().from(siteSettings).where(eq(siteSettings.id, 1));
   if (!row) return { settings: defaultSiteSettings, revision: 0 };
-  return { settings: siteSettingsSchema.parse(row.value), revision: row.revision };
+  return { settings: siteSettingsSchema.parse(normalizeStoredSiteSettings(row.value)), revision: row.revision };
 }
 
 export async function saveStoredSiteSettings(settings: SiteSettings, revision: number) {

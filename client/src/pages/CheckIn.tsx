@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { type RsvpResponse } from "@shared/schema";
+import { weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,11 @@ export default function CheckIn() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
+  // Chaque événement a son propre accueil : l'équipe choisit la célébration du jour.
+  const [event, setEvent] = useState<WeddingEventKey | null>(() => {
+    const stored = sessionStorage.getItem("jg-checkin-event");
+    return stored && stored in weddingEvents ? (stored as WeddingEventKey) : null;
+  });
 
   // Reset page on search change
   useEffect(() => {
@@ -23,9 +29,10 @@ export default function CheckIn() {
   }, [searchTerm]);
 
   const { data: guests = [], isLoading } = useQuery<RsvpResponse[]>({
-    queryKey: ["/api/checkin/guests"],
+    queryKey: ["/api/checkin/guests", event],
+    enabled: Boolean(event),
     queryFn: async () => {
-      const res = await fetch("/api/checkin/guests", {
+      const res = await fetch(`/api/checkin/guests?event=${event}`, {
         headers: { "X-Checkin-Code": CHECKIN_CODE },
       });
       if (!res.ok) throw new Error("Accès refusé");
@@ -82,6 +89,29 @@ export default function CheckIn() {
   const expectedCount = guests.reduce((total, guest) => total + guest.guestCount, 0);
   const waitingCount = expectedCount - checkedInCount;
 
+  if (!event) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#F7F7F5] px-6 text-center">
+        <p className="font-script text-4xl text-foreground/70">Jessica &amp; Geldi</p>
+        <h1 className="font-serif text-2xl">Quel accueil tenez-vous&nbsp;?</h1>
+        <div className="grid w-full max-w-md gap-3">
+          {(Object.keys(weddingEvents) as WeddingEventKey[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => { sessionStorage.setItem("jg-checkin-event", key); setEvent(key); }}
+              className="border p-5 text-left"
+              style={{ background: weddingEvents[key].background, borderColor: `${weddingEvents[key].accent}55`, color: weddingEvents[key].ink }}
+            >
+              <span className="block font-serif text-xl">{weddingEvents[key].label}</span>
+              <span className="text-xs uppercase tracking-[0.25em] opacity-70">{weddingEvents[key].date} · {weddingEvents[key].time}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F7F7F5] flex flex-col pb-24">
       {/* Sticky header with live counters */}
@@ -89,8 +119,11 @@ export default function CheckIn() {
         <div className="flex items-center justify-center gap-2 text-primary/60 mb-2">
           <UserCheck className="w-4 h-4" strokeWidth={1.5} />
           <p className="text-[9px] font-sans tracking-[0.5em] uppercase">
-            Accueil invités · 10, 12 & 14 février 2027
+            Accueil · {weddingEvents[event].label}
           </p>
+          <button type="button" onClick={() => { sessionStorage.removeItem("jg-checkin-event"); setEvent(null); }} className="ml-2 text-[9px] uppercase tracking-[0.2em] underline">
+            Changer
+          </button>
         </div>
         <p className="font-script text-2xl text-foreground/70 leading-none">
           Jessica & Geldi

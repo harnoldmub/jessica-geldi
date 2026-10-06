@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -15,18 +15,17 @@ import {
   LogOut,
   MessageCircle,
   Pencil,
-  RefreshCw,
   RotateCcw,
   Plus,
   Search,
-  ShieldCheck,
   Trash2,
   UserCheck,
   UserPlus,
   Users,
-  XCircle,
   Settings,
   DatabaseBackup,
+  LayoutGrid,
+  Mail,
 } from "lucide-react";
 import { Link } from "wouter";
 import {
@@ -34,7 +33,7 @@ import {
   type RsvpResponse,
   type SafeUser,
 } from "@shared/schema";
-import { beverageOptions, getEventKeys, joinEventKeys, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
+import { beverageCategories, getEventKeys, getGuestEvent, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -86,29 +85,24 @@ const statusOptions = [
   { value: "confirmed", label: "Confirmé" },
   { value: "declined", label: "Absent(e)" },
 ];
-const statusFilterOptions = [
-  { value: "all", label: "Tous les RSVP" },
-  ...statusOptions,
-];
-const invitationFilterOptions = [
-  { value: "all", label: "Toutes les invitations" },
-  { value: "draft", label: "Brouillons" },
-  { value: "sent", label: "Envoyées" },
-];
 const eventKeys = Object.keys(weddingEvents) as WeddingEventKey[];
-const ceremonyFilterOptions = eventKeys.map((key) => ({
+const eventOptions = eventKeys.map((key) => ({
   value: key,
-  label: `${weddingEvents[key].shortLabel} · ${weddingEvents[key].time}`,
+  label: weddingEvents[key].label,
+  detail: `${weddingEvents[key].date} · ${weddingEvents[key].time}`,
 }));
 const guestCountOptions = Array.from({ length: 10 }, (_, index) => ({
   value: String(index + 1),
   label: `${index + 1} personne${index ? "s" : ""}`,
 }));
+// Deux listes séparées : chaque invité est invité par Jessica ou par Geldi.
 const partyOptions = [
-  { value: "commun", label: "En commun" },
   { value: "jessica", label: "Liste Jessica" },
   { value: "geldi", label: "Liste Geldi" },
 ];
+type Party = "jessica" | "geldi";
+const isParty = (value: unknown): value is Party => value === "jessica" || value === "geldi";
+const partyLabel = (value?: string | null) => partyOptions.find((o) => o.value === value)?.label || "Sans liste";
 
 function parseImportRows(text: string, defaults: { guestCount: number; ceremonyChoice: string; party: string }) {
   const rows = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
@@ -155,9 +149,8 @@ const DEFAULT_TABLE_COUNT = 16;
 type CapacityResponse = Record<string, number>;
 const beverageSelectOptions = [
   { value: "", label: "Aucune préférence" },
-  ...beverageOptions.beers.map((drink) => ({ value: drink, label: drink, group: "Bières" })),
-  ...beverageOptions.softDrinks.map((drink) => ({ value: drink, label: drink, group: "Boissons sucrées" })),
-  { value: OTHER_BEVERAGE_VALUE, label: "Autre boisson", detail: "Préciser le choix", group: "Autre" },
+  ...beverageCategories.map((drink) => ({ value: drink, label: drink })),
+  { value: OTHER_BEVERAGE_VALUE, label: "Autre boisson", detail: "Ancienne réponse ou précision" },
 ];
 
 function getBeverageSelectValue(value?: string | null) {
@@ -170,54 +163,88 @@ function getOtherBeverageValue(value?: string | null) {
   return value.startsWith("Autre: ") ? value.slice(7) : value;
 }
 
-function toggleEvent(value: string | null | undefined, key: WeddingEventKey) {
-  const selected = getEventKeys(value).filter((eventKey) => eventKey !== key);
-  if (!getEventKeys(value).includes(key)) {
-    selected.push(key);
-  }
-  return joinEventKeys(selected);
-}
-
-function EventMultiPicker({
-  value,
-  onChange,
-}: {
-  value?: string | null;
-  onChange: (value: string) => void;
-}) {
-  const selected = getEventKeys(value);
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {eventKeys.map((key) => {
-        const event = weddingEvents[key];
-        const active = selected.includes(key);
-        return (
-          <button
-            key={key}
-            type="button"
-            aria-pressed={active}
-            onClick={() => onChange(toggleEvent(value, key))}
-            className={`border p-3 text-left transition ${
-              active
-                ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                : "border-primary/15 bg-transparent text-foreground hover:border-primary/40"
-            }`}
-          >
-            <span className="block font-serif text-base">{event.shortLabel}</span>
-            <span className={`mt-1 block text-[9px] uppercase tracking-[0.24em] ${active ? "text-white/70" : "text-foreground/45"}`}>
-              {event.date.replace(" 2027", "")} · {event.time}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function getTransitInvitationUrl(guest: GuestRecord) {
   const url = guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`;
   return url.replace(/\/(samedi|dimanche)\/?$/, "");
 }
+
+type AdminView = "overview" | "guests" | "tables" | "checkin" | "messages" | "settings" | "account";
+type Stage = "all" | "todo" | "waiting" | "confirmed" | "declined";
+
+const VIEW_KEY = "jg-admin-view";
+const EVENT_KEY = "jg-admin-event";
+const LIST_KEY = "jg-admin-list";
+
+const navigation: { id: AdminView; label: string; caption: string }[] = [
+  { id: "overview", label: "Vue d'ensemble", caption: "L'essentiel de vos préparatifs, en un coup d'œil." },
+  { id: "guests", label: "Invités", caption: "Vos listes, vos invitations et les réponses, célébration par célébration." },
+  { id: "tables", label: "Plan de table", caption: "Imaginez les tablées et placez chaque invité." },
+  { id: "checkin", label: "Accueil", caption: "Le jour J, validez les arrivées à l'entrée." },
+  { id: "messages", label: "Messages", caption: "Les petits mots laissés par vos invités." },
+  { id: "settings", label: "Contenu du site", caption: "Textes, lieux, programme : votre invitation, à votre image." },
+  { id: "account", label: "Compte & sauvegarde", caption: "Votre accès privé et une copie de vos préparatifs." },
+];
+
+const guestLists = [
+  { id: "jessica", title: "Jessica", caption: "Les invités de Jessica", mark: "J" },
+  { id: "geldi", title: "Geldi", caption: "Les invités de Geldi", mark: "G" },
+];
+
+const stages: { id: Stage; step: string; label: string; hint: string }[] = [
+  { id: "all", step: "Tout", label: "Toutes les invitations", hint: "L'ensemble des invités de cette célébration." },
+  { id: "todo", step: "01", label: "À envoyer", hint: "Invitations prêtes, pas encore partagées : envoyez-les par WhatsApp, e-mail ou lien." },
+  { id: "waiting", step: "02", label: "En attente", hint: "Invitations envoyées, sans réponse pour l'instant. Une relance peut aider." },
+  { id: "confirmed", step: "03", label: "Confirmés", hint: "Ils seront là. Pensez à leur attribuer une table." },
+  { id: "declined", step: "04", label: "Absents", hint: "Ils ne pourront pas venir." },
+];
+
+function stageMatches(stage: Stage, guest: GuestRecord) {
+  switch (stage) {
+    case "todo":
+      return guest.status === "pending" && guest.invitationStatus !== "sent";
+    case "waiting":
+      return guest.status === "pending" && guest.invitationStatus === "sent";
+    case "confirmed":
+      return guest.status === "confirmed";
+    case "declined":
+      return guest.status === "declined";
+    default:
+      return true;
+  }
+}
+
+function NavIcon({ id }: { id: AdminView }) {
+  const Icon = {
+    overview: CalendarDays,
+    guests: Users,
+    tables: LayoutGrid,
+    checkin: UserCheck,
+    messages: MessageCircle,
+    settings: Settings,
+    account: DatabaseBackup,
+  }[id];
+  return <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />;
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const tone =
+    status === "confirmed" ? "bg-emerald-50 text-emerald-700" : status === "declined" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700";
+  const label = status === "confirmed" ? "Confirmé" : status === "declined" ? "Absent(e)" : "En attente";
+  return <span className={`inline-block px-2.5 py-1 text-[9px] uppercase tracking-[0.22em] ${tone}`}>{label}</span>;
+}
+
+function Empty({ title, text, action }: { title: string; text: string; action?: ReactNode }) {
+  return (
+    <div className="px-6 py-16 text-center">
+      <p className="font-serif text-2xl text-foreground/75">{title}</p>
+      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-foreground/50">{text}</p>
+      {action && <div className="mt-6">{action}</div>}
+    </div>
+  );
+}
+
+const panel = "border border-[#6e1420]/10 bg-white";
+const eyebrow = "text-[10px] uppercase tracking-[0.38em] text-[#6e1420]/65";
 
 async function getCurrentUser() {
   const res = await fetch("/api/user", {
@@ -249,9 +276,12 @@ async function getCurrentUser() {
 export default function Admin() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "confirmed" | "declined">("all");
-  const [invitationFilter, setInvitationFilter] = useState<"all" | "draft" | "sent">("all");
-  const [ceremonyFilter, setCeremonyFilter] = useState<"" | WeddingEventKey>("");
+  // L'événement géré : chaque événement a ses propres invités, tout l'espace se limite à lui.
+  const [currentEvent, setCurrentEvent] = useState<WeddingEventKey | null>(() => {
+    const stored = sessionStorage.getItem(EVENT_KEY);
+    return stored && stored in weddingEvents ? (stored as WeddingEventKey) : null;
+  });
+  const ceremonyFilter: "" | WeddingEventKey = currentEvent ?? "";
   const [credentials, setCredentials] = useState({
     username: "",
     password: "",
@@ -261,38 +291,85 @@ export default function Admin() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [msgPage, setMsgPage] = useState(0);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
   const [importGuestCount, setImportGuestCount] = useState(1);
-  const [importCeremony, setImportCeremony] = useState<string>("civil");
-  const [importParty, setImportParty] = useState("commun");
+  const [importParty, setImportParty] = useState<Party>("jessica");
   const [partyFilter, setPartyFilter] = useState("all");
-  const MSG_PAGE_SIZE = 9;
   const [showPassword, setShowPassword] = useState(false);
+  const [view, setView] = useState<AdminView>(() => {
+    const stored = sessionStorage.getItem(VIEW_KEY) as AdminView | null;
+    return stored && navigation.some((item) => item.id === stored) ? stored : "overview";
+  });
+  const [listChosen, setListChosen] = useState(() => isParty(sessionStorage.getItem(LIST_KEY)));
+  const [toAssign, setToAssign] = useState<number[]>([]);
+  const [stage, setStage] = useState<Stage>("all");
+  const [tableSearch, setTableSearch] = useState("");
+  const [checkinSearch, setCheckinSearch] = useState("");
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem(LIST_KEY);
+    if (isParty(stored)) {
+      setPartyFilter(stored);
+      setImportParty(stored);
+    } else {
+      sessionStorage.removeItem(LIST_KEY);
+    }
+  }, []);
+
+  function navigate(next: AdminView) {
+    setView(next);
+    sessionStorage.setItem(VIEW_KEY, next);
+    window.scrollTo({ top: 0 });
+  }
+
+  function chooseEvent(value: WeddingEventKey | null) {
+    setCurrentEvent(value);
+    if (value) sessionStorage.setItem(EVENT_KEY, value);
+    else sessionStorage.removeItem(EVENT_KEY);
+    setStage("all");
+    setSearchTerm("");
+    setTableSearch("");
+    setCheckinSearch("");
+    window.scrollTo({ top: 0 });
+  }
+
+  function chooseList(value: Party) {
+    setPartyFilter(value);
+    setImportParty(value);
+    setListChosen(true);
+    sessionStorage.setItem(LIST_KEY, value);
+  }
 
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchTerm, statusFilter, invitationFilter, pageSize]);
+  }, [searchTerm, stage, ceremonyFilter, partyFilter, pageSize]);
 
   const { data: user, isLoading: isCheckingSession } = useQuery<SafeUser | null>({
     queryKey: ["/api/user"],
     queryFn: getCurrentUser,
   });
 
-  const { data: guests = [], isLoading: isLoadingGuests } = useQuery<GuestRecord[]>({
+  const { data: allGuests = [], isLoading: isLoadingGuests } = useQuery<GuestRecord[]>({
     queryKey: ["/api/admin/guests"],
     enabled: Boolean(user),
     refetchInterval: user && document.visibilityState === "visible" ? 15_000 : false,
   });
 
+  const guests = useMemo(
+    () => (currentEvent ? allGuests.filter((g) => getGuestEvent(g) === currentEvent) : []),
+    [allGuests, currentEvent],
+  );
+  // Invitations héritées rattachées à plusieurs célébrations (ou à aucune) : à répartir.
+  const legacyGuests = useMemo(() => allGuests.filter((g) => !getGuestEvent(g)), [allGuests]);
+
   // Tables dynamiques : le nombre de tables disponibles est le maximum entre
   // les tables déjà utilisées par des invités et le nombre ajouté manuellement
   // (mémorisé localement). « Ajouter une table » crée la table suivante.
-  const [manualTableCount, setManualTableCount] = useState<number>(() => {
-    const stored = Number(localStorage.getItem(TABLES_STORAGE_KEY));
-    return Number.isFinite(stored) && stored > 0 ? stored : DEFAULT_TABLE_COUNT;
-  });
+  const tablesStorageKey = `${TABLES_STORAGE_KEY}-${currentEvent ?? "none"}`;
+  const [manualTableCounts, setManualTableCounts] = useState<Record<string, number>>({});
+  const storedTableCount = Number(localStorage.getItem(tablesStorageKey));
+  const manualTableCount = manualTableCounts[tablesStorageKey] ?? (Number.isFinite(storedTableCount) && storedTableCount > 0 ? storedTableCount : DEFAULT_TABLE_COUNT);
 
   const usedTableMax = useMemo(
     () => guests.reduce((max, g) => Math.max(max, g.tableNumber ?? 0), 0),
@@ -317,8 +394,8 @@ export default function Admin() {
       toast({ title: "Limite atteinte", description: "Maximum 200 tables.", variant: "destructive" });
       return;
     }
-    setManualTableCount(next);
-    localStorage.setItem(TABLES_STORAGE_KEY, String(next));
+    setManualTableCounts((counts) => ({ ...counts, [tablesStorageKey]: next }));
+    localStorage.setItem(tablesStorageKey, String(next));
     toast({ title: `Table ${next} ajoutée`, description: "Elle est désormais disponible pour l'attribution des invités." });
   }
 
@@ -423,15 +500,12 @@ export default function Admin() {
   });
 
   const checkInMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("PATCH", `/api/rsvp/${id}/check-in`);
+    mutationFn: async ({ id, arrived }: { id: number; arrived: boolean }) => {
+      await apiRequest("PATCH", `/api/rsvp/${id}/${arrived ? "check-in" : "uncheck"}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, { arrived }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
-      toast({
-        title: "Présence enregistrée",
-        description: "Le check-in de l'invité a été validé.",
-      });
+      toast({ title: arrived ? "Arrivée enregistrée" : "Arrivée annulée" });
     },
   });
 
@@ -452,14 +526,15 @@ export default function Admin() {
     mutationFn: async () => {
       const guests = parseImportRows(importText, {
         guestCount: importGuestCount,
-        ceremonyChoice: importCeremony,
+        ceremonyChoice: currentEvent ?? "",
         party: importParty,
       });
 
       const response = await apiRequest("POST", "/api/admin/guests/import", {
         guests,
         guestCount: importGuestCount,
-        ceremonyChoice: importCeremony,
+        ceremonyChoice: currentEvent ?? "",
+        party: importParty,
       });
       return response.json();
     },
@@ -501,6 +576,47 @@ export default function Admin() {
     },
   });
 
+  const [legacyChoices, setLegacyChoices] = useState<Record<number, WeddingEventKey[]>>({});
+  const legacyEventsOf = (g: GuestRecord) => legacyChoices[g.id] ?? getEventKeys(g.invitedCeremonyChoice || g.ceremonyChoice);
+  const splitMutation = useMutation({
+    mutationFn: async (items: { id: number; events: WeddingEventKey[] }[]) => {
+      let copies = 0;
+      for (const item of items) {
+        const response = await apiRequest("POST", `/api/admin/guests/${item.id}/split`, { events: item.events });
+        copies += ((await response.json()) as { copies: number }).copies;
+      }
+      return { count: items.length, copies };
+    },
+    onSuccess: ({ count, copies }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
+      toast({
+        title: `${count} invitation${count > 1 ? "s" : ""} répartie${count > 1 ? "s" : ""}`,
+        description: copies ? `${copies} invitation(s) créée(s) pour les autres événements, chacune avec son propre lien.` : "Chaque invité est désormais rattaché à un seul événement.",
+      });
+    },
+    onError: (error: Error) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
+      toast({ title: "Répartition interrompue", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const unassigned = guests.filter((g) => !isParty(g.party));
+  const assignPartyMutation = useMutation({
+    mutationFn: async ({ ids, party }: { ids: number[]; party: Party }) => {
+      for (const id of ids) await apiRequest("PATCH", `/api/admin/guests/${id}`, { party });
+      return { count: ids.length, party };
+    },
+    onSuccess: ({ count, party }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
+      setToAssign([]);
+      toast({ title: `${count} invité${count > 1 ? "s" : ""} rangé${count > 1 ? "s" : ""} dans la ${partyLabel(party).toLowerCase()}` });
+    },
+    onError: (error: Error) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
+      toast({ title: "Attribution interrompue", description: error.message, variant: "destructive" });
+    },
+  });
+
   const confirmed = guests.filter((g) => g.status === "confirmed");
   const sumPeople = (list: typeof guests) => list.reduce((sum, g) => sum + (g.guestCount || 1), 0);
   const stats = {
@@ -526,9 +642,8 @@ export default function Admin() {
     if (!ceremonyFilter) return [];
 
     return guests.filter((guest) => {
-      const matchesStatus = statusFilter === "all" || guest.status === statusFilter;
-      const matchesInvitation =
-        invitationFilter === "all" || guest.invitationStatus === invitationFilter;
+      const matchesStatus = stageMatches(stage, guest);
+      const matchesInvitation = true;
       const matchesParty = partyFilter === "all" || guest.party === partyFilter;
       const guestEvents = getEventKeys(guest.invitedCeremonyChoice || guest.ceremonyChoice);
       const matchesCeremony = guestEvents.includes(ceremonyFilter);
@@ -557,7 +672,7 @@ export default function Admin() {
         .toLowerCase()
         .includes(term);
     });
-  }, [guests, invitationFilter, searchTerm, statusFilter, ceremonyFilter, partyFilter]);
+  }, [guests, stage, searchTerm, ceremonyFilter, partyFilter]);
 
   const totalPages = Math.ceil(filteredGuests.length / pageSize);
   const paginatedGuests = filteredGuests.slice(
@@ -592,6 +707,21 @@ export default function Admin() {
       `${linkIntro}\n${url}\n\n` +
       `Avec joie de vous avoir parmi nous.`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
+    apiRequest("POST", `/api/admin/guests/${guest.id}/mark-sent`).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
+    });
+  }
+
+  function shareViaEmail(guest: GuestRecord) {
+    const url = getTransitInvitationUrl(guest);
+    const dateLines = getEventKeys(guest.invitedCeremonyChoice || guest.ceremonyChoice)
+      .map((key) => `· ${weddingEvents[key].label} : ${weddingEvents[key].date} à ${weddingEvents[key].time}`)
+      .join("\n");
+    const body =
+      `Bonjour ${guest.firstName},\n\n` +
+      `Nous avons la joie de vous inviter au mariage de Jessica & Geldi.\n\n${dateLines}\n\n` +
+      `Votre invitation personnalisée vous attend ici :\n${url}\n\nAvec toute notre affection,\nJessica & Geldi`;
+    window.location.href = `mailto:${encodeURIComponent(guest.email || "")}?subject=${encodeURIComponent("Invitation au mariage de Jessica & Geldi")}&body=${encodeURIComponent(body)}`;
     apiRequest("POST", `/api/admin/guests/${guest.id}/mark-sent`).then(() => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
     });
@@ -633,9 +763,9 @@ export default function Admin() {
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-[#F7F7F5] px-6 py-10 md:px-10 md:py-16">
+      <main className="min-h-screen bg-[#f6f2ec] px-6 py-10 md:px-10 md:py-16">
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.85fr_1.15fr]">
-          <section className="overflow-hidden bg-[#5f4828] p-8 text-[#fff8ec] md:p-12">
+          <section className="wine-band overflow-hidden p-8 md:p-12">
             <p className="text-[11px] uppercase tracking-[0.45em] text-white/55">
               Espace admin
             </p>
@@ -738,162 +868,266 @@ export default function Admin() {
     );
   }
 
-  return (
-    <main className="min-h-screen bg-background px-6 py-10 md:px-10 md:py-14">
-      <div className="mx-auto max-w-7xl space-y-10">
-        <header className="flex flex-col gap-6 border border-primary/10 bg-white p-8 editorial-shadow md:flex-row md:items-end md:justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 text-primary">
-              <ShieldCheck className="h-5 w-5" strokeWidth={1.6} />
-              <p className="text-[11px] uppercase tracking-[0.45em] text-primary/65">
-                Session active
-              </p>
-            </div>
-            <div>
-              <h1 className="font-serif text-4xl text-foreground md:text-6xl">
-                Invités & invitations
-              </h1>
-              <p className="mt-3 text-sm leading-7 text-foreground/70">
-                Connecté en tant que {user.username}. Gérez toute la liste,
-                partagez les liens personnalisés et suivez les réponses RSVP.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Button
-              asChild
-              type="button"
-              variant="outline"
-              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
-            >
-              <a href="/checkin" target="_blank" rel="noreferrer">
-                <UserCheck className="mr-2 h-4 w-4" strokeWidth={1.6} />
-                Page check-in
-              </a>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                if (confirm("Réinitialiser tous les check-ins ? Cette action efface toutes les arrivées enregistrées.")) {
-                  resetCheckInsMutation.mutate();
-                }
-              }}
-              disabled={resetCheckInsMutation.isPending}
-              className="rounded-none border-orange-200 px-5 text-[10px] uppercase tracking-[0.35em] text-orange-700 hover:bg-orange-50"
-            >
-              <RotateCcw className="mr-2 h-4 w-4" strokeWidth={1.6} />
-              Reset check-ins
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addTable}
-              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
-            >
-              <Plus className="mr-2 h-4 w-4" strokeWidth={1.6} />
-              Ajouter une table ({tableCount})
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsImportOpen(true)}
-              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
-            >
-              <UserPlus className="mr-2 h-4 w-4" strokeWidth={1.6} />
-              Importer liste
-            </Button>
-            {/* Export UNIQUEMENT par événement (pas d'export général) */}
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!ceremonyFilter}
-              onClick={() => ceremonyFilter && window.open(`/api/admin/guests/export?event=${ceremonyFilter}&sort=name`, "_blank")}
-              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Download className="mr-2 h-4 w-4" strokeWidth={1.6} />
-              {ceremonyFilter ? `Export ${weddingEvents[ceremonyFilter].shortLabel} (nom)` : "Export (choisir une célébration)"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!ceremonyFilter}
-              onClick={() => ceremonyFilter && window.open(`/api/admin/guests/export?event=${ceremonyFilter}&sort=table`, "_blank")}
-              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Download className="mr-2 h-4 w-4" strokeWidth={1.6} />
-              {ceremonyFilter ? `Export ${weddingEvents[ceremonyFilter].shortLabel} (table)` : "Export par table"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => document.getElementById("site-settings")?.scrollIntoView({ behavior: "smooth" })}
-              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
-            >
-              <Settings className="mr-2 h-4 w-4" strokeWidth={1.6} />
-              Réglages du site
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => document.getElementById("account-backup")?.scrollIntoView({ behavior: "smooth" })}
-              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
-            >
-              <DatabaseBackup className="mr-2 h-4 w-4" strokeWidth={1.6} />
-              Compte & sauvegarde
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => logoutMutation.mutate()}
-              className="rounded-none border-primary/15 px-5 text-[10px] uppercase tracking-[0.35em] text-primary"
-            >
-              <LogOut className="mr-2 h-4 w-4" strokeWidth={1.6} />
-              Déconnexion
-            </Button>
-          </div>
+  /* ══════ Choix de l'événement à gérer ══════ */
+  if (!currentEvent) {
+    const readyLegacy = legacyGuests.filter((g) => legacyEventsOf(g).length > 0);
+    return (
+      <main className="min-h-screen bg-[#f6f2ec] text-foreground">
+        <header className="wine-band px-6 py-10 text-center md:py-14">
+          <p className="signature text-6xl text-[#f6ece8] md:text-7xl">Jessica &amp; Geldi</p>
+          <p className="mt-3 text-[10px] uppercase tracking-[0.38em] text-white/60">L'espace des mariés</p>
+          <h1 className="mt-8 font-serif text-3xl md:text-5xl">Quel événement souhaitez-vous gérer&nbsp;?</h1>
+          <p className="mx-auto mt-3 max-w-xl text-sm text-white/70">Chaque célébration a ses propres invités, son plan de table et son accueil. Vous pourrez changer d'événement à tout moment.</p>
         </header>
 
-        {/* ── Stats condensées ─────────────────────────────────────────── */}
-        <section className="border border-primary/10 bg-white editorial-shadow overflow-hidden">
-          {/* Ligne principale */}
-          <div className="grid grid-cols-3 divide-x divide-primary/8 sm:grid-cols-5 border-b border-primary/8">
-            {[
-              { label: "Invités",    value: stats.totalInvites,    color: "text-foreground",    bg: "" },
-              { label: "Confirmés",  value: stats.confirmedInvites, color: "text-emerald-600",   bg: "bg-emerald-50/60" },
-              { label: "En attente", value: stats.pendingInvites,   color: "text-amber-500",     bg: "bg-amber-50/60" },
-              { label: "Absents",    value: stats.declinedInvites,  color: "text-rose-500",      bg: "bg-rose-50/60" },
-              { label: "Envoyées",   value: stats.sentInvitations,  color: "text-indigo-500",    bg: "bg-indigo-50/60" },
-            ].map((item) => (
-              <div key={item.label} className={`p-5 text-center ${item.bg}`}>
-                <p className={`font-serif text-3xl ${item.color}`}>{item.value}</p>
-                <p className="mt-2 text-[9px] uppercase tracking-[0.35em] text-foreground/40">{item.label}</p>
-              </div>
-            ))}
-          </div>
-          {/* Ligne cérémonies */}
-          <div className="grid divide-primary/8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mx-auto max-w-6xl space-y-10 px-5 py-10 md:px-10">
+          <div className="grid gap-5 md:grid-cols-3">
             {eventKeys.map((key) => {
               const event = weddingEvents[key];
-              const count = stats.byEvent[key];
+              const list = allGuests.filter((g) => getGuestEvent(g) === key);
+              const people = sumPeople(list.filter((g) => g.status === "confirmed"));
               return (
-                <div key={key} className="p-5 text-center" style={{ background: `${event.accent}12` }}>
-                  <p className="mb-2 text-[9px] uppercase tracking-[0.34em]" style={{ color: event.accent }}>
-                    {event.shortLabel} · {event.time}
-                  </p>
-                  <p className="font-serif text-2xl" style={{ color: event.ink }}>
-                    {count}
-                    <span className="text-sm font-sans font-normal text-foreground/40"> / {event.capacity}</span>
-                  </p>
-                  <p className="mt-1 text-[9px] text-foreground/35">
-                    {count >= event.capacity ? "Complet" : `${event.capacity - count} places restantes`}
-                  </p>
-                </div>
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => chooseEvent(key)}
+                  className="group flex flex-col border p-7 text-left transition-transform duration-300 hover:-translate-y-1"
+                  style={{ background: event.background, borderColor: `${event.accent}55`, color: event.ink }}
+                >
+                  <span className="text-[10px] uppercase tracking-[0.32em]" style={{ color: event.accent }}>{event.date.replace(" 2027", "")} · {event.time}</span>
+                  <span className="signature mt-4 text-5xl" style={{ color: event.accent }}>{event.shortLabel}</span>
+                  <span className="mt-2 font-serif text-2xl">{event.label}</span>
+                  <span className="mt-1 text-sm opacity-70">{event.theme}</span>
+                  <span className="mt-4 flex gap-1.5" aria-hidden>
+                    {event.palette.map((color) => <span key={color} className="h-4 w-4 rounded-full border border-black/10" style={{ background: color }} />)}
+                  </span>
+                  <span className="mt-6 grid grid-cols-2 gap-4 border-t pt-4 text-sm" style={{ borderColor: `${event.accent}30` }}>
+                    <span><strong className="block font-serif text-2xl tabular-nums">{list.length}</strong>invitation{list.length > 1 ? "s" : ""}</span>
+                    <span><strong className="block font-serif text-2xl tabular-nums">{people}<span className="text-sm opacity-50">/{event.capacity}</span></strong>présents</span>
+                  </span>
+                  <span className="mt-6 text-[10px] uppercase tracking-[0.3em]" style={{ color: event.accent }}>Gérer cet événement →</span>
+                </button>
               );
             })}
           </div>
-        </section>
+
+          {legacyGuests.length > 0 && (
+            <section className={`${panel} p-6 md:p-8`}>
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className={eyebrow}>À répartir</p>
+                  <h2 className="mt-2 font-serif text-2xl md:text-3xl">{legacyGuests.length} invitation{legacyGuests.length > 1 ? "s" : ""} sans événement unique</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-foreground/60">
+                    Ces invitations datent d'avant la séparation par événement : rattachées à plusieurs célébrations, ou à aucune.
+                    Cochez le ou les événements de chaque invité. Le premier garde le lien actuel ; une nouvelle invitation, avec son propre lien, est créée pour chacun des autres.
+                    Elles n'apparaissent dans aucune liste tant qu'elles ne sont pas réparties.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  disabled={!readyLegacy.length || splitMutation.isPending}
+                  onClick={() => {
+                    if (confirm(`Répartir ${readyLegacy.length} invitation(s) selon les cases cochées ?`)) {
+                      splitMutation.mutate(readyLegacy.map((g) => ({ id: g.id, events: legacyEventsOf(g) })));
+                    }
+                  }}
+                  className="shrink-0 rounded-none bg-[#6e1420] px-6 py-6 text-[10px] uppercase tracking-[0.3em] text-white hover:bg-[#4a0d15]"
+                >
+                  {splitMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Répartir {readyLegacy.length} invitation{readyLegacy.length > 1 ? "s" : ""}
+                </Button>
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-center gap-2 text-xs text-foreground/60">
+                <span>Cocher pour toutes :</span>
+                {eventKeys.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setLegacyChoices(Object.fromEntries(legacyGuests.map((g) => {
+                      const current = legacyEventsOf(g);
+                      return [g.id, current.includes(key) ? current : [...current, key]];
+                    })))}
+                    className="border border-[#6e1420]/20 px-3 py-1.5 hover:bg-[#f6f2ec]"
+                  >
+                    + {weddingEvents[key].shortLabel}
+                  </button>
+                ))}
+                <button type="button" onClick={() => setLegacyChoices(Object.fromEntries(legacyGuests.map((g) => [g.id, []])))} className="border border-[#6e1420]/20 px-3 py-1.5 hover:bg-[#f6f2ec]">
+                  Tout décocher
+                </button>
+              </div>
+
+              <div className="mt-5 max-h-[520px] overflow-y-auto border-t border-[#6e1420]/10">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-white text-left text-[10px] uppercase tracking-[0.25em] text-foreground/45">
+                    <tr>
+                      <th className="py-3 pr-4 font-normal">Invité</th>
+                      <th className="py-3 pr-4 font-normal">Réponse</th>
+                      {eventKeys.map((key) => <th key={key} className="py-3 pr-2 text-center font-normal">{weddingEvents[key].shortLabel}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#6e1420]/8">
+                    {legacyGuests.map((g) => {
+                      const selected = legacyEventsOf(g);
+                      return (
+                        <tr key={g.id}>
+                          <td className="py-2.5 pr-4">
+                            <span className="block font-serif text-base">{g.firstName} {g.lastName}</span>
+                            <span className="text-[11px] text-foreground/45">{g.invitedCount || g.guestCount || 1} place(s) · {partyLabel(g.party)}</span>
+                          </td>
+                          <td className="py-2.5 pr-4"><StatusBadge status={g.status} /></td>
+                          {eventKeys.map((key) => (
+                            <td key={key} className="py-2.5 pr-2 text-center">
+                              <input
+                                type="checkbox"
+                                aria-label={`${g.firstName} ${g.lastName} : ${weddingEvents[key].label}`}
+                                checked={selected.includes(key)}
+                                onChange={() => setLegacyChoices((c) => ({ ...c, [g.id]: selected.includes(key) ? selected.filter((k) => k !== key) : [...selected, key] }))}
+                                className="h-4 w-4 accent-[#6e1420]"
+                              />
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-foreground/60">
+            <a href="/" target="_blank" rel="noreferrer" className="hover:text-[#6e1420]">Voir le site du mariage ↗</a>
+            <button type="button" onClick={() => logoutMutation.mutate()} className="hover:text-[#6e1420]">Se déconnecter</button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  const activeEvent = weddingEvents[currentEvent];
+  const current = navigation.find((item) => item.id === view)!;
+  const pending = guests.filter((g) => g.status === "pending");
+  const arrived = confirmed.filter((g) => g.checkedInAt);
+  const inList = guests.filter((g) => partyFilter === "all" || g.party === partyFilter);
+  const inListForEvent = inList;
+  const drinkStats = Object.entries(
+    confirmed.reduce<Record<string, number>>((acc, g) => {
+      const drink = g.beverageChoice?.replace(/^Autre: /, "").trim();
+      if (drink) acc[drink] = (acc[drink] || 0) + (g.guestCount || 1);
+      return acc;
+    }, {}),
+  ).sort((a, b) => b[1] - a[1]);
+  const overviewStats = [
+    { label: "Personnes invitées", value: guests.reduce((n, g) => n + (g.invitedCount || g.guestCount || 1), 0), detail: `${guests.length} invitations`, tone: "text-foreground" },
+    { label: "Présences confirmées", value: stats.confirmedInvites, detail: `${confirmed.length} réponses positives`, tone: "text-emerald-700" },
+    { label: "Réponses en attente", value: pending.length, detail: `${stats.pendingInvites} personnes concernées`, tone: "text-amber-600" },
+    { label: "Absents", value: stats.declinedInvites, detail: "ne pourront pas venir", tone: "text-rose-700" },
+    { label: "Invitations envoyées", value: stats.sentInvitations, detail: `sur ${guests.length}`, tone: "text-[#6e1420]" },
+    { label: "Personnes arrivées", value: sumPeople(arrived), detail: `sur ${stats.confirmedInvites} confirmées`, tone: "text-foreground" },
+  ];
+  const tableNumbers = Array.from({ length: tableCount }, (_, i) => i + 1);
+  const tableQuery = tableSearch.trim().toLowerCase();
+  const seatable = guests.filter(
+    (g) => g.status !== "declined" && (partyFilter === "all" || g.party === partyFilter) && (!tableQuery || `${g.firstName} ${g.lastName}`.toLowerCase().includes(tableQuery)),
+  );
+  const checkinList = confirmed
+    .filter((g) => `${g.firstName} ${g.lastName}`.toLowerCase().includes(checkinSearch.trim().toLowerCase()))
+    .sort((a, b) => Number(!!a.checkedInAt) - Number(!!b.checkedInAt) || a.lastName.localeCompare(b.lastName));
+  const buttonBase = "rounded-none px-5 text-[10px] uppercase tracking-[0.3em]";
+
+  return (
+    <div className="min-h-screen bg-[#f6f2ec] text-foreground lg:grid lg:grid-cols-[264px_1fr]">
+      <a href="#admin-main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-white focus:px-4 focus:py-2">
+        Aller au contenu
+      </a>
+
+      {/* ── Barre latérale ── */}
+      <aside className="wine-band flex flex-col lg:sticky lg:top-0 lg:h-screen">
+        <div className="flex items-center justify-between gap-4 px-6 py-6 lg:block">
+          <a href="/" className="block">
+            <span className="signature block text-5xl text-[#f3e9e4]">J&amp;G</span>
+          </a>
+          <div className="text-right lg:mt-4 lg:text-left">
+            <p className="font-serif text-lg">Jessica &amp; Geldi</p>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-white/55">L'espace des mariés</p>
+          </div>
+        </div>
+        <div className="mx-3 mb-3 border border-white/15 px-4 py-3">
+          <p className="text-[9px] uppercase tracking-[0.3em] text-white/50">Événement géré</p>
+          <p className="mt-1 flex items-center gap-2 font-serif text-lg">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: activeEvent.accent }} />
+            {activeEvent.label}
+          </p>
+          <p className="text-[11px] text-white/55">{activeEvent.date.replace(" 2027", "")} · {activeEvent.time}</p>
+          <button type="button" onClick={() => chooseEvent(null)} className="mt-2 text-[11px] text-white/75 underline-offset-4 hover:text-white hover:underline">
+            Changer d'événement ⇄
+          </button>
+        </div>
+        <nav aria-label="Administration" className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-1 lg:flex-col lg:overflow-visible lg:pb-0">
+          {navigation.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => navigate(item.id)}
+              aria-current={view === item.id ? "page" : undefined}
+              className={`flex shrink-0 items-center gap-3 px-3 py-2.5 text-left text-[13px] transition-colors ${
+                view === item.id ? "bg-[#f3e9e4] text-[#6e1420]" : "text-white/75 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <NavIcon id={item.id} />
+              <span className="whitespace-nowrap">{item.label}</span>
+              {item.id === "guests" && <span className="ml-auto text-[10px] opacity-60">{guests.length}</span>}
+            </button>
+          ))}
+        </nav>
+        <div className="hidden space-y-2 border-t border-white/15 px-6 py-5 text-[12px] lg:block">
+          <a href={`/${activeEvent.slug}`} target="_blank" rel="noreferrer" className="block text-white/70 hover:text-white">Voir la page {activeEvent.shortLabel.toLowerCase()} ↗</a>
+          <a href="/checkin" target="_blank" rel="noreferrer" className="block text-white/70 hover:text-white">Page check-in (code) ↗</a>
+          <button type="button" onClick={() => logoutMutation.mutate()} className="flex items-center gap-2 text-white/70 hover:text-white">
+            <LogOut className="h-3.5 w-3.5" strokeWidth={1.6} /> Se déconnecter
+          </button>
+        </div>
+      </aside>
+
+      <div className="min-w-0">
+        <header className="flex items-center justify-between border-b border-[#6e1420]/10 bg-white/70 px-6 py-3 text-[10px] uppercase tracking-[0.3em] text-foreground/50 backdrop-blur md:px-10">
+          <span>{activeEvent.label} <span className="mx-1 text-[#6e1420]/40">/</span> {current.label}</span>
+          <span className="flex items-center gap-3">
+            <span className="hidden sm:inline">{user.username}</span>
+            <button type="button" onClick={() => logoutMutation.mutate()} className="lg:hidden" aria-label="Se déconnecter">
+              <LogOut className="h-4 w-4" strokeWidth={1.6} />
+            </button>
+          </span>
+        </header>
+
+        <main id="admin-main" className="mx-auto max-w-6xl space-y-8 px-5 py-8 md:px-10 md:py-10">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className={eyebrow}>Espace privé</p>
+              <h1 className="mt-3 font-serif text-4xl md:text-5xl">{current.label}</h1>
+              <p className="mt-2 text-sm text-foreground/60">{current.caption}</p>
+            </div>
+            {(view === "overview" || view === "guests") && (
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsImportOpen(true)} className={`${buttonBase} border-[#6e1420]/20 text-[#6e1420]`}>
+                  <UserPlus className="mr-2 h-4 w-4" strokeWidth={1.6} /> Importer
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setGuestForm(ceremonyFilter ? { ...emptyGuestForm, ceremonyChoice: ceremonyFilter, invitedCeremonyChoice: ceremonyFilter, party: isParty(partyFilter) ? partyFilter : "jessica" } : emptyGuestForm);
+                    setEditingGuestId(null);
+                    setIsFormOpen(true);
+                  }}
+                  className={`${buttonBase} bg-[#6e1420] text-white hover:bg-[#4a0d15]`}
+                >
+                  <Plus className="mr-2 h-4 w-4" strokeWidth={1.6} /> Ajouter un invité
+                </Button>
+              </div>
+            )}
+          </div>
 
         {/* ── Modale import en masse ─────────────────────────────────────── */}
         <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
@@ -915,7 +1149,7 @@ export default function Admin() {
               />
 
               {importText.trim() && (() => {
-                const count = parseImportRows(importText, { guestCount: importGuestCount, ceremonyChoice: importCeremony, party: importParty }).length;
+                const count = parseImportRows(importText, { guestCount: importGuestCount, ceremonyChoice: currentEvent ?? "", party: importParty }).length;
                 return (
                   <p className="text-[10px] uppercase tracking-[0.3em] text-primary/60">
                     {count} invité{count > 1 ? "s" : ""} détecté{count > 1 ? "s" : ""}
@@ -948,20 +1182,21 @@ export default function Admin() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Liste</label>
-                  <PrettySelect value={importParty} onChange={setImportParty} options={partyOptions} placeholder="Liste" />
+                  <PrettySelect value={importParty} onChange={(value) => isParty(value) && setImportParty(value)} options={partyOptions} placeholder="Liste" />
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Célébrations</label>
-                <EventMultiPicker value={importCeremony} onChange={setImportCeremony} />
-              </div>
+              {currentEvent && (
+                <p className="border-l-2 pl-3 text-sm text-foreground/70" style={{ borderColor: weddingEvents[currentEvent].accent }}>
+                  Ces invités seront ajoutés à la liste du <strong>{weddingEvents[currentEvent].label.toLowerCase()}</strong> uniquement.
+                </p>
+              )}
             </div>
 
             <DialogFooter className="px-6 py-4 border-t border-primary/8 shrink-0">
               <Button
                 type="button"
                 onClick={() => importGuestsMutation.mutate()}
-                disabled={importGuestsMutation.isPending || parseImportRows(importText, { guestCount: importGuestCount, ceremonyChoice: importCeremony, party: importParty }).length === 0 || !importCeremony}
+                disabled={importGuestsMutation.isPending || parseImportRows(importText, { guestCount: importGuestCount, ceremonyChoice: currentEvent ?? "", party: importParty }).length === 0 || !currentEvent}
                 className="rounded-none bg-primary px-7 py-6 text-[10px] uppercase tracking-[0.35em] text-primary-foreground hover:bg-foreground"
               >
                 {importGuestsMutation.isPending ? "Import en cours..." : "Importer"}
@@ -1087,11 +1322,16 @@ export default function Admin() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Invité aux célébrations</label>
-                  <EventMultiPicker
-                    value={guestForm.invitedCeremonyChoice}
+                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Événement</label>
+                  <PrettySelect
+                    value={getGuestEvent(guestForm) ?? ""}
                     onChange={(value) => setGuestForm((c) => ({ ...c, invitedCeremonyChoice: value, ceremonyChoice: value }))}
+                    options={eventOptions}
+                    placeholder="Événement"
                   />
+                  {editingGuestId && currentEvent && getGuestEvent(guestForm) !== currentEvent && (
+                    <p className="text-xs text-amber-700">L'invité quittera cette liste et rejoindra celle du {weddingEvents[getGuestEvent(guestForm) ?? currentEvent].label.toLowerCase()}.</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1122,15 +1362,7 @@ export default function Admin() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Repas / régime</label>
-                  <Input value={guestForm.mealChoice || ""} onChange={(e) => setGuestForm((c) => ({ ...c, mealChoice: e.target.value }))} className="h-12 rounded-none border-primary/15" />
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Allergies</label>
-                  <Textarea value={guestForm.allergies || ""} onChange={(e) => setGuestForm((c) => ({ ...c, allergies: e.target.value }))} className="min-h-[90px] rounded-none border-primary/15" />
-                </div>
 
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Note</label>
@@ -1171,73 +1403,249 @@ export default function Admin() {
           </DialogContent>
         </Dialog>
 
-        {/* ── Liste des invités (pleine largeur) ─────────────────────────── */}
-        <section className="border border-primary/10 bg-white p-6 editorial-shadow md:p-8">
-          {/* Header: titre + bouton + recherche */}
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.45em] text-primary/60">
-                Liste invités
-              </p>
-              <p className="mt-1 text-sm text-foreground/55">
-                {filteredGuests.length} résultat{filteredGuests.length > 1 ? "s" : ""}
-                {filteredGuests.length !== guests.length && ` sur ${guests.length}`}
-              </p>
-            </div>
+          {/* ══════ VUE D'ENSEMBLE ══════ */}
+          {view === "overview" && (
+            <>
+              <section className="wine-band relative overflow-hidden px-7 py-10 md:px-12">
+                <p className="text-[10px] uppercase tracking-[0.38em] text-white/60">Le plus beau reste à venir</p>
+                <h2 className="mt-4 font-serif text-3xl leading-tight md:text-5xl">
+                  {activeEvent.label}
+                  <br />
+                  <span className="signature text-5xl md:text-7xl">mille détails à aimer</span>
+                </h2>
+                <p className="mt-6 text-[11px] uppercase tracking-[0.3em] text-white/65">{activeEvent.date} · {activeEvent.time} · {activeEvent.theme}</p>
+              </section>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                type="button"
-                onClick={() => {
-                  setGuestForm(emptyGuestForm);
-                  setEditingGuestId(null);
-                  setIsFormOpen(true);
-                }}
-                className="rounded-none bg-primary px-5 py-5 text-[10px] uppercase tracking-[0.35em] text-primary-foreground hover:bg-foreground"
-              >
-                <UserPlus className="mr-2 h-4 w-4" strokeWidth={1.6} />
-                Ajouter un invité
-              </Button>
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/35" />
-                <Input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Nom, email, statut..."
-                  className="h-12 w-full min-w-[200px] rounded-none border-primary/15 bg-transparent pl-11 focus-visible:ring-primary/20"
-                />
+              <section aria-label="Statistiques" className="grid gap-px border border-[#6e1420]/10 bg-[#6e1420]/10 sm:grid-cols-2 lg:grid-cols-3">
+                {overviewStats.map((item) => (
+                  <article key={item.label} className="bg-white p-6">
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/45">{item.label}</p>
+                    <p className={`mt-3 font-serif text-4xl tabular-nums ${item.tone}`}>{item.value.toLocaleString("fr-FR")}</p>
+                    <p className="mt-1 text-xs text-foreground/45">{item.detail}</p>
+                  </article>
+                ))}
+              </section>
+
+              {currentEvent && (() => {
+                const event = weddingEvents[currentEvent];
+                const count = stats.confirmedInvites;
+                const ratio = Math.min(1, count / event.capacity);
+                return (
+                  <section className="border p-6" style={{ background: event.background, borderColor: `${event.accent}40`, color: event.ink }}>
+                    <div className="flex flex-wrap items-end justify-between gap-4">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.3em]" style={{ color: event.accent }}>Capacité · {event.theme}</p>
+                        <p className="mt-2 font-serif text-3xl tabular-nums">{count}<span className="text-base opacity-50"> / {event.capacity} personnes</span></p>
+                      </div>
+                      <p className="text-sm opacity-70">{count >= event.capacity ? "Complet" : `${event.capacity - count} places restantes`}</p>
+                    </div>
+                    <div className="mt-4 h-1.5 w-full bg-black/10"><div className="h-full" style={{ width: `${ratio * 100}%`, background: event.accent }} /></div>
+                  </section>
+                );
+              })()}
+
+              <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
+                <section className={`${panel} p-6`}>
+                  <div className="flex items-end justify-between gap-4">
+                    <div><p className={eyebrow}>On garde le lien</p><h2 className="mt-2 font-serif text-2xl">Les dernières réponses</h2></div>
+                    <button type="button" onClick={() => navigate("guests")} className="text-xs text-[#6e1420] underline-offset-4 hover:underline">Tout voir ↗</button>
+                  </div>
+                  <div className="mt-4 divide-y divide-[#6e1420]/8">
+                    {guests
+                      .filter((g) => g.status !== "pending")
+                      .sort((a, b) => String(b.respondedAt || b.createdAt || "").localeCompare(String(a.respondedAt || a.createdAt || "")))
+                      .slice(0, 6)
+                      .map((g) => (
+                        <button key={g.id} type="button" onClick={() => startEditingGuest(g)} className="flex w-full items-center gap-4 py-3 text-left hover:bg-[#f6f2ec]">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#6e1420]/8 text-[11px] text-[#6e1420]">{g.firstName[0]}{g.lastName[0]}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-serif text-lg">{g.firstName} {g.lastName}</span>
+                            <span className="block text-xs text-foreground/50">
+                              {g.guestCount} pers. · {getEventKeys(g.ceremonyChoice).map((k) => weddingEvents[k].shortLabel).join(", ")}
+                            </span>
+                          </span>
+                          <StatusBadge status={g.status} />
+                        </button>
+                      ))}
+                    {!guests.some((g) => g.status !== "pending") && (
+                      <Empty title="Les premières réponses se font attendre." text="Partagez les invitations : les réponses apparaîtront ici." />
+                    )}
+                  </div>
+                </section>
+
+                <div className="space-y-6">
+                  <section className={`${panel} p-6`}>
+                    <p className={eyebrow}>Un pas après l'autre</p>
+                    <h2 className="mt-2 font-serif text-2xl">À préparer</h2>
+                    <div className="mt-4 divide-y divide-[#6e1420]/8">
+                      {[
+                        { n: "01", title: "Envoyer les invitations", detail: `${guests.filter((g) => stageMatches("todo", g)).length} invitation(s) à partager`, go: () => { setStage("todo"); navigate("guests"); } },
+                        { n: "02", title: "Recueillir les réponses", detail: `${guests.filter((g) => stageMatches("waiting", g)).length} en attente de réponse`, go: () => { setStage("waiting"); navigate("guests"); } },
+                        { n: "03", title: "Imaginer les tablées", detail: `${confirmed.filter((g) => !g.tableNumber).length} groupe(s) confirmé(s) sans table`, go: () => navigate("tables") },
+                        { n: "04", title: "Partager les détails", detail: "Lieux, programme, textes du site", go: () => navigate("settings") },
+                      ].map((item) => (
+                        <button key={item.n} type="button" onClick={item.go} className="flex w-full items-center gap-4 py-3 text-left hover:bg-[#f6f2ec]">
+                          <span className="font-serif text-xl text-[#6e1420]/50">{item.n}</span>
+                          <span className="flex-1"><span className="block text-sm">{item.title}</span><span className="block text-xs text-foreground/50">{item.detail}</span></span>
+                          <span className="text-[#6e1420]">↗</span>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className={`${panel} p-6`}>
+                    <div className="flex items-end justify-between">
+                      <div><p className={eyebrow}>Préférences RSVP</p><h2 className="mt-2 font-serif text-2xl">Boissons</h2></div>
+                      <span className="text-xs text-foreground/45">en personnes confirmées</span>
+                    </div>
+                    {drinkStats.length ? (
+                      <ul className="mt-4 space-y-2">
+                        {drinkStats.map(([drink, count]) => (
+                          <li key={drink} className="flex items-center gap-3 text-sm">
+                            <span className="w-32 truncate">{drink}</span>
+                            <span className="h-1.5 flex-1 bg-[#6e1420]/8"><span className="block h-full bg-[#6e1420]/70" style={{ width: `${(count / drinkStats[0][1]) * 100}%` }} /></span>
+                            <span className="w-8 text-right tabular-nums">{count}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-4 text-sm text-foreground/50">Aucune préférence renseignée pour l'instant.</p>
+                    )}
+                  </section>
+                </div>
               </div>
-            </div>
-          </div>
+            </>
+          )}
 
-          {/* Filtres */}
-          <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <PrettySelect
-              value={statusFilter}
-              onChange={(value) => setStatusFilter(value as "all" | "pending" | "confirmed" | "declined")}
-              options={statusFilterOptions}
-              placeholder="RSVP"
-            />
-            <PrettySelect
-              value={invitationFilter}
-              onChange={(value) => setInvitationFilter(value as "all" | "draft" | "sent")}
-              options={invitationFilterOptions}
-              placeholder="Invitations"
-            />
-            <PrettySelect
-              value={partyFilter}
-              onChange={setPartyFilter}
-              options={[{ value: "all", label: "Toutes les listes" }, ...partyOptions]}
-              placeholder="Liste"
-            />
-            <PrettySelect
-              value={ceremonyFilter}
-              onChange={(value) => setCeremonyFilter(value as "" | WeddingEventKey)}
-              options={ceremonyFilterOptions}
-              placeholder="Choisir une célébration"
-            />
-          </div>
+          {/* ══════ INVITÉS ══════ */}
+          {view === "guests" && !listChosen && (
+            <section className={`${panel} p-8 text-center md:p-12`}>
+              <p className={eyebrow}>Bienvenue</p>
+              <h2 className="mt-3 font-serif text-3xl md:text-4xl">Quelle liste souhaitez-vous gérer&nbsp;?</h2>
+              <p className="mt-3 text-sm text-foreground/55">Chacun s'occupe de ses invités. Vous pourrez changer de liste à tout moment.</p>
+              <div className="mx-auto mt-10 grid max-w-2xl gap-4 sm:grid-cols-2">
+                {guestLists.map((item) => {
+                  const list = guests.filter((g) => g.party === item.id);
+                  return (
+                    <button key={item.id} type="button" onClick={() => chooseList(item.id as Party)} className="group border border-[#6e1420]/15 bg-white p-6 text-left transition hover:-translate-y-0.5 hover:border-[#6e1420]/50">
+                      <span className="signature block text-5xl text-[#6e1420]">{item.mark}</span>
+                      <span className="mt-4 block font-serif text-xl">{item.title}</span>
+                      <span className="block text-xs text-foreground/50">{item.caption}</span>
+                      <span className="mt-4 block text-[10px] uppercase tracking-[0.25em] text-foreground/45">
+                        {list.length} invitation{list.length > 1 ? "s" : ""} · {list.filter((g) => g.status === "confirmed").length} présent(s)
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
+          {view === "guests" && !listChosen && unassigned.length > 0 && (
+            <section className={`${panel} p-6 md:p-8`}>
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className={eyebrow}>À attribuer</p>
+                  <h2 className="mt-2 font-serif text-2xl">{unassigned.length} invité{unassigned.length > 1 ? "s" : ""} sans liste</h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-foreground/60">Ils n'apparaissent ni chez Jessica ni chez Geldi. Cochez-les puis rangez-les dans la bonne liste.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {guestLists.map((l) => (
+                    <Button
+                      key={l.id}
+                      type="button"
+                      disabled={!toAssign.length || assignPartyMutation.isPending}
+                      onClick={() => assignPartyMutation.mutate({ ids: toAssign, party: l.id as Party })}
+                      className="rounded-none bg-[#6e1420] px-5 text-[10px] uppercase tracking-[0.3em] text-white hover:bg-[#4a0d15]"
+                    >
+                      {toAssign.length || ""} → {l.title}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <label className="mt-5 flex items-center gap-2 text-xs text-foreground/60">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-[#6e1420]"
+                  checked={toAssign.length === unassigned.length}
+                  onChange={(e) => setToAssign(e.target.checked ? unassigned.map((g) => g.id) : [])}
+                />
+                Tout sélectionner
+              </label>
+              <div className="mt-3 max-h-[480px] divide-y divide-[#6e1420]/8 overflow-y-auto border-t border-[#6e1420]/10">
+                {unassigned.map((g) => (
+                  <div key={g.id} className="flex items-center gap-3 py-2.5">
+                    <input
+                      type="checkbox"
+                      aria-label={`Sélectionner ${g.firstName} ${g.lastName}`}
+                      className="h-4 w-4 accent-[#6e1420]"
+                      checked={toAssign.includes(g.id)}
+                      onChange={() => setToAssign((ids) => (ids.includes(g.id) ? ids.filter((id) => id !== g.id) : [...ids, g.id]))}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-serif text-base">{g.firstName} {g.lastName}</span>
+                      <span className="text-[11px] text-foreground/45">{g.invitedCount || g.guestCount || 1} place(s)</span>
+                    </span>
+                    <StatusBadge status={g.status} />
+                    {guestLists.map((l) => (
+                      <button
+                        key={l.id}
+                        type="button"
+                        disabled={assignPartyMutation.isPending}
+                        onClick={() => assignPartyMutation.mutate({ ids: [g.id], party: l.id as Party })}
+                        className="border border-[#6e1420]/20 px-3 py-1.5 text-xs text-[#6e1420] hover:bg-[#f6f2ec]"
+                      >
+                        {l.title}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {view === "guests" && listChosen && (
+            <>
+              <div className={`${panel} flex flex-wrap items-center justify-between gap-4 px-6 py-4`}>
+                <div>
+                  <p className={eyebrow}>Liste affichée</p>
+                  <p className="mt-1 font-serif text-xl">{guestLists.find((l) => l.id === partyFilter)?.caption}</p>
+                </div>
+                <Button type="button" variant="outline" onClick={() => { setListChosen(false); sessionStorage.removeItem(LIST_KEY); }} className={`${buttonBase} border-[#6e1420]/20 text-[#6e1420]`}>
+                  Changer de liste ⇄
+                </Button>
+              </div>
+
+              {ceremonyFilter && (
+                <nav aria-label="Étapes des invitations" className="grid grid-cols-2 gap-px border border-[#6e1420]/10 bg-[#6e1420]/10 sm:grid-cols-5">
+                  {stages.map((item) => {
+                    const list = inListForEvent.filter((g) => stageMatches(item.id, g));
+                    const active = stage === item.id;
+                    return (
+                      <button key={item.id} type="button" aria-pressed={active} onClick={() => setStage(item.id)} className={`p-4 text-left transition ${active ? "bg-[#6e1420] text-white" : "bg-white hover:bg-[#f6f2ec]"}`}>
+                        <span className={`block text-[9px] uppercase tracking-[0.3em] ${active ? "text-white/60" : "text-foreground/40"}`}>{item.step}</span>
+                        <span className="mt-1 block font-serif text-3xl tabular-nums">{list.length}</span>
+                        <span className="block text-xs">{item.label}</span>
+                        {item.id === "confirmed" && <span className={`block text-[10px] ${active ? "text-white/60" : "text-foreground/45"}`}>{sumPeople(list)} personne(s)</span>}
+                      </button>
+                    );
+                  })}
+                </nav>
+              )}
+
+              <section className={`${panel} p-5 md:p-7`}>
+                <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <p className="text-sm text-foreground/60">{ceremonyFilter ? stages.find((s) => s.id === stage)!.hint : "Choisissez une célébration pour afficher ses invités."}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e1420]/40" />
+                      <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Un nom, un e-mail, un téléphone…" aria-label="Rechercher un invité" className="h-11 w-full min-w-[240px] rounded-none border-[#6e1420]/15 pl-10" />
+                    </div>
+                    <Button type="button" variant="outline" disabled={!ceremonyFilter} onClick={() => ceremonyFilter && window.open(`/api/admin/guests/export?event=${ceremonyFilter}&sort=name`, "_blank")} className={`${buttonBase} h-11 border-[#6e1420]/20 text-[#6e1420] disabled:opacity-40`}>
+                      <Download className="mr-2 h-4 w-4" strokeWidth={1.6} /> Export CSV
+                    </Button>
+                  </div>
+                </div>
           {/* Liste des invités */}
           {isLoadingGuests ? (
             <div className="flex min-h-[280px] items-center justify-center">
@@ -1260,7 +1668,7 @@ export default function Admin() {
                         {guest.email || "—"} · {guest.phone || "—"}
                       </p>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/35">
-                        {guest.guestCount || 1} présent(s) sur {guest.invitedCount || guest.guestCount || 1} place(s) · {partyOptions.find((item) => item.value === guest.party)?.label || "En commun"} ·{" "}
+                        {guest.guestCount || 1} présent(s) sur {guest.invitedCount || guest.guestCount || 1} place(s) · {partyLabel(guest.party)} ·{" "}
                         {guest.tableNumber ? `Table ${guest.tableNumber} · ` : ""}
                         {guest.createdAt
                           ? format(new Date(guest.createdAt), "d MMM yyyy", { locale: fr })
@@ -1327,7 +1735,7 @@ export default function Admin() {
                         {guest.beverageChoice}
                       </Badge>
                     )}
-                    {guest.allergies && <Badge variant="outline" className="rounded-none border-0 bg-rose-50 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] text-rose-700">Allergies</Badge>}
+
                     {(guest.city || guest.country) && <span className="text-[10px] text-foreground/45">{[guest.city, guest.country].filter(Boolean).join(", ")}</span>}
                     {guest.invitationSentAt && (
                       <span className="text-[10px] text-foreground/40">
@@ -1366,6 +1774,16 @@ export default function Admin() {
                       >
                         <MessageCircle className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
                         WhatsApp
+                      </Button>
+                    )}
+                    {guest.status !== "declined" && (
+                      <Button
+                        type="button" size="sm" variant="outline"
+                        onClick={() => shareViaEmail(guest)}
+                        className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
+                      >
+                        <Mail className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                        E-mail
                       </Button>
                     )}
                     {guest.status !== "declined" && (
@@ -1476,112 +1894,151 @@ export default function Admin() {
               </div>
             </div>
           )}
-        </section>
+              </section>
+            </>
+          )}
 
-        {/* ── Messages des invités (en bas, paginés) ─────────────────────── */}
-        {guests.some((g) => g.message) && (() => {
-          const allMessages = guests.filter((g) => g.message);
-          const totalMsgPages = Math.ceil(allMessages.length / MSG_PAGE_SIZE);
-          const pagedMessages = allMessages.slice(
-            msgPage * MSG_PAGE_SIZE,
-            (msgPage + 1) * MSG_PAGE_SIZE,
-          );
-          return (
-            <section className="border border-primary/10 bg-white p-6 editorial-shadow md:p-8">
-              <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.45em] text-primary/60">
-                    Mots pour les mariés
-                  </p>
-                  <h2 className="mt-3 font-serif text-3xl text-foreground md:text-4xl">
-                    Messages des invités
-                  </h2>
-                  <p className="mt-2 text-sm text-foreground/55">
-                    {allMessages.length} message{allMessages.length > 1 ? "s" : ""} reçu{allMessages.length > 1 ? "s" : ""}
-                  </p>
-                </div>
-                {totalMsgPages > 1 && (
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/40 shrink-0">
-                    Page {msgPage + 1} / {totalMsgPages}
-                  </p>
-                )}
+          {/* ══════ PLAN DE TABLE ══════ */}
+          {view === "tables" && (
+            <>
+              <div className="flex flex-wrap gap-2">
+                {[{ id: "all", title: "Tous" }, ...guestLists.filter((l) => l.id !== "all")].map((l) => (
+                  <Button key={l.id} type="button" variant="outline" aria-pressed={partyFilter === l.id} onClick={() => setPartyFilter(l.id)} className={`${buttonBase} ${partyFilter === l.id ? "border-[#6e1420] bg-[#6e1420] text-white hover:bg-[#4a0d15] hover:text-white" : "border-[#6e1420]/20 text-[#6e1420]"}`}>
+                    {l.title} · {guests.filter((g) => l.id === "all" || g.party === l.id).length}
+                  </Button>
+                ))}
+                <Button type="button" variant="outline" onClick={addTable} className={`${buttonBase} ml-auto border-[#6e1420]/20 text-[#6e1420]`}>
+                  <Plus className="mr-2 h-4 w-4" strokeWidth={1.6} /> Ajouter une table ({tableCount})
+                </Button>
               </div>
+              <div className={`${panel} flex flex-wrap items-center gap-x-8 gap-y-2 px-6 py-4 text-sm`}>
+                <strong className="font-serif text-lg">{tableCount} tables</strong>
+                <span>{sumPeople(confirmed.filter((g) => g.tableNumber))} personnes confirmées placées</span>
+                <span className="text-[#6e1420]">{sumPeople(confirmed.filter((g) => !g.tableNumber))} à placer</span>
+                <Button type="button" variant="outline" disabled={!ceremonyFilter} onClick={() => ceremonyFilter && window.open(`/api/admin/guests/export?event=${ceremonyFilter}&sort=table`, "_blank")} className={`${buttonBase} ml-auto h-10 border-[#6e1420]/20 text-[#6e1420] disabled:opacity-40`}>
+                  <Download className="mr-2 h-4 w-4" strokeWidth={1.6} /> Export par table
+                </Button>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e1420]/40" />
+                <Input value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} placeholder="Rechercher un invité à placer…" aria-label="Rechercher un invité à placer" className="h-11 rounded-none border-[#6e1420]/15 bg-white pl-10" />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {[null, ...tableNumbers].map((number) => {
+                  const list = seatable.filter((g) => (g.tableNumber ?? null) === number);
+                  if (number !== null && !list.length && tableQuery) return null;
+                  return (
+                    <section key={number ?? "none"} className={`${panel} p-5 ${number === null ? "md:col-span-2 xl:col-span-3" : ""}`}>
+                      <div className="flex items-end justify-between gap-4 border-b border-[#6e1420]/8 pb-3">
+                        <div>
+                          <p className={eyebrow}>{number ? "Une belle tablée" : "À organiser"}</p>
+                          <h2 className="mt-1 font-serif text-2xl">{number ? `Table ${number}` : "Sans table"}</h2>
+                        </div>
+                        <p className="text-right font-serif text-2xl tabular-nums">{sumPeople(list.filter((g) => g.status === "confirmed"))}<span className="block text-[9px] uppercase tracking-[0.25em] text-foreground/45">confirmés</span></p>
+                      </div>
+                      <div className={`mt-2 ${number === null ? "grid gap-x-6 md:grid-cols-2 xl:grid-cols-3" : ""}`}>
+                        {list.map((g) => (
+                          <div key={g.id} className="flex items-center justify-between gap-3 border-b border-[#6e1420]/5 py-2 text-sm">
+                            <span className="min-w-0">
+                              <span className="block truncate">{g.firstName} {g.lastName}</span>
+                              <span className="block text-[10px] text-foreground/45">{g.guestCount} pers. · {g.status === "confirmed" ? "Confirmé" : "En attente"}</span>
+                            </span>
+                            <select
+                              aria-label={`Table de ${g.firstName} ${g.lastName}`}
+                              value={g.tableNumber ?? ""}
+                              disabled={updateTableMutation.isPending}
+                              onChange={(e) => updateTableMutation.mutate({ id: g.id, tableNumber: e.target.value ? Number(e.target.value) : null })}
+                              className="h-9 shrink-0 border border-[#6e1420]/15 bg-white px-2 text-xs"
+                            >
+                              <option value="">Sans table</option>
+                              {tableNumbers.map((n) => <option key={n} value={n}>Table {n}</option>)}
+                            </select>
+                          </div>
+                        ))}
+                        {!list.length && <p className="py-3 text-sm text-foreground/45">{number ? "Aucun invité à cette table." : "Tous les invités actifs sont placés."}</p>}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {pagedMessages.map((guest) => (
-                  <blockquote
-                    key={guest.id}
-                    className="border border-primary/8 bg-[#FAFAF8] p-5 space-y-3 flex flex-col"
-                  >
-                    <p className="font-serif text-base leading-7 text-foreground/80 italic flex-1">
-                      "{guest.message}"
-                    </p>
-                    <footer className="flex items-center justify-between gap-2 pt-3 border-t border-primary/8">
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/45">
-                        {guest.firstName} {guest.lastName}
-                      </p>
-                      <Badge
-                        variant="outline"
-                        className={`rounded-none border-0 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] ${
-                          guest.status === "confirmed"
-                            ? "bg-emerald-50 text-emerald-700"
-                            : guest.status === "declined"
-                              ? "bg-rose-50 text-rose-700"
-                              : "bg-amber-50 text-amber-700"
-                        }`}
-                      >
-                        {guest.status === "confirmed"
-                          ? "Confirmé"
-                          : guest.status === "declined"
-                            ? "Absent(e)"
-                            : "En attente"}
-                      </Badge>
-                    </footer>
-                  </blockquote>
+          {/* ══════ ACCUEIL ══════ */}
+          {view === "checkin" && (
+            <>
+              <section className="wine-band flex flex-wrap items-center gap-6 px-7 py-8">
+                <p className="font-serif text-6xl tabular-nums">{sumPeople(arrived)}<span className="text-2xl text-white/50"> / {stats.confirmedInvites}</span></p>
+                <div>
+                  <h2 className="font-serif text-2xl">Ils nous ont rejoints.</h2>
+                  <p className="text-sm text-white/65">{confirmed.length - arrived.length} groupe(s) encore attendu(s)</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => confirm("Réinitialiser tous les check-ins ? Cette action efface toutes les arrivées enregistrées.") && resetCheckInsMutation.mutate()}
+                  disabled={resetCheckInsMutation.isPending}
+                  className={`${buttonBase} ml-auto border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white`}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" strokeWidth={1.6} /> Tout réinitialiser
+                </Button>
+              </section>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e1420]/40" />
+                <Input value={checkinSearch} onChange={(e) => setCheckinSearch(e.target.value)} placeholder="Rechercher le nom d'un invité…" aria-label="Rechercher à l'accueil" className="h-12 rounded-none border-[#6e1420]/15 bg-white pl-10" />
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {checkinList.map((g) => (
+                  <article key={g.id} className={`${panel} flex items-center gap-4 p-4 ${g.checkedInAt ? "opacity-70" : ""}`}>
+                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-[11px] ${g.checkedInAt ? "bg-emerald-600 text-white" : "bg-[#6e1420]/8 text-[#6e1420]"}`}>{g.firstName[0]}{g.lastName[0]}</span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate font-serif text-lg">{g.firstName} {g.lastName}</h3>
+                      <p className="text-xs text-foreground/55">{g.guestCount} personne(s) · {g.tableNumber ? `Table ${g.tableNumber}` : "Table à attribuer"}</p>
+                      {g.checkedInAt && <p className="text-[11px] text-emerald-700">Arrivée à {format(new Date(g.checkedInAt), "HH:mm")}</p>}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={checkInMutation.isPending}
+                      onClick={() => checkInMutation.mutate({ id: g.id, arrived: !g.checkedInAt })}
+                      className={`${buttonBase} px-4 ${g.checkedInAt ? "border-[#6e1420]/20 text-[#6e1420]" : "border-[#6e1420] bg-[#6e1420] text-white hover:bg-[#4a0d15] hover:text-white"}`}
+                    >
+                      {g.checkedInAt ? "Annuler ↶" : "Valider ✓"}
+                    </Button>
+                  </article>
                 ))}
               </div>
+              {!checkinList.length && <Empty title="Aucun invité à accueillir pour le moment." text="Seuls les invités ayant confirmé leur présence figurent ici." />}
+              <p className="text-xs text-foreground/50">Une validation enregistre l'arrivée de toutes les personnes de l'invitation. La liste se met à jour toutes les 15 secondes.</p>
+            </>
+          )}
 
-              {totalMsgPages > 1 && (
-                <div className="mt-6 flex items-center justify-end gap-2 border-t border-primary/8 pt-5">
-                  <Button
-                    type="button" variant="outline" size="sm"
-                    onClick={() => setMsgPage((p) => p - 1)}
-                    disabled={msgPage === 0}
-                    className="rounded-none border-primary/15 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
-                  >
-                    <ChevronLeft className="h-4 w-4" strokeWidth={1.6} />
-                  </Button>
-                  {Array.from({ length: totalMsgPages }, (_, i) => (
-                    <Button
-                      key={i} type="button" size="sm"
-                      variant={i === msgPage ? "default" : "outline"}
-                      onClick={() => setMsgPage(i)}
-                      className={`rounded-none px-4 py-5 text-[10px] uppercase tracking-[0.25em] ${
-                        i === msgPage
-                          ? "bg-primary text-primary-foreground hover:bg-foreground"
-                          : "border-primary/15 text-primary hover:bg-primary/5"
-                      }`}
-                    >
-                      {i + 1}
-                    </Button>
+          {/* ══════ MESSAGES & ATTENTIONS ══════ */}
+          {view === "messages" && (
+            <div className="mx-auto max-w-3xl">
+              <section className={`${panel} p-6`}>
+                <div className="flex items-end justify-between"><h2 className="font-serif text-2xl">Les mots pour vous</h2><span className="text-sm text-foreground/45">{guests.filter((g) => g.message).length}</span></div>
+                <div className="mt-4 space-y-4">
+                  {guests.filter((g) => g.message).map((g) => (
+                    <blockquote key={g.id} className="border-l-2 border-[#6e1420]/30 bg-[#f6f2ec] px-5 py-4">
+                      <p className="font-serif text-lg italic leading-7">« {g.message} »</p>
+                      <footer className="mt-3 flex items-center justify-between gap-3">
+                        <button type="button" onClick={() => startEditingGuest(g)} className="text-[10px] uppercase tracking-[0.25em] text-[#6e1420] hover:underline">{g.firstName} {g.lastName} ↗</button>
+                        <StatusBadge status={g.status} />
+                      </footer>
+                    </blockquote>
                   ))}
-                  <Button
-                    type="button" variant="outline" size="sm"
-                    onClick={() => setMsgPage((p) => p + 1)}
-                    disabled={msgPage >= totalMsgPages - 1}
-                    className="rounded-none border-primary/15 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
-                  >
-                    <ChevronRight className="h-4 w-4" strokeWidth={1.6} />
-                  </Button>
+                  {!guests.some((g) => g.message) && <Empty title="Le livre des petits mots attend ses premières lignes." text="Les messages laissés dans les réponses seront rassemblés ici." />}
                 </div>
-              )}
-            </section>
-          );
-        })()}
+              </section>
 
-        <AdminSettingsPanel />
-        <AdminAccountPanel user={user} />
+            </div>
+          )}
+
+          {view === "settings" && <AdminSettingsPanel />}
+          {view === "account" && <AdminAccountPanel user={user} />}
+        </main>
       </div>
-    </main>
+    </div>
   );
 }
