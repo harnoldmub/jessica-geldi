@@ -391,6 +391,16 @@ export default function EventHome({ eventKey }: { eventKey: WeddingEventKey }) {
         <p className="signature mt-16 text-7xl text-tbandink md:text-8xl">Jessica &amp; Geldi</p>
         <SmallCaps className="mt-4 text-tbandink/60">{event.label} · {event.date} · Kinshasa, Congo</SmallCaps>
         <p className="mx-auto mt-6 max-w-md whitespace-pre-line font-body text-lg italic leading-8 text-tbandink/70">{siteSettings.footerText}</p>
+        <p className="mt-10 font-body text-xs tracking-[0.08em] text-tbandink/75">
+          <a
+            href="https://mubuanga.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-tbandink/35 underline-offset-4 transition-colors hover:text-tbandink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tbandink focus-visible:ring-offset-4 focus-visible:ring-offset-tdeep"
+          >
+            Made by mubuanga.com
+          </a>
+        </p>
       </footer>
 
       <GalleryLightbox item={galleryItem} onClose={() => setGalleryItem(null)} />
