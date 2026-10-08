@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -35,6 +35,7 @@ import {
 } from "@shared/schema";
 import { beverageCategories, getEventKeys, getGuestEvent, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { pageThemes } from "@/lib/eventThemes";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -103,6 +104,11 @@ const partyOptions = [
 type Party = "jessica" | "geldi";
 const isParty = (value: unknown): value is Party => value === "jessica" || value === "geldi";
 const partyLabel = (value?: string | null) => partyOptions.find((o) => o.value === value)?.label || "Sans liste";
+
+const partyVisuals: Record<Party, { accent: string; deep: string; soft: string; border: string }> = {
+  jessica: { accent: "#9c4668", deep: "#672a42", soft: "#fff4f8", border: "#e7b8c9" },
+  geldi: { accent: "#2f6a64", deep: "#1e4b47", soft: "#f0f8f6", border: "#b9dad4" },
+};
 
 function parseImportRows(text: string, defaults: { guestCount: number; ceremonyChoice: string; party: string }) {
   const rows = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
@@ -186,8 +192,8 @@ const navigation: { id: AdminView; label: string; caption: string }[] = [
 ];
 
 const guestLists = [
-  { id: "jessica", title: "Jessica", caption: "Les invités de Jessica", mark: "J" },
-  { id: "geldi", title: "Geldi", caption: "Les invités de Geldi", mark: "G" },
+  { id: "jessica", title: "Jessica", caption: "Les invités de Jessica", mark: "J", ...partyVisuals.jessica },
+  { id: "geldi", title: "Geldi", caption: "Les invités de Geldi", mark: "G", ...partyVisuals.geldi },
 ];
 
 const stages: { id: Stage; step: string; label: string; hint: string }[] = [
@@ -230,7 +236,7 @@ function StatusBadge({ status }: { status: string }) {
   const tone =
     status === "confirmed" ? "bg-emerald-50 text-emerald-700" : status === "declined" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700";
   const label = status === "confirmed" ? "Confirmé" : status === "declined" ? "Absent(e)" : "En attente";
-  return <span className={`inline-block px-2.5 py-1 text-[9px] uppercase tracking-[0.22em] ${tone}`}>{label}</span>;
+  return <span className={`inline-block rounded-full px-2.5 py-1 text-[12px] font-medium ${tone}`}>{label}</span>;
 }
 
 function Empty({ title, text, action }: { title: string; text: string; action?: ReactNode }) {
@@ -243,8 +249,41 @@ function Empty({ title, text, action }: { title: string; text: string; action?: 
   );
 }
 
-const panel = "border border-[#6e1420]/10 bg-white";
-const eyebrow = "text-[10px] uppercase tracking-[0.38em] text-[#6e1420]/65";
+const panel = "rounded-3xl border border-black/[0.05] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03),0_16px_40px_-24px_rgba(0,0,0,0.18)]";
+const eyebrow = "text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--admin-event-deep)]";
+const PAGE_SIZE = 15;
+
+/* Pagination compacte (pilules) pour les longues listes */
+function Pager({ page, total, onChange }: { page: number; total: number; onChange: (page: number) => void }) {
+  const pages = Math.ceil(total / PAGE_SIZE);
+  if (pages <= 1) return null;
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-foreground/55">
+      <span>
+        {page * PAGE_SIZE + 1}–{Math.min(total, (page + 1) * PAGE_SIZE)} sur {total}
+      </span>
+      <div className="flex items-center gap-1.5">
+        <button type="button" disabled={page === 0} onClick={() => onChange(page - 1)} className="grid h-9 w-9 place-items-center rounded-full border border-black/10 bg-white hover:bg-[#f5f5f6] disabled:opacity-30" aria-label="Page précédente">
+          <ChevronLeft className="h-4 w-4" strokeWidth={1.8} />
+        </button>
+        {Array.from({ length: pages }, (_, i) => (
+          <button
+            key={i}
+            type="button"
+            aria-current={i === page ? "page" : undefined}
+            onClick={() => onChange(i)}
+            className={`h-9 min-w-9 rounded-full px-3 text-[13px] font-medium ${i === page ? "bg-[#6e1420] text-white" : "border border-black/10 bg-white hover:bg-[#f5f5f6]"}`}
+          >
+            {i + 1}
+          </button>
+        ))}
+        <button type="button" disabled={page >= pages - 1} onClick={() => onChange(page + 1)} className="grid h-9 w-9 place-items-center rounded-full border border-black/10 bg-white hover:bg-[#f5f5f6] disabled:opacity-30" aria-label="Page suivante">
+          <ChevronRight className="h-4 w-4" strokeWidth={1.8} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 async function getCurrentUser() {
   const res = await fetch("/api/user", {
@@ -303,6 +342,14 @@ export default function Admin() {
   });
   const [listChosen, setListChosen] = useState(() => isParty(sessionStorage.getItem(LIST_KEY)));
   const [toAssign, setToAssign] = useState<number[]>([]);
+  const [legacyPage, setLegacyPage] = useState(0);
+  const [assignPage, setAssignPage] = useState(0);
+
+  // Habillage de l'admin (police, fond) appliqué au <body> pour couvrir aussi les fenêtres modales.
+  useEffect(() => {
+    document.body.classList.add("admin-ui");
+    return () => document.body.classList.remove("admin-ui");
+  }, []);
   const [stage, setStage] = useState<Stage>("all");
   const [tableSearch, setTableSearch] = useState("");
   const [checkinSearch, setCheckinSearch] = useState("");
@@ -763,10 +810,10 @@ export default function Admin() {
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-[#f6f2ec] px-6 py-10 md:px-10 md:py-16">
+      <main className="min-h-screen bg-[#f5f5f6] px-6 py-10 md:px-10 md:py-16">
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.85fr_1.15fr]">
-          <section className="wine-band overflow-hidden p-8 md:p-12">
-            <p className="text-[11px] uppercase tracking-[0.45em] text-white/55">
+          <section className="admin-hero overflow-hidden rounded-3xl p-8 md:p-12">
+            <p className="text-[11px] uppercase tracking-[0.06em] text-white/55">
               Espace admin
             </p>
             <h1 className="mt-6 font-serif text-4xl leading-tight md:text-6xl">
@@ -779,11 +826,11 @@ export default function Admin() {
             </p>
           </section>
 
-          <section className="border border-primary/10 bg-white p-8 editorial-shadow md:p-12">
+          <section className="border border-primary/10 bg-white p-8 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-18px_rgba(0,0,0,0.14)] md:p-12">
             <div className="mb-10">
               <div className="mb-4 flex items-center gap-3 text-primary">
                 <LockKeyhole className="h-5 w-5" strokeWidth={1.6} />
-                <p className="text-[11px] uppercase tracking-[0.45em] text-primary/65">
+                <p className="text-[11px] uppercase tracking-[0.06em] text-primary/65">
                   Connexion
                 </p>
               </div>
@@ -800,10 +847,12 @@ export default function Admin() {
               }}
             >
               <div className="space-y-3">
-                <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">
+                <label htmlFor="admin-username" className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">
                   Identifiant
                 </label>
                 <Input
+                  id="admin-username"
+                  autoComplete="username"
                   value={credentials.username}
                   onChange={(event) =>
                     setCredentials((current) => ({
@@ -811,17 +860,19 @@ export default function Admin() {
                       username: event.target.value,
                     }))
                   }
-                  className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                  className="h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20"
                   placeholder="Nom d'utilisateur"
                 />
               </div>
 
               <div className="space-y-3">
-                <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">
+                <label htmlFor="admin-password" className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">
                   Code d'accès
                 </label>
                 <div className="relative">
                   <Input
+                    id="admin-password"
+                    autoComplete="current-password"
                     type={showPassword ? "text" : "password"}
                     value={credentials.password}
                     onChange={(event) =>
@@ -830,11 +881,12 @@ export default function Admin() {
                         password: event.target.value,
                       }))
                     }
-                    className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20 pr-12"
+                    className="h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20 pr-12"
                     placeholder="Entrez le code d'accès"
                   />
                   <button
                     type="button"
+                    aria-label={showPassword ? "Masquer le code d'accès" : "Afficher le code d'accès"}
                     onClick={() => setShowPassword((v) => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/70 transition-colors"
                     tabIndex={-1}
@@ -847,7 +899,7 @@ export default function Admin() {
               <Button
                 type="submit"
                 disabled={loginMutation.isPending}
-                className="w-full rounded-none bg-primary py-7 text-[10px] uppercase tracking-[0.4em] text-primary-foreground hover:bg-foreground"
+                className="w-full rounded-full bg-primary py-7 text-[13px] font-medium normal-case tracking-normal text-primary-foreground hover:bg-foreground"
               >
                 {loginMutation.isPending ? "Connexion..." : "Entrer dans l'admin"}
               </Button>
@@ -857,7 +909,7 @@ export default function Admin() {
               <Button
                 asChild
                 variant="ghost"
-                className="rounded-none px-0 text-[10px] uppercase tracking-[0.35em] text-primary/70 hover:bg-transparent hover:text-primary"
+                className="rounded-full px-0 text-[13px] font-medium normal-case tracking-normal text-primary/70 hover:bg-transparent hover:text-primary"
               >
                 <Link href="/">Retour au site invitation</Link>
               </Button>
@@ -872,12 +924,12 @@ export default function Admin() {
   if (!currentEvent) {
     const readyLegacy = legacyGuests.filter((g) => legacyEventsOf(g).length > 0);
     return (
-      <main className="min-h-screen bg-[#f6f2ec] text-foreground">
-        <header className="wine-band px-6 py-10 text-center md:py-14">
-          <p className="signature text-6xl text-[#f6ece8] md:text-7xl">Jessica &amp; Geldi</p>
-          <p className="mt-3 text-[10px] uppercase tracking-[0.38em] text-white/60">L'espace des mariés</p>
-          <h1 className="mt-8 font-serif text-3xl md:text-5xl">Quel événement souhaitez-vous gérer&nbsp;?</h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-white/70">Chaque célébration a ses propres invités, son plan de table et son accueil. Vous pourrez changer d'événement à tout moment.</p>
+      <main className="min-h-screen bg-[#f5f5f6] text-foreground">
+        <header className="mx-3 mt-3 rounded-3xl border border-black/[0.05] bg-white px-6 py-10 text-center md:mx-5 md:py-12">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#6e1420] text-[15px] font-semibold text-white">JG</span>
+          <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-[#6e1420]">L'espace des mariés</p>
+          <h1 className="mt-4 text-3xl md:text-4xl">Quel événement souhaitez-vous gérer&nbsp;?</h1>
+          <p className="mx-auto mt-3 max-w-xl text-sm text-foreground/60">Chaque célébration a ses propres invités, son plan de table et son accueil. Vous pourrez changer d'événement à tout moment.</p>
         </header>
 
         <div className="mx-auto max-w-6xl space-y-10 px-5 py-10 md:px-10">
@@ -891,11 +943,11 @@ export default function Admin() {
                   key={key}
                   type="button"
                   onClick={() => chooseEvent(key)}
-                  className="group flex flex-col border p-7 text-left transition-transform duration-300 hover:-translate-y-1"
+                  className="group flex flex-col rounded-3xl border p-7 text-left transition-transform duration-300 hover:-translate-y-1"
                   style={{ background: event.background, borderColor: `${event.accent}55`, color: event.ink }}
                 >
-                  <span className="text-[10px] uppercase tracking-[0.32em]" style={{ color: event.accent }}>{event.date.replace(" 2027", "")} · {event.time}</span>
-                  <span className="signature mt-4 text-5xl" style={{ color: event.accent }}>{event.shortLabel}</span>
+                  <span className="text-[11px] uppercase tracking-[0.06em]" style={{ color: event.accent }}>{event.date.replace(" 2027", "")} · {event.time}</span>
+                  <span className="mt-4 text-3xl font-semibold" style={{ color: event.accent }}>{event.shortLabel}</span>
                   <span className="mt-2 font-serif text-2xl">{event.label}</span>
                   <span className="mt-1 text-sm opacity-70">{event.theme}</span>
                   <span className="mt-4 flex gap-1.5" aria-hidden>
@@ -905,7 +957,7 @@ export default function Admin() {
                     <span><strong className="block font-serif text-2xl tabular-nums">{list.length}</strong>invitation{list.length > 1 ? "s" : ""}</span>
                     <span><strong className="block font-serif text-2xl tabular-nums">{people}<span className="text-sm opacity-50">/{event.capacity}</span></strong>présents</span>
                   </span>
-                  <span className="mt-6 text-[10px] uppercase tracking-[0.3em]" style={{ color: event.accent }}>Gérer cet événement →</span>
+                  <span className="mt-6 text-[11px] uppercase tracking-[0.06em]" style={{ color: event.accent }}>Gérer cet événement →</span>
                 </button>
               );
             })}
@@ -931,7 +983,7 @@ export default function Admin() {
                       splitMutation.mutate(readyLegacy.map((g) => ({ id: g.id, events: legacyEventsOf(g) })));
                     }
                   }}
-                  className="shrink-0 rounded-none bg-[#6e1420] px-6 py-6 text-[10px] uppercase tracking-[0.3em] text-white hover:bg-[#4a0d15]"
+                  className="shrink-0 rounded-full bg-[#6e1420] px-6 py-6 text-[13px] font-medium normal-case tracking-normal text-white hover:bg-[#4a0d15]"
                 >
                   {splitMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Répartir {readyLegacy.length} invitation{readyLegacy.length > 1 ? "s" : ""}
@@ -948,19 +1000,19 @@ export default function Admin() {
                       const current = legacyEventsOf(g);
                       return [g.id, current.includes(key) ? current : [...current, key]];
                     })))}
-                    className="border border-[#6e1420]/20 px-3 py-1.5 hover:bg-[#f6f2ec]"
+                    className="rounded-full border border-black/10 px-3 py-1.5 hover:bg-[#f5f5f6]"
                   >
                     + {weddingEvents[key].shortLabel}
                   </button>
                 ))}
-                <button type="button" onClick={() => setLegacyChoices(Object.fromEntries(legacyGuests.map((g) => [g.id, []])))} className="border border-[#6e1420]/20 px-3 py-1.5 hover:bg-[#f6f2ec]">
+                <button type="button" onClick={() => setLegacyChoices(Object.fromEntries(legacyGuests.map((g) => [g.id, []])))} className="rounded-full border border-black/10 px-3 py-1.5 hover:bg-[#f5f5f6]">
                   Tout décocher
                 </button>
               </div>
 
-              <div className="mt-5 max-h-[520px] overflow-y-auto border-t border-[#6e1420]/10">
+              <div className="mt-5 overflow-x-auto border-t border-black/[0.06]">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-white text-left text-[10px] uppercase tracking-[0.25em] text-foreground/45">
+                  <thead className="sticky top-0 bg-white text-left text-[11px] uppercase tracking-[0.06em] text-foreground/45">
                     <tr>
                       <th className="py-3 pr-4 font-normal">Invité</th>
                       <th className="py-3 pr-4 font-normal">Réponse</th>
@@ -968,7 +1020,7 @@ export default function Admin() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#6e1420]/8">
-                    {legacyGuests.map((g) => {
+                    {legacyGuests.slice(legacyPage * PAGE_SIZE, (legacyPage + 1) * PAGE_SIZE).map((g) => {
                       const selected = legacyEventsOf(g);
                       return (
                         <tr key={g.id}>
@@ -994,6 +1046,7 @@ export default function Admin() {
                   </tbody>
                 </table>
               </div>
+              <Pager page={Math.min(legacyPage, Math.max(0, Math.ceil(legacyGuests.length / PAGE_SIZE) - 1))} total={legacyGuests.length} onChange={setLegacyPage} />
             </section>
           )}
 
@@ -1007,6 +1060,22 @@ export default function Admin() {
   }
 
   const activeEvent = weddingEvents[currentEvent];
+  const activeEventTheme = pageThemes[currentEvent];
+  const activeParty = isParty(partyFilter) ? partyVisuals[partyFilter] : null;
+  const activeList = isParty(partyFilter) ? guestLists.find((list) => list.id === partyFilter) : null;
+  const adminThemeStyle = {
+    "--admin-event-accent": activeEventTheme.accent,
+    "--admin-event-deep": activeEventTheme.bandDeep,
+    "--admin-event-band": activeEventTheme.band,
+    "--admin-event-paper": activeEventTheme.paper,
+    "--admin-event-ink": activeEventTheme.ink,
+    "--admin-event-lace": activeEventTheme.lace,
+    "--admin-event-wash": `${activeEventTheme.accent}12`,
+    "--party-accent": activeParty?.accent ?? activeEventTheme.accent,
+    "--party-deep": activeParty?.deep ?? activeEventTheme.ink,
+    "--party-soft": activeParty?.soft ?? activeEventTheme.paper,
+    "--party-border": activeParty?.border ?? activeEventTheme.lace,
+  } as CSSProperties;
   const current = navigation.find((item) => item.id === view)!;
   const pending = guests.filter((g) => g.status === "pending");
   const arrived = confirmed.filter((g) => g.checkedInAt);
@@ -1035,36 +1104,35 @@ export default function Admin() {
   const checkinList = confirmed
     .filter((g) => `${g.firstName} ${g.lastName}`.toLowerCase().includes(checkinSearch.trim().toLowerCase()))
     .sort((a, b) => Number(!!a.checkedInAt) - Number(!!b.checkedInAt) || a.lastName.localeCompare(b.lastName));
-  const buttonBase = "rounded-none px-5 text-[10px] uppercase tracking-[0.3em]";
+  const buttonBase = "h-10 rounded-full px-5 text-[13px] font-medium normal-case tracking-normal";
 
   return (
-    <div className="min-h-screen bg-[#f6f2ec] text-foreground lg:grid lg:grid-cols-[264px_1fr]">
+    <div style={adminThemeStyle} className="admin-shell min-h-screen text-foreground lg:grid lg:grid-cols-[280px_1fr]">
       <a href="#admin-main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-white focus:px-4 focus:py-2">
         Aller au contenu
       </a>
 
       {/* ── Barre latérale ── */}
-      <aside className="wine-band flex flex-col lg:sticky lg:top-0 lg:h-screen">
-        <div className="flex items-center justify-between gap-4 px-6 py-6 lg:block">
-          <a href="/" className="block">
-            <span className="signature block text-5xl text-[#f3e9e4]">J&amp;G</span>
+      <aside className="admin-sidebar flex flex-col bg-white lg:sticky lg:top-3 lg:m-3 lg:h-[calc(100vh-1.5rem)] lg:rounded-3xl lg:border">
+        <div className="flex items-center justify-between gap-4 px-6 py-5 lg:block lg:pt-7">
+          <a href="/" className="flex items-center gap-2">
+            <span className="admin-brand-mark grid h-9 w-9 place-items-center rounded-full text-[13px] font-semibold text-white">JG</span>
+            <span className="text-[15px] font-semibold tracking-tight">Jessica &amp; Geldi</span>
           </a>
-          <div className="text-right lg:mt-4 lg:text-left">
-            <p className="font-serif text-lg">Jessica &amp; Geldi</p>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-white/55">L'espace des mariés</p>
-          </div>
         </div>
-        <div className="mx-3 mb-3 border border-white/15 px-4 py-3">
-          <p className="text-[9px] uppercase tracking-[0.3em] text-white/50">Événement géré</p>
-          <p className="mt-1 flex items-center gap-2 font-serif text-lg">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: activeEvent.accent }} />
-            {activeEvent.label}
+        <div className="admin-event-context mx-3 mb-4 rounded-2xl border px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground/45">Événement</p>
+          <p className="mt-1 flex items-center gap-2 text-[14px] font-semibold text-[var(--admin-event-ink)]">
+            <span className="admin-event-dot h-2.5 w-2.5 shrink-0 rounded-full" />
+            {activeEvent.shortLabel}
           </p>
-          <p className="text-[11px] text-white/55">{activeEvent.date.replace(" 2027", "")} · {activeEvent.time}</p>
-          <button type="button" onClick={() => chooseEvent(null)} className="mt-2 text-[11px] text-white/75 underline-offset-4 hover:text-white hover:underline">
-            Changer d'événement ⇄
+          <p className="mt-0.5 text-[12px] font-medium text-[var(--admin-event-ink)]/70">{activeEvent.label}</p>
+          <p className="text-[12px] text-[var(--admin-event-ink)]/60">{activeEvent.date.replace(" 2027", "")} · {activeEvent.time}</p>
+          <button type="button" onClick={() => chooseEvent(null)} className="admin-event-switch mt-3 h-8 rounded-full border px-3 text-[12px] font-medium">
+            Changer d'événement
           </button>
         </div>
+        <p className="hidden px-6 pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground/40 lg:block">Menu</p>
         <nav aria-label="Administration" className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-1 lg:flex-col lg:overflow-visible lg:pb-0">
           {navigation.map((item) => (
             <button
@@ -1072,46 +1140,63 @@ export default function Admin() {
               type="button"
               onClick={() => navigate(item.id)}
               aria-current={view === item.id ? "page" : undefined}
-              className={`flex shrink-0 items-center gap-3 px-3 py-2.5 text-left text-[13px] transition-colors ${
-                view === item.id ? "bg-[#f3e9e4] text-[#6e1420]" : "text-white/75 hover:bg-white/10 hover:text-white"
+              className={`flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[14px] transition-colors ${
+                view === item.id ? "admin-nav-active font-semibold" : "text-foreground/60 hover:bg-white/70 hover:text-foreground"
               }`}
             >
               <NavIcon id={item.id} />
               <span className="whitespace-nowrap">{item.label}</span>
-              {item.id === "guests" && <span className="ml-auto text-[10px] opacity-60">{guests.length}</span>}
+              {item.id === "guests" && <span className="admin-nav-count ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold">{guests.length}</span>}
             </button>
           ))}
         </nav>
-        <div className="hidden space-y-2 border-t border-white/15 px-6 py-5 text-[12px] lg:block">
-          <a href={`/${activeEvent.slug}`} target="_blank" rel="noreferrer" className="block text-white/70 hover:text-white">Voir la page {activeEvent.shortLabel.toLowerCase()} ↗</a>
-          <a href="/checkin" target="_blank" rel="noreferrer" className="block text-white/70 hover:text-white">Page check-in (code) ↗</a>
-          <button type="button" onClick={() => logoutMutation.mutate()} className="flex items-center gap-2 text-white/70 hover:text-white">
-            <LogOut className="h-3.5 w-3.5" strokeWidth={1.6} /> Se déconnecter
+        <div className="hidden px-3 pb-3 lg:block">
+          <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground/40">Général</p>
+          <a href={`/${activeEvent.slug}`} target="_blank" rel="noreferrer" className="block rounded-xl px-3 py-2 text-[14px] text-foreground/60 hover:bg-white/70 hover:text-foreground">Voir la page {activeEvent.shortLabel.toLowerCase()} ↗</a>
+          <a href="/checkin" target="_blank" rel="noreferrer" className="block rounded-xl px-3 py-2 text-[14px] text-foreground/60 hover:bg-white/70 hover:text-foreground">Page check-in ↗</a>
+          <button type="button" onClick={() => logoutMutation.mutate()} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-[14px] text-foreground/60 hover:bg-white/70 hover:text-foreground">
+            <LogOut className="h-4 w-4" strokeWidth={1.6} /> Se déconnecter
           </button>
+          <div className="admin-hero mt-4 rounded-2xl p-4">
+            <p className="text-[13px] font-semibold">Accueil des invités</p>
+            <p className="mt-1 text-[11px] text-white/70">Le jour J, validez les arrivées depuis un téléphone.</p>
+            <button type="button" onClick={() => navigate("checkin")} className="mt-3 h-9 w-full rounded-full bg-white text-[13px] font-medium text-[var(--admin-event-deep)]">
+              Ouvrir l'accueil
+            </button>
+          </div>
         </div>
       </aside>
 
       <div className="min-w-0">
-        <header className="flex items-center justify-between border-b border-[#6e1420]/10 bg-white/70 px-6 py-3 text-[10px] uppercase tracking-[0.3em] text-foreground/50 backdrop-blur md:px-10">
-          <span>{activeEvent.label} <span className="mx-1 text-[#6e1420]/40">/</span> {current.label}</span>
+        <header className="admin-topbar mx-3 mt-3 flex items-center justify-between gap-3 rounded-3xl border bg-white px-5 py-3 text-[13px] text-foreground/55 md:mx-5">
+          <span className="min-w-0 truncate"><strong className="text-[var(--admin-event-deep)]">{activeEvent.shortLabel}</strong> <span className="mx-1 text-foreground/25">/</span> <span className="font-medium text-foreground">{current.label}</span></span>
           <span className="flex items-center gap-3">
-            <span className="hidden sm:inline">{user.username}</span>
+            {(view === "guests" || view === "tables") && activeList && (
+              <span className="admin-party-chip hidden items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold sm:flex">
+                <span className="admin-party-chip-mark grid h-5 w-5 place-items-center rounded-full text-[10px] text-white">{activeList.mark}</span>
+                Liste {activeList.title}
+              </span>
+            )}
+            <span className="hidden items-center gap-2 sm:flex">
+              <span className="admin-user-mark grid h-8 w-8 place-items-center rounded-full text-[12px] font-semibold">{user.username.slice(0, 2).toUpperCase()}</span>
+              <span className="font-medium text-foreground">{user.username}</span>
+            </span>
             <button type="button" onClick={() => logoutMutation.mutate()} className="lg:hidden" aria-label="Se déconnecter">
               <LogOut className="h-4 w-4" strokeWidth={1.6} />
             </button>
           </span>
         </header>
 
-        <main id="admin-main" className="mx-auto max-w-6xl space-y-8 px-5 py-8 md:px-10 md:py-10">
+        <main id="admin-main" className="admin-workspace mx-3 my-3 space-y-6 rounded-3xl border bg-white px-5 py-7 md:mx-5 md:px-8 md:py-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className={eyebrow}>Espace privé</p>
-              <h1 className="mt-3 font-serif text-4xl md:text-5xl">{current.label}</h1>
+              <h1 className="mt-2 text-3xl md:text-4xl">{current.label}</h1>
               <p className="mt-2 text-sm text-foreground/60">{current.caption}</p>
             </div>
             {(view === "overview" || view === "guests") && (
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsImportOpen(true)} className={`${buttonBase} border-[#6e1420]/20 text-[#6e1420]`}>
+                <Button type="button" variant="outline" onClick={() => setIsImportOpen(true)} className={`${buttonBase} border-[var(--admin-event-accent)]/30 text-[var(--admin-event-deep)]`}>
                   <UserPlus className="mr-2 h-4 w-4" strokeWidth={1.6} /> Importer
                 </Button>
                 <Button
@@ -1121,7 +1206,7 @@ export default function Admin() {
                     setEditingGuestId(null);
                     setIsFormOpen(true);
                   }}
-                  className={`${buttonBase} bg-[#6e1420] text-white hover:bg-[#4a0d15]`}
+                  className={`${buttonBase} bg-[var(--admin-event-deep)] text-white hover:bg-[var(--admin-event-band)]`}
                 >
                   <Plus className="mr-2 h-4 w-4" strokeWidth={1.6} /> Ajouter un invité
                 </Button>
@@ -1133,7 +1218,7 @@ export default function Admin() {
         <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
           <DialogContent className="max-w-lg p-0 flex flex-col max-h-[88vh]">
             <DialogHeader className="px-6 pt-6 pb-4 border-b border-primary/8 shrink-0">
-              <p className="text-[10px] uppercase tracking-[0.4em] text-primary/55">Import rapide</p>
+              <p className="text-[11px] uppercase tracking-[0.06em] text-primary/55">Import rapide</p>
               <DialogTitle>Importer une liste d'invités</DialogTitle>
               <p className="text-xs text-muted-foreground mt-1">
                 Collez une liste ou un CSV : <span className="font-mono">Prénom;Nom;Contact;Personnes</span>
@@ -1145,21 +1230,21 @@ export default function Admin() {
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
                 placeholder={"Prénom;Nom;Contact;Personnes\nJean;Dupont;jean@email.com;2\nMarie;Martin;+243000000000;1"}
-                className="min-h-[180px] rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20 font-mono text-sm"
+                className="min-h-[180px] rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20 font-mono text-sm"
               />
 
               {importText.trim() && (() => {
                 const count = parseImportRows(importText, { guestCount: importGuestCount, ceremonyChoice: currentEvent ?? "", party: importParty }).length;
                 return (
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-primary/60">
+                  <p className="text-[11px] uppercase tracking-[0.06em] text-primary/60">
                     {count} invité{count > 1 ? "s" : ""} détecté{count > 1 ? "s" : ""}
                   </p>
                 );
               })()}
 
               <label className="block space-y-2">
-                <span className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Fichier CSV</span>
-                <Input type="file" accept=".csv,text/csv,text/plain" className="h-12 rounded-none border-primary/15" onChange={async (event) => {
+                <span className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Fichier CSV</span>
+                <Input type="file" accept=".csv,text/csv,text/plain" className="h-12 rounded-xl border-primary/15" onChange={async (event) => {
                   const file = event.target.files?.[0];
                   if (!file) return;
                   if (file.size > 512000) {
@@ -1172,7 +1257,7 @@ export default function Admin() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Places par défaut</label>
+                  <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Places par défaut</label>
                   <PrettySelect
                     value={importGuestCount}
                     onChange={(value) => setImportGuestCount(Number(value))}
@@ -1181,7 +1266,7 @@ export default function Admin() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Liste</label>
+                  <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Liste</label>
                   <PrettySelect value={importParty} onChange={(value) => isParty(value) && setImportParty(value)} options={partyOptions} placeholder="Liste" />
                 </div>
               </div>
@@ -1197,7 +1282,7 @@ export default function Admin() {
                 type="button"
                 onClick={() => importGuestsMutation.mutate()}
                 disabled={importGuestsMutation.isPending || parseImportRows(importText, { guestCount: importGuestCount, ceremonyChoice: currentEvent ?? "", party: importParty }).length === 0 || !currentEvent}
-                className="rounded-none bg-primary px-7 py-6 text-[10px] uppercase tracking-[0.35em] text-primary-foreground hover:bg-foreground"
+                className="rounded-full bg-primary px-7 py-6 text-[13px] font-medium normal-case tracking-normal text-primary-foreground hover:bg-foreground"
               >
                 {importGuestsMutation.isPending ? "Import en cours..." : "Importer"}
               </Button>
@@ -1205,7 +1290,7 @@ export default function Admin() {
                 type="button"
                 variant="outline"
                 onClick={() => { setIsImportOpen(false); setImportText(""); }}
-                className="rounded-none border-primary/15 px-7 py-6 text-[10px] uppercase tracking-[0.35em] text-primary"
+                className="rounded-full border-primary/15 px-7 py-6 text-[13px] font-medium normal-case tracking-normal text-primary"
               >
                 Annuler
               </Button>
@@ -1226,7 +1311,7 @@ export default function Admin() {
         >
           <DialogContent className="max-w-xl p-0 flex flex-col max-h-[92vh]">
             <DialogHeader className="shrink-0">
-              <p className="text-[10px] uppercase tracking-[0.4em] text-primary/55">
+              <p className="text-[11px] uppercase tracking-[0.06em] text-primary/55">
                 {editingGuestId ? "Modifier l'invité" : "Ajouter un invité"}
               </p>
               <DialogTitle>
@@ -1244,46 +1329,46 @@ export default function Admin() {
               <div className="px-6 py-5 space-y-5">
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Prénom</label>
+                    <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Prénom</label>
                     <Input
                       value={guestForm.firstName}
                       onChange={(e) => setGuestForm((c) => ({ ...c, firstName: e.target.value }))}
-                      className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                      className="h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Nom</label>
+                    <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Nom</label>
                     <Input
                       value={guestForm.lastName}
                       onChange={(e) => setGuestForm((c) => ({ ...c, lastName: e.target.value }))}
-                      className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                      className="h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20"
                     />
                   </div>
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Email</label>
+                    <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Email</label>
                     <Input
                       type="email"
                       value={guestForm.email || ""}
                       onChange={(e) => setGuestForm((c) => ({ ...c, email: e.target.value }))}
-                      className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                      className="h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Téléphone</label>
+                    <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Téléphone</label>
                     <Input
                       value={guestForm.phone || ""}
                       onChange={(e) => setGuestForm((c) => ({ ...c, phone: e.target.value }))}
-                      className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                      className="h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20"
                     />
                   </div>
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Statut</label>
+                    <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Statut</label>
                     <PrettySelect
                       value={guestForm.status}
                       onChange={(value) => setGuestForm((c) => ({ ...c, status: value as GuestFormState["status"] }))}
@@ -1292,7 +1377,7 @@ export default function Admin() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Nombre de personnes</label>
+                    <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Nombre de personnes</label>
                     <PrettySelect
                       value={guestForm.guestCount}
                       onChange={(value) => setGuestForm((c) => {
@@ -1307,22 +1392,22 @@ export default function Admin() {
 
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Places réservées</label>
+                    <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Places réservées</label>
                     <PrettySelect value={guestForm.invitedCount} onChange={(value) => setGuestForm((c) => ({ ...c, invitedCount: Number(value) }))} options={guestCountOptions} placeholder="Places" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Liste d’origine</label>
+                    <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Liste d’origine</label>
                     <PrettySelect value={guestForm.party} onChange={(value) => setGuestForm((c) => ({ ...c, party: value as GuestFormState["party"] }))} options={partyOptions} placeholder="Liste" />
                   </div>
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2">
-                  <label className="space-y-2"><span className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Pays</span><Input value={guestForm.country || ""} maxLength={2} onChange={(e) => setGuestForm((c) => ({ ...c, country: e.target.value.toUpperCase() }))} className="h-12 rounded-none border-primary/15" placeholder="CD" /></label>
-                  <label className="space-y-2"><span className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Ville</span><Input value={guestForm.city || ""} onChange={(e) => setGuestForm((c) => ({ ...c, city: e.target.value }))} className="h-12 rounded-none border-primary/15" placeholder="Kinshasa" /></label>
+                  <label className="space-y-2"><span className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Pays</span><Input value={guestForm.country || ""} maxLength={2} onChange={(e) => setGuestForm((c) => ({ ...c, country: e.target.value.toUpperCase() }))} className="h-12 rounded-xl border-primary/15" placeholder="CD" /></label>
+                  <label className="space-y-2"><span className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Ville</span><Input value={guestForm.city || ""} onChange={(e) => setGuestForm((c) => ({ ...c, city: e.target.value }))} className="h-12 rounded-xl border-primary/15" placeholder="Kinshasa" /></label>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Événement</label>
+                  <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Événement</label>
                   <PrettySelect
                     value={getGuestEvent(guestForm) ?? ""}
                     onChange={(value) => setGuestForm((c) => ({ ...c, invitedCeremonyChoice: value, ceremonyChoice: value }))}
@@ -1335,7 +1420,7 @@ export default function Admin() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Boisson souhaitée</label>
+                  <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Boisson souhaitée</label>
                   <PrettySelect
                     value={getBeverageSelectValue(guestForm.beverageChoice)}
                     onChange={(value) => setGuestForm((c) => ({ ...c, beverageChoice: value === OTHER_BEVERAGE_VALUE ? "Autre: " : value }))}
@@ -1346,14 +1431,14 @@ export default function Admin() {
                     <Input
                       value={getOtherBeverageValue(guestForm.beverageChoice)}
                       onChange={(e) => setGuestForm((c) => ({ ...c, beverageChoice: e.target.value ? `Autre: ${e.target.value}` : "Autre: " }))}
-                      className="h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                      className="h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20"
                       placeholder="Préciser la boisson"
                     />
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Numéro de table</label>
+                  <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Numéro de table</label>
                   <PrettySelect
                     value={guestForm.tableNumber ?? ""}
                     onChange={(value) => setGuestForm((c) => ({ ...c, tableNumber: value ? Number(value) : null }))}
@@ -1365,16 +1450,16 @@ export default function Admin() {
 
 
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Note</label>
+                  <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Note</label>
                   <Textarea
                     value={guestForm.message || ""}
                     onChange={(e) => setGuestForm((c) => ({ ...c, message: e.target.value }))}
-                    className="min-h-[110px] rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                    className="min-h-[110px] rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.3em] text-foreground/60">Notes privées</label>
-                  <Textarea value={guestForm.notes || ""} onChange={(e) => setGuestForm((c) => ({ ...c, notes: e.target.value }))} className="min-h-[90px] rounded-none border-primary/15" placeholder="Visible uniquement dans l’administration" />
+                  <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Notes privées</label>
+                  <Textarea value={guestForm.notes || ""} onChange={(e) => setGuestForm((c) => ({ ...c, notes: e.target.value }))} className="min-h-[90px] rounded-xl border-primary/15" placeholder="Visible uniquement dans l’administration" />
                 </div>
               </div>
 
@@ -1382,7 +1467,7 @@ export default function Admin() {
                 <Button
                   type="submit"
                   disabled={saveGuestMutation.isPending}
-                  className="rounded-none bg-primary px-7 py-6 text-[10px] uppercase tracking-[0.35em] text-primary-foreground hover:bg-foreground"
+                  className="rounded-full bg-primary px-7 py-6 text-[13px] font-medium normal-case tracking-normal text-primary-foreground hover:bg-foreground"
                 >
                   {saveGuestMutation.isPending
                     ? "Enregistrement..."
@@ -1394,7 +1479,7 @@ export default function Admin() {
                   type="button"
                   variant="outline"
                   onClick={() => setIsFormOpen(false)}
-                  className="rounded-none border-primary/15 px-7 py-6 text-[10px] uppercase tracking-[0.35em] text-primary"
+                  className="rounded-full border-primary/15 px-7 py-6 text-[13px] font-medium normal-case tracking-normal text-primary"
                 >
                   Annuler
                 </Button>
@@ -1406,22 +1491,18 @@ export default function Admin() {
           {/* ══════ VUE D'ENSEMBLE ══════ */}
           {view === "overview" && (
             <>
-              <section className="wine-band relative overflow-hidden px-7 py-10 md:px-12">
-                <p className="text-[10px] uppercase tracking-[0.38em] text-white/60">Le plus beau reste à venir</p>
-                <h2 className="mt-4 font-serif text-3xl leading-tight md:text-5xl">
-                  {activeEvent.label}
-                  <br />
-                  <span className="signature text-5xl md:text-7xl">mille détails à aimer</span>
-                </h2>
-                <p className="mt-6 text-[11px] uppercase tracking-[0.3em] text-white/65">{activeEvent.date} · {activeEvent.time} · {activeEvent.theme}</p>
+              <section className="admin-hero relative overflow-hidden rounded-3xl px-7 py-8 md:px-10">
+                <p className="text-[12px] font-medium text-white/70">Le plus beau reste à venir</p>
+                <h2 className="mt-3 text-3xl md:text-4xl">{activeEvent.label}</h2>
+                <p className="mt-3 text-[13px] text-white/75">{activeEvent.date} · {activeEvent.time} · {activeEvent.theme}</p>
               </section>
 
-              <section aria-label="Statistiques" className="grid gap-px border border-[#6e1420]/10 bg-[#6e1420]/10 sm:grid-cols-2 lg:grid-cols-3">
-                {overviewStats.map((item) => (
-                  <article key={item.label} className="bg-white p-6">
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/45">{item.label}</p>
-                    <p className={`mt-3 font-serif text-4xl tabular-nums ${item.tone}`}>{item.value.toLocaleString("fr-FR")}</p>
-                    <p className="mt-1 text-xs text-foreground/45">{item.detail}</p>
+              <section aria-label="Statistiques" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {overviewStats.map((item, index) => (
+                  <article key={item.label} className={index === 0 ? "admin-hero rounded-3xl p-6" : `${panel} p-6`}>
+                    <p className={`text-[14px] font-medium ${index === 0 ? "text-white/90" : "text-foreground/70"}`}>{item.label}</p>
+                    <p className={`mt-3 text-4xl font-semibold tabular-nums ${index === 0 ? "text-white" : item.tone}`}>{item.value.toLocaleString("fr-FR")}</p>
+                    <p className={`mt-1 text-xs ${index === 0 ? "text-white/65" : "text-foreground/45"}`}>{item.detail}</p>
                   </article>
                 ))}
               </section>
@@ -1431,10 +1512,10 @@ export default function Admin() {
                 const count = stats.confirmedInvites;
                 const ratio = Math.min(1, count / event.capacity);
                 return (
-                  <section className="border p-6" style={{ background: event.background, borderColor: `${event.accent}40`, color: event.ink }}>
+                  <section className="rounded-3xl border p-6" style={{ background: event.background, borderColor: `${event.accent}40`, color: event.ink }}>
                     <div className="flex flex-wrap items-end justify-between gap-4">
                       <div>
-                        <p className="text-[10px] uppercase tracking-[0.3em]" style={{ color: event.accent }}>Capacité · {event.theme}</p>
+                        <p className="text-[11px] uppercase tracking-[0.06em]" style={{ color: event.accent }}>Capacité · {event.theme}</p>
                         <p className="mt-2 font-serif text-3xl tabular-nums">{count}<span className="text-base opacity-50"> / {event.capacity} personnes</span></p>
                       </div>
                       <p className="text-sm opacity-70">{count >= event.capacity ? "Complet" : `${event.capacity - count} places restantes`}</p>
@@ -1456,7 +1537,7 @@ export default function Admin() {
                       .sort((a, b) => String(b.respondedAt || b.createdAt || "").localeCompare(String(a.respondedAt || a.createdAt || "")))
                       .slice(0, 6)
                       .map((g) => (
-                        <button key={g.id} type="button" onClick={() => startEditingGuest(g)} className="flex w-full items-center gap-4 py-3 text-left hover:bg-[#f6f2ec]">
+                        <button key={g.id} type="button" onClick={() => startEditingGuest(g)} className="flex w-full items-center gap-4 py-3 text-left hover:bg-[#f5f5f6]">
                           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#6e1420]/8 text-[11px] text-[#6e1420]">{g.firstName[0]}{g.lastName[0]}</span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate font-serif text-lg">{g.firstName} {g.lastName}</span>
@@ -1484,7 +1565,7 @@ export default function Admin() {
                         { n: "03", title: "Imaginer les tablées", detail: `${confirmed.filter((g) => !g.tableNumber).length} groupe(s) confirmé(s) sans table`, go: () => navigate("tables") },
                         { n: "04", title: "Partager les détails", detail: "Lieux, programme, textes du site", go: () => navigate("settings") },
                       ].map((item) => (
-                        <button key={item.n} type="button" onClick={item.go} className="flex w-full items-center gap-4 py-3 text-left hover:bg-[#f6f2ec]">
+                        <button key={item.n} type="button" onClick={item.go} className="flex w-full items-center gap-4 py-3 text-left hover:bg-[#f5f5f6]">
                           <span className="font-serif text-xl text-[#6e1420]/50">{item.n}</span>
                           <span className="flex-1"><span className="block text-sm">{item.title}</span><span className="block text-xs text-foreground/50">{item.detail}</span></span>
                           <span className="text-[#6e1420]">↗</span>
@@ -1527,11 +1608,20 @@ export default function Admin() {
                 {guestLists.map((item) => {
                   const list = guests.filter((g) => g.party === item.id);
                   return (
-                    <button key={item.id} type="button" onClick={() => chooseList(item.id as Party)} className="group border border-[#6e1420]/15 bg-white p-6 text-left transition hover:-translate-y-0.5 hover:border-[#6e1420]/50">
-                      <span className="signature block text-5xl text-[#6e1420]">{item.mark}</span>
-                      <span className="mt-4 block font-serif text-xl">{item.title}</span>
-                      <span className="block text-xs text-foreground/50">{item.caption}</span>
-                      <span className="mt-4 block text-[10px] uppercase tracking-[0.25em] text-foreground/45">
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => chooseList(item.id as Party)}
+                      style={{ "--party-card-accent": item.accent, "--party-card-deep": item.deep, "--party-card-soft": item.soft, "--party-card-border": item.border } as CSSProperties}
+                      className="admin-list-choice group rounded-2xl border p-6 text-left transition hover:-translate-y-0.5"
+                    >
+                      <span className="flex items-center justify-between gap-3">
+                        <span className="admin-list-mark grid h-12 w-12 place-items-center rounded-full text-xl font-semibold text-white">{item.mark}</span>
+                        <span className="admin-list-label rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em]">Liste {item.title}</span>
+                      </span>
+                      <span className="mt-5 block font-serif text-2xl text-[var(--party-card-deep)]">Invités de {item.title}</span>
+                      <span className="mt-1 block text-xs text-[var(--party-card-deep)]/65">Ouvrir et gérer cette liste</span>
+                      <span className="mt-5 block border-t border-[var(--party-card-border)] pt-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--party-card-deep)]/70">
                         {list.length} invitation{list.length > 1 ? "s" : ""} · {list.filter((g) => g.status === "confirmed").length} présent(s)
                       </span>
                     </button>
@@ -1556,9 +1646,10 @@ export default function Admin() {
                       type="button"
                       disabled={!toAssign.length || assignPartyMutation.isPending}
                       onClick={() => assignPartyMutation.mutate({ ids: toAssign, party: l.id as Party })}
-                      className="rounded-none bg-[#6e1420] px-5 text-[10px] uppercase tracking-[0.3em] text-white hover:bg-[#4a0d15]"
+                      style={{ background: l.accent }}
+                      className="rounded-full px-5 text-[13px] font-medium normal-case tracking-normal text-white hover:brightness-90"
                     >
-                      {toAssign.length || ""} → {l.title}
+                      {l.mark} · {toAssign.length || ""} vers {l.title}
                     </Button>
                   ))}
                 </div>
@@ -1570,10 +1661,10 @@ export default function Admin() {
                   checked={toAssign.length === unassigned.length}
                   onChange={(e) => setToAssign(e.target.checked ? unassigned.map((g) => g.id) : [])}
                 />
-                Tout sélectionner
+                Tout sélectionner ({unassigned.length}, toutes pages)
               </label>
-              <div className="mt-3 max-h-[480px] divide-y divide-[#6e1420]/8 overflow-y-auto border-t border-[#6e1420]/10">
-                {unassigned.map((g) => (
+              <div className="mt-3 divide-y divide-black/[0.06] border-t border-black/[0.06]">
+                {unassigned.slice(assignPage * PAGE_SIZE, (assignPage + 1) * PAGE_SIZE).map((g) => (
                   <div key={g.id} className="flex items-center gap-3 py-2.5">
                     <input
                       type="checkbox"
@@ -1593,40 +1684,46 @@ export default function Admin() {
                         type="button"
                         disabled={assignPartyMutation.isPending}
                         onClick={() => assignPartyMutation.mutate({ ids: [g.id], party: l.id as Party })}
-                        className="border border-[#6e1420]/20 px-3 py-1.5 text-xs text-[#6e1420] hover:bg-[#f6f2ec]"
+                        style={{ borderColor: l.border, color: l.deep, background: l.soft }}
+                        className="rounded-full border px-3 py-1.5 text-xs font-semibold hover:brightness-95"
                       >
-                        {l.title}
+                        {l.mark} · {l.title}
                       </button>
                     ))}
                   </div>
                 ))}
               </div>
+              <Pager page={Math.min(assignPage, Math.max(0, Math.ceil(unassigned.length / PAGE_SIZE) - 1))} total={unassigned.length} onChange={setAssignPage} />
             </section>
           )}
 
           {view === "guests" && listChosen && (
             <>
-              <div className={`${panel} flex flex-wrap items-center justify-between gap-4 px-6 py-4`}>
-                <div>
-                  <p className={eyebrow}>Liste affichée</p>
-                  <p className="mt-1 font-serif text-xl">{guestLists.find((l) => l.id === partyFilter)?.caption}</p>
+              <div className={`${panel} admin-party-context flex flex-wrap items-center justify-between gap-4 px-6 py-5`}>
+                <div className="flex items-center gap-4">
+                  <span className="admin-party-context-mark grid h-12 w-12 shrink-0 place-items-center rounded-full text-lg font-semibold text-white">{activeList?.mark}</span>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--party-deep)]/65">Vous gérez actuellement</p>
+                    <p className="mt-1 font-serif text-xl text-[var(--party-deep)]">La liste de {activeList?.title}</p>
+                    <p className="mt-1 text-xs font-medium text-[var(--party-deep)]/65">{inList.length} invitation{inList.length === 1 ? "" : "s"} pour {activeEvent.shortLabel.toLowerCase()}</p>
+                  </div>
                 </div>
-                <Button type="button" variant="outline" onClick={() => { setListChosen(false); sessionStorage.removeItem(LIST_KEY); }} className={`${buttonBase} border-[#6e1420]/20 text-[#6e1420]`}>
-                  Changer de liste ⇄
+                <Button type="button" variant="outline" onClick={() => { setListChosen(false); sessionStorage.removeItem(LIST_KEY); }} className={`${buttonBase} border-[var(--party-border)] bg-white/70 text-[var(--party-deep)] hover:bg-white hover:text-[var(--party-deep)]`}>
+                  Changer de liste
                 </Button>
               </div>
 
               {ceremonyFilter && (
-                <nav aria-label="Étapes des invitations" className="grid grid-cols-2 gap-px border border-[#6e1420]/10 bg-[#6e1420]/10 sm:grid-cols-5">
+                <nav aria-label="Étapes des invitations" className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                   {stages.map((item) => {
                     const list = inListForEvent.filter((g) => stageMatches(item.id, g));
                     const active = stage === item.id;
                     return (
-                      <button key={item.id} type="button" aria-pressed={active} onClick={() => setStage(item.id)} className={`p-4 text-left transition ${active ? "bg-[#6e1420] text-white" : "bg-white hover:bg-[#f6f2ec]"}`}>
-                        <span className={`block text-[9px] uppercase tracking-[0.3em] ${active ? "text-white/60" : "text-foreground/40"}`}>{item.step}</span>
+                      <button key={item.id} type="button" aria-pressed={active} onClick={() => setStage(item.id)} className={`rounded-2xl p-4 text-left transition ${active ? "admin-hero" : "border border-black/[0.06] bg-white hover:bg-[#f5f5f6]"}`}>
+                        <span className={`block text-[11px] uppercase tracking-[0.06em] ${active ? "text-white/60" : "text-foreground/40"}`}>{item.step}</span>
                         <span className="mt-1 block font-serif text-3xl tabular-nums">{list.length}</span>
                         <span className="block text-xs">{item.label}</span>
-                        {item.id === "confirmed" && <span className={`block text-[10px] ${active ? "text-white/60" : "text-foreground/45"}`}>{sumPeople(list)} personne(s)</span>}
+                        {item.id === "confirmed" && <span className={`block text-[11px] ${active ? "text-white/60" : "text-foreground/45"}`}>{sumPeople(list)} personne(s)</span>}
                       </button>
                     );
                   })}
@@ -1639,7 +1736,7 @@ export default function Admin() {
                   <div className="flex flex-wrap gap-2">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e1420]/40" />
-                      <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Un nom, un e-mail, un téléphone…" aria-label="Rechercher un invité" className="h-11 w-full min-w-[240px] rounded-none border-[#6e1420]/15 pl-10" />
+                      <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Un nom, un e-mail, un téléphone…" aria-label="Rechercher un invité" className="h-11 w-full min-w-[240px] rounded-xl border-[#6e1420]/15 pl-10" />
                     </div>
                     <Button type="button" variant="outline" disabled={!ceremonyFilter} onClick={() => ceremonyFilter && window.open(`/api/admin/guests/export?event=${ceremonyFilter}&sort=name`, "_blank")} className={`${buttonBase} h-11 border-[#6e1420]/20 text-[#6e1420] disabled:opacity-40`}>
                       <Download className="mr-2 h-4 w-4" strokeWidth={1.6} /> Export CSV
@@ -1656,7 +1753,13 @@ export default function Admin() {
               {paginatedGuests.map((guest) => (
                 <article
                   key={guest.id}
-                  className="border border-primary/10 bg-[#FAFAF8] p-4 md:p-5"
+                  style={isParty(guest.party) ? {
+                    "--guest-party-accent": partyVisuals[guest.party].accent,
+                    "--guest-party-soft": partyVisuals[guest.party].soft,
+                    "--guest-party-deep": partyVisuals[guest.party].deep,
+                    "--guest-party-border": partyVisuals[guest.party].border,
+                  } as CSSProperties : undefined}
+                  className="admin-guest-card rounded-2xl border p-4 md:p-5"
                 >
                   {/* Nom + statut */}
                   <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -1667,7 +1770,7 @@ export default function Admin() {
                       <p className="text-sm text-foreground/55 truncate">
                         {guest.email || "—"} · {guest.phone || "—"}
                       </p>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/35">
+                      <p className="text-[11px] uppercase tracking-[0.06em] text-foreground/35">
                         {guest.guestCount || 1} présent(s) sur {guest.invitedCount || guest.guestCount || 1} place(s) · {partyLabel(guest.party)} ·{" "}
                         {guest.tableNumber ? `Table ${guest.tableNumber} · ` : ""}
                         {guest.createdAt
@@ -1676,9 +1779,14 @@ export default function Admin() {
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      {isParty(guest.party) && (
+                        <span className="admin-guest-party-badge rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.06em]">
+                          {guest.party === "jessica" ? "J · Jessica" : "G · Geldi"}
+                        </span>
+                      )}
                       <Badge
                         variant="outline"
-                        className={`rounded-none border-0 px-3 py-1 text-[10px] uppercase tracking-[0.25em] ${
+                        className={`rounded-full border-0 px-3 py-1 text-[11px] uppercase tracking-[0.06em] ${
                           guest.status === "confirmed"
                             ? "bg-emerald-50 text-emerald-700"
                             : guest.status === "declined"
@@ -1695,7 +1803,7 @@ export default function Admin() {
                       {guest.checkedInAt && (
                         <Badge
                           variant="outline"
-                          className="rounded-none border-0 px-3 py-0.5 text-[9px] uppercase tracking-[0.2em] bg-primary/5 text-primary"
+                          className="rounded-full border-0 px-3 py-0.5 text-[11px] uppercase tracking-[0.06em] bg-primary/5 text-primary"
                         >
                           Check-in ✓
                         </Badge>
@@ -1707,7 +1815,7 @@ export default function Admin() {
                   <div className="mt-3 pt-3 border-t border-primary/8 flex items-center gap-3 flex-wrap">
                     <Badge
                       variant="outline"
-                      className={`rounded-none border-0 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] ${
+                      className={`rounded-full border-0 px-2 py-0.5 text-[11px] uppercase tracking-[0.06em] ${
                         guest.invitationStatus === "sent"
                           ? "bg-stone-100 text-stone-700"
                           : "bg-[#ECEFF1] text-[#5F6870]"
@@ -1717,7 +1825,7 @@ export default function Admin() {
                     </Badge>
                     <Badge
                       variant="outline"
-                      className={`rounded-none border-0 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] ${
+                      className={`rounded-full border-0 px-2 py-0.5 text-[11px] uppercase tracking-[0.06em] ${
                         getEventKeys(guest.invitedCeremonyChoice || guest.ceremonyChoice).length > 1
                           ? "bg-purple-50 text-purple-700"
                           : "bg-yellow-50 text-yellow-700"
@@ -1730,19 +1838,19 @@ export default function Admin() {
                     {guest.beverageChoice && (
                       <Badge
                         variant="outline"
-                        className="rounded-none border-0 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] bg-sky-50 text-sky-700"
+                        className="rounded-full border-0 px-2 py-0.5 text-[11px] uppercase tracking-[0.06em] bg-sky-50 text-sky-700"
                       >
                         {guest.beverageChoice}
                       </Badge>
                     )}
 
-                    {(guest.city || guest.country) && <span className="text-[10px] text-foreground/45">{[guest.city, guest.country].filter(Boolean).join(", ")}</span>}
+                    {(guest.city || guest.country) && <span className="text-[11px] text-foreground/45">{[guest.city, guest.country].filter(Boolean).join(", ")}</span>}
                     {guest.invitationSentAt && (
-                      <span className="text-[10px] text-foreground/40">
+                      <span className="text-[11px] text-foreground/40">
                         {format(new Date(guest.invitationSentAt), "d MMM, HH:mm", { locale: fr })}
                       </span>
                     )}
-                    <span className="ml-auto text-[10px] text-foreground/30 truncate max-w-[200px] hidden md:block">
+                    <span className="ml-auto text-[11px] text-foreground/30 truncate max-w-[200px] hidden md:block">
                       {getTransitInvitationUrl(guest)}
                     </span>
                   </div>
@@ -1770,7 +1878,7 @@ export default function Admin() {
                       <Button
                         type="button" size="sm" variant="outline"
                         onClick={() => shareViaWhatsApp(guest)}
-                        className="rounded-none border-green-200 text-[10px] uppercase tracking-[0.25em] text-green-700 hover:bg-green-50"
+                        className="rounded-full border-primary/15 text-[13px] font-medium normal-case tracking-normal text-primary hover:bg-[#f5f5f6] hover:text-primary"
                       >
                         <MessageCircle className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
                         WhatsApp
@@ -1780,7 +1888,7 @@ export default function Admin() {
                       <Button
                         type="button" size="sm" variant="outline"
                         onClick={() => shareViaEmail(guest)}
-                        className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
+                        className="rounded-full border-primary/15 text-[13px] font-medium normal-case tracking-normal text-primary"
                       >
                         <Mail className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
                         E-mail
@@ -1790,7 +1898,7 @@ export default function Admin() {
                       <Button
                         type="button" size="sm" variant="outline"
                         onClick={() => copyInvitationLink(guest)}
-                        className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
+                        className="rounded-full border-primary/15 text-[13px] font-medium normal-case tracking-normal text-primary"
                       >
                         <Copy className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
                         Copier
@@ -1799,7 +1907,7 @@ export default function Admin() {
                     <Button
                       type="button" size="sm" variant="outline"
                       onClick={() => startEditingGuest(guest)}
-                      className="rounded-none border-primary/15 text-[10px] uppercase tracking-[0.25em] text-primary"
+                      className="rounded-full border-primary/15 text-[13px] font-medium normal-case tracking-normal text-primary"
                     >
                       <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
                       Modifier
@@ -1811,7 +1919,7 @@ export default function Admin() {
                           deleteGuestMutation.mutate(guest.id);
                         }
                       }}
-                      className="rounded-none border-rose-200 text-[10px] uppercase tracking-[0.25em] text-rose-700 hover:bg-rose-50"
+                      className="rounded-full border-rose-200 text-[13px] font-medium normal-case tracking-normal text-rose-700 hover:bg-rose-50"
                     >
                       <Trash2 className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
                       Supprimer
@@ -1841,7 +1949,7 @@ export default function Admin() {
           {(totalPages > 1 || filteredGuests.length > 10) && (
             <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-primary/8 pt-5">
               <div className="flex items-center gap-3">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-foreground/40">
+                <p className="text-[11px] uppercase tracking-[0.06em] text-foreground/40">
                   Page {currentPage + 1} / {totalPages} · {filteredGuests.length} invité{filteredGuests.length > 1 ? "s" : ""}
                 </p>
                 <PrettySelect
@@ -1861,7 +1969,7 @@ export default function Admin() {
                   size="sm"
                   onClick={() => setCurrentPage((p) => p - 1)}
                   disabled={currentPage === 0}
-                  className="rounded-none border-primary/15 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
+                  className="rounded-full border-primary/15 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
                 >
                   <ChevronLeft className="h-4 w-4" strokeWidth={1.6} />
                 </Button>
@@ -1872,7 +1980,7 @@ export default function Admin() {
                     variant={i === currentPage ? "default" : "outline"}
                     size="sm"
                     onClick={() => setCurrentPage(i)}
-                    className={`rounded-none px-4 py-5 text-[10px] uppercase tracking-[0.25em] ${
+                    className={`rounded-full px-4 py-5 text-[13px] font-medium normal-case tracking-normal ${
                       i === currentPage
                         ? "bg-primary text-primary-foreground hover:bg-foreground"
                         : "border-primary/15 text-primary hover:bg-primary/5"
@@ -1887,7 +1995,7 @@ export default function Admin() {
                   size="sm"
                   onClick={() => setCurrentPage((p) => p + 1)}
                   disabled={currentPage >= totalPages - 1}
-                  className="rounded-none border-primary/15 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
+                  className="rounded-full border-primary/15 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
                 >
                   <ChevronRight className="h-4 w-4" strokeWidth={1.6} />
                 </Button>
@@ -1902,11 +2010,27 @@ export default function Admin() {
           {view === "tables" && (
             <>
               <div className="flex flex-wrap gap-2">
-                {[{ id: "all", title: "Tous" }, ...guestLists.filter((l) => l.id !== "all")].map((l) => (
-                  <Button key={l.id} type="button" variant="outline" aria-pressed={partyFilter === l.id} onClick={() => setPartyFilter(l.id)} className={`${buttonBase} ${partyFilter === l.id ? "border-[#6e1420] bg-[#6e1420] text-white hover:bg-[#4a0d15] hover:text-white" : "border-[#6e1420]/20 text-[#6e1420]"}`}>
-                    {l.title} · {guests.filter((g) => l.id === "all" || g.party === l.id).length}
-                  </Button>
-                ))}
+                {[{ id: "all", title: "Tous", mark: "" }, ...guestLists].map((l) => {
+                  const listTheme = isParty(l.id) ? partyVisuals[l.id] : null;
+                  const isActive = partyFilter === l.id;
+                  return (
+                    <Button
+                      key={l.id}
+                      type="button"
+                      variant="outline"
+                      aria-pressed={isActive}
+                      onClick={() => setPartyFilter(l.id)}
+                      style={listTheme ? {
+                        borderColor: listTheme.border,
+                        background: isActive ? listTheme.accent : listTheme.soft,
+                        color: isActive ? "#ffffff" : listTheme.deep,
+                      } : undefined}
+                      className={`${buttonBase} ${listTheme ? "hover:brightness-95" : isActive ? "border-[var(--admin-event-accent)] bg-[var(--admin-event-accent)] text-white hover:text-white" : "border-[var(--admin-event-accent)]/30 text-[var(--admin-event-deep)]"}`}
+                    >
+                      {l.mark && `${l.mark} · `}{l.title} · {guests.filter((g) => l.id === "all" || g.party === l.id).length}
+                    </Button>
+                  );
+                })}
                 <Button type="button" variant="outline" onClick={addTable} className={`${buttonBase} ml-auto border-[#6e1420]/20 text-[#6e1420]`}>
                   <Plus className="mr-2 h-4 w-4" strokeWidth={1.6} /> Ajouter une table ({tableCount})
                 </Button>
@@ -1921,7 +2045,7 @@ export default function Admin() {
               </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e1420]/40" />
-                <Input value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} placeholder="Rechercher un invité à placer…" aria-label="Rechercher un invité à placer" className="h-11 rounded-none border-[#6e1420]/15 bg-white pl-10" />
+                <Input value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} placeholder="Rechercher un invité à placer…" aria-label="Rechercher un invité à placer" className="h-11 rounded-xl border-[#6e1420]/15 bg-white pl-10" />
               </div>
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {[null, ...tableNumbers].map((number) => {
@@ -1934,14 +2058,14 @@ export default function Admin() {
                           <p className={eyebrow}>{number ? "Une belle tablée" : "À organiser"}</p>
                           <h2 className="mt-1 font-serif text-2xl">{number ? `Table ${number}` : "Sans table"}</h2>
                         </div>
-                        <p className="text-right font-serif text-2xl tabular-nums">{sumPeople(list.filter((g) => g.status === "confirmed"))}<span className="block text-[9px] uppercase tracking-[0.25em] text-foreground/45">confirmés</span></p>
+                        <p className="text-right font-serif text-2xl tabular-nums">{sumPeople(list.filter((g) => g.status === "confirmed"))}<span className="block text-[11px] uppercase tracking-[0.06em] text-foreground/45">confirmés</span></p>
                       </div>
                       <div className={`mt-2 ${number === null ? "grid gap-x-6 md:grid-cols-2 xl:grid-cols-3" : ""}`}>
                         {list.map((g) => (
                           <div key={g.id} className="flex items-center justify-between gap-3 border-b border-[#6e1420]/5 py-2 text-sm">
                             <span className="min-w-0">
                               <span className="block truncate">{g.firstName} {g.lastName}</span>
-                              <span className="block text-[10px] text-foreground/45">{g.guestCount} pers. · {g.status === "confirmed" ? "Confirmé" : "En attente"}</span>
+                              <span className="block text-[11px] text-foreground/45">{g.guestCount} pers. · {g.status === "confirmed" ? "Confirmé" : "En attente"}</span>
                             </span>
                             <select
                               aria-label={`Table de ${g.firstName} ${g.lastName}`}
@@ -1967,7 +2091,7 @@ export default function Admin() {
           {/* ══════ ACCUEIL ══════ */}
           {view === "checkin" && (
             <>
-              <section className="wine-band flex flex-wrap items-center gap-6 px-7 py-8">
+              <section className="admin-hero flex flex-wrap items-center gap-6 rounded-3xl px-7 py-8">
                 <p className="font-serif text-6xl tabular-nums">{sumPeople(arrived)}<span className="text-2xl text-white/50"> / {stats.confirmedInvites}</span></p>
                 <div>
                   <h2 className="font-serif text-2xl">Ils nous ont rejoints.</h2>
@@ -1985,7 +2109,7 @@ export default function Admin() {
               </section>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e1420]/40" />
-                <Input value={checkinSearch} onChange={(e) => setCheckinSearch(e.target.value)} placeholder="Rechercher le nom d'un invité…" aria-label="Rechercher à l'accueil" className="h-12 rounded-none border-[#6e1420]/15 bg-white pl-10" />
+                <Input value={checkinSearch} onChange={(e) => setCheckinSearch(e.target.value)} placeholder="Rechercher le nom d'un invité…" aria-label="Rechercher à l'accueil" className="h-12 rounded-xl border-[#6e1420]/15 bg-white pl-10" />
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {checkinList.map((g) => (
@@ -2020,10 +2144,10 @@ export default function Admin() {
                 <div className="flex items-end justify-between"><h2 className="font-serif text-2xl">Les mots pour vous</h2><span className="text-sm text-foreground/45">{guests.filter((g) => g.message).length}</span></div>
                 <div className="mt-4 space-y-4">
                   {guests.filter((g) => g.message).map((g) => (
-                    <blockquote key={g.id} className="border-l-2 border-[#6e1420]/30 bg-[#f6f2ec] px-5 py-4">
+                    <blockquote key={g.id} className="rounded-2xl bg-[#f5f5f6] px-5 py-4">
                       <p className="font-serif text-lg italic leading-7">« {g.message} »</p>
                       <footer className="mt-3 flex items-center justify-between gap-3">
-                        <button type="button" onClick={() => startEditingGuest(g)} className="text-[10px] uppercase tracking-[0.25em] text-[#6e1420] hover:underline">{g.firstName} {g.lastName} ↗</button>
+                        <button type="button" onClick={() => startEditingGuest(g)} className="text-[11px] uppercase tracking-[0.06em] text-[#6e1420] hover:underline">{g.firstName} {g.lastName} ↗</button>
                         <StatusBadge status={g.status} />
                       </footer>
                     </blockquote>

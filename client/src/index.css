@@ -216,3 +216,184 @@
   letter-spacing: 0.04em;
   line-height: 0.9;
 }
+
+/* ─── Admin : le blanc domine, le rouge en accent (police Montserrat, boutons pilules) ─── */
+body.admin-ui {
+  /* Jetons neutres (blanc / gris) + rouge comme couleur principale, aussi dans les fenêtres modales */
+  --admin-event-accent: #6e1420;
+  --admin-event-deep: #6e1420;
+  --background: 0 0% 100%;
+  --foreground: 240 10% 10%;
+  --primary: 352 69% 25%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 5% 96%;
+  --secondary-foreground: 240 10% 10%;
+  --muted: 240 5% 96%;
+  --muted-foreground: 240 4% 46%;
+  --border: 240 6% 90%;
+  --input: 240 6% 90%;
+  --ring: 352 69% 25%;
+  --accent: 240 5% 96%;
+  --accent-foreground: 352 69% 25%;
+  background: #f5f5f6;
+  font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+body.admin-ui .font-serif,
+body.admin-ui .font-body,
+body.admin-ui .font-sans,
+body.admin-ui h1,
+body.admin-ui h2,
+body.admin-ui h3,
+body.admin-ui h4,
+body.admin-ui input,
+body.admin-ui textarea,
+body.admin-ui select,
+body.admin-ui button {
+  font-family: 'Montserrat', system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+body.admin-ui h1,
+body.admin-ui h2,
+body.admin-ui h3,
+body.admin-ui .font-serif {
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+body.admin-ui .italic {
+  font-style: normal;
+}
+
+/* Repères persistants : la célébration colore le cadre, la liste colore les invités. */
+.admin-shell {
+  border-top: 6px solid var(--admin-event-accent, #6e1420);
+  background:
+    linear-gradient(var(--admin-event-wash, rgb(110 20 32 / 0.06)), var(--admin-event-wash, rgb(110 20 32 / 0.06))),
+    #f5f5f6;
+}
+
+.admin-sidebar {
+  border-color: color-mix(in srgb, var(--admin-event-accent, #6e1420) 18%, transparent);
+  background: color-mix(in srgb, var(--admin-event-paper, #fff) 46%, #f4f4f5);
+}
+
+.admin-brand-mark {
+  background: var(--admin-event-deep, #6e1420);
+}
+
+.admin-event-context {
+  border-color: color-mix(in srgb, var(--admin-event-accent, #6e1420) 34%, transparent);
+  background: var(--admin-event-paper, #fff);
+  box-shadow:
+    inset 4px 0 0 var(--admin-event-accent, #6e1420),
+    0 8px 24px -20px var(--admin-event-deep, #6e1420);
+}
+
+.admin-event-dot,
+.admin-nav-count {
+  background: var(--admin-event-accent, #6e1420);
+}
+
+.admin-nav-count {
+  color: #fff;
+}
+
+.admin-event-switch {
+  border-color: color-mix(in srgb, var(--admin-event-accent, #6e1420) 42%, transparent);
+  color: var(--admin-event-deep, #6e1420);
+  background: rgb(255 255 255 / 0.68);
+}
+
+.admin-event-switch:hover {
+  background: #fff;
+}
+
+.admin-nav-active {
+  color: var(--admin-event-deep, #6e1420);
+  background: var(--admin-event-paper, #fff);
+  box-shadow:
+    inset 3px 0 0 var(--admin-event-accent, #6e1420),
+    0 1px 2px rgb(0 0 0 / 0.05);
+}
+
+.admin-topbar,
+.admin-workspace {
+  border-color: color-mix(in srgb, var(--admin-event-accent, #6e1420) 20%, transparent);
+}
+
+.admin-topbar {
+  box-shadow: inset 0 3px 0 var(--admin-event-accent, #6e1420);
+}
+
+.admin-workspace {
+  box-shadow: 0 18px 50px -40px var(--admin-event-deep, #6e1420);
+}
+
+.admin-user-mark {
+  color: var(--admin-event-deep, #6e1420);
+  background: var(--admin-event-wash, rgb(110 20 32 / 0.08));
+}
+
+.admin-party-chip,
+.admin-party-context {
+  border-color: var(--party-border, #ddd);
+  color: var(--party-deep, #333);
+  background: var(--party-soft, #fff);
+}
+
+.admin-party-context {
+  box-shadow:
+    inset 5px 0 0 var(--party-accent, #6e1420),
+    0 16px 38px -30px var(--party-deep, #333);
+}
+
+.admin-party-context-mark,
+.admin-party-chip-mark {
+  background: var(--party-accent, var(--admin-event-accent, #6e1420));
+}
+
+.admin-list-choice {
+  border-color: var(--party-card-border);
+  color: var(--party-card-deep);
+  background: var(--party-card-soft);
+  box-shadow: inset 0 4px 0 var(--party-card-accent);
+}
+
+.admin-list-choice:hover,
+.admin-list-choice:focus-visible {
+  border-color: var(--party-card-accent);
+  box-shadow:
+    inset 0 4px 0 var(--party-card-accent),
+    0 18px 34px -24px var(--party-card-deep);
+}
+
+.admin-list-mark {
+  background: var(--party-card-accent);
+}
+
+.admin-list-label {
+  color: var(--party-card-deep);
+  background: color-mix(in srgb, var(--party-card-accent) 12%, white);
+}
+
+.admin-guest-card {
+  border-color: var(--guest-party-border, rgb(0 0 0 / 0.06));
+  border-left: 5px solid var(--guest-party-accent, var(--admin-event-accent, #6e1420));
+  background: linear-gradient(90deg, var(--guest-party-soft, #f8f8f9), #f8f8f9 45%);
+}
+
+.admin-guest-party-badge {
+  border-color: var(--guest-party-border, #ddd);
+  color: var(--guest-party-deep, #333);
+  background: var(--guest-party-soft, #fff);
+}
+
+/* Carte mise en avant aux couleurs de la célébration active. */
+.admin-hero {
+  color: #fff;
+  background:
+    radial-gradient(120% 120% at 100% 0%, color-mix(in srgb, var(--admin-event-lace, #e7a9bb) 72%, transparent), transparent 55%),
+    linear-gradient(145deg, var(--admin-event-band, #8a1a2a), var(--admin-event-deep, #4a0d15));
+}

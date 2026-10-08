@@ -12,9 +12,9 @@ import PrettySelect from "@/components/PrettySelect";
 
 type StoredSettings = { settings: SiteSettings; revision: number };
 
-const fieldClass = "h-12 rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20";
-const textareaClass = "min-h-[110px] rounded-none border-primary/15 bg-transparent focus-visible:ring-primary/20";
-const labelClass = "text-[10px] uppercase tracking-[0.3em] text-foreground/60";
+const fieldClass = "h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20";
+const textareaClass = "min-h-[110px] rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20";
+const labelClass = "text-[11px] uppercase tracking-[0.06em] text-foreground/60";
 const eventKeys = Object.keys(weddingEvents) as WeddingEventKey[];
 
 export default function AdminSettingsPanel() {
@@ -67,18 +67,18 @@ export default function AdminSettingsPanel() {
   if (isLoading) return <section id="site-settings" className="border border-primary/10 bg-white p-8">Chargement des réglages…</section>;
 
   return (
-    <section id="site-settings" className="border border-primary/10 bg-white p-6 editorial-shadow md:p-8">
+    <section id="site-settings" className="border border-primary/10 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-18px_rgba(0,0,0,0.14)] md:p-8">
       <div className="flex flex-col gap-4 border-b border-primary/10 pb-6 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.45em] text-primary/60">Publication</p>
+          <p className="text-[11px] uppercase tracking-[0.06em] text-primary/60">Publication</p>
           <h2 className="mt-3 font-serif text-3xl md:text-4xl">Informations du mariage</h2>
           <p className="mt-2 max-w-2xl text-sm leading-7 text-foreground/60">Les textes, lieux et rubriques enregistrés ici sont immédiatement utilisés sur le site public.</p>
         </div>
         <div className="flex gap-2">
-          <Button type="button" variant="outline" disabled={!dirty || saveMutation.isPending} onClick={() => data && setSettings(data.settings)} className="rounded-none border-primary/15">
+          <Button type="button" variant="outline" disabled={!dirty || saveMutation.isPending} onClick={() => data && setSettings(data.settings)} className="rounded-full border-primary/15">
             <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" /> Annuler
           </Button>
-          <Button type="button" disabled={!dirty || saveMutation.isPending} onClick={() => saveMutation.mutate()} className="rounded-none bg-primary text-primary-foreground">
+          <Button type="button" disabled={!dirty || saveMutation.isPending} onClick={() => saveMutation.mutate()} className="rounded-full bg-primary text-primary-foreground">
             <Save className="mr-2 h-4 w-4" aria-hidden="true" /> {saveMutation.isPending ? "Publication…" : "Publier"}
           </Button>
         </div>
@@ -109,7 +109,7 @@ export default function AdminSettingsPanel() {
       </div>
 
       <div className="mt-10 border-t border-primary/10 pt-8">
-        <div className="flex items-center justify-between gap-4"><h3 className="font-serif text-2xl">Programme</h3><Button type="button" variant="outline" disabled={settings.program.length >= 12} onClick={() => setSettings({ ...settings, program: [...settings.program, { event: "civil", time: "À venir", title: "Nouvelle étape", text: "" }] })} className="rounded-none border-primary/15"><Plus className="mr-2 h-4 w-4" aria-hidden="true" /> Ajouter</Button></div>
+        <div className="flex items-center justify-between gap-4"><h3 className="font-serif text-2xl">Programme</h3><Button type="button" variant="outline" disabled={settings.program.length >= 12} onClick={() => setSettings({ ...settings, program: [...settings.program, { event: "civil", time: "À venir", title: "Nouvelle étape", text: "" }] })} className="rounded-full border-primary/15"><Plus className="mr-2 h-4 w-4" aria-hidden="true" /> Ajouter</Button></div>
         <div className="mt-5 space-y-4">
           {settings.program.map((item, index) => (
             <div key={`${item.event}-${index}`} className="grid gap-3 border border-primary/10 p-4 lg:grid-cols-[170px_1fr_1fr_auto]">
@@ -133,7 +133,7 @@ export default function AdminSettingsPanel() {
           <label className="mt-4 block space-y-2"><span className={labelClass}>Message</span><Textarea className={textareaClass} value={settings.contribution.message} onChange={(e) => setSettings({ ...settings, contribution: { ...settings.contribution, message: e.target.value } })} /></label>
         </div>
         <div>
-          <div className="flex items-center justify-between"><h3 className="font-serif text-2xl">Informations pratiques</h3><Button type="button" variant="outline" disabled={settings.practical.length >= 12} onClick={() => setSettings({ ...settings, practical: [...settings.practical, { title: "Nouvelle rubrique", text: "Informations à venir." }] })} className="rounded-none border-primary/15"><Plus className="mr-2 h-4 w-4" /> Ajouter</Button></div>
+          <div className="flex items-center justify-between"><h3 className="font-serif text-2xl">Informations pratiques</h3><Button type="button" variant="outline" disabled={settings.practical.length >= 12} onClick={() => setSettings({ ...settings, practical: [...settings.practical, { title: "Nouvelle rubrique", text: "Informations à venir." }] })} className="rounded-full border-primary/15"><Plus className="mr-2 h-4 w-4" /> Ajouter</Button></div>
           <div className="mt-4 space-y-4">{settings.practical.map((item, index) => <div key={index} className="border border-primary/10 p-4"><Input aria-label={`Titre de la rubrique ${index + 1}`} className={fieldClass} value={item.title} onChange={(e) => setSettings({ ...settings, practical: settings.practical.map((row, i) => i === index ? { ...row, title: e.target.value } : row) })} /><Textarea aria-label={`Texte de la rubrique ${index + 1}`} className={`${textareaClass} mt-3`} value={item.text} onChange={(e) => setSettings({ ...settings, practical: settings.practical.map((row, i) => i === index ? { ...row, text: e.target.value } : row) })} /><div className="mt-2 flex justify-end gap-1"><Button type="button" variant="ghost" size="sm" aria-label={`Monter la rubrique ${index + 1}`} disabled={index === 0} onClick={() => move("practical", index, -1)}><ArrowUp className="h-4 w-4" /></Button><Button type="button" variant="ghost" size="sm" aria-label={`Descendre la rubrique ${index + 1}`} disabled={index === settings.practical.length - 1} onClick={() => move("practical", index, 1)}><ArrowDown className="h-4 w-4" /></Button><Button type="button" variant="ghost" size="sm" aria-label={`Supprimer la rubrique ${index + 1}`} onClick={() => setSettings({ ...settings, practical: settings.practical.filter((_, i) => i !== index) })}><Trash2 className="h-4 w-4" /></Button></div></div>)}</div>
         </div>
       </div>

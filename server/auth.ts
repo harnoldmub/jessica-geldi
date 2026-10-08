@@ -112,24 +112,29 @@ function toSafeUser(user: SelectUser): SafeUser {
   return safeUser;
 }
 
+const LEGACY_ADMIN_USERNAME = "admin";
+
+/*
+ * Compte admin : admin-jg / LoveJG2026 par défaut (surchargeables par ADMIN_USERNAME / ADMIN_PASSWORD).
+ * L'ancien compte « admin » est renommé plutôt que dupliqué, pour que l'ancien identifiant ne fonctionne plus.
+ * Une fois le compte en place, le mot de passe n'est plus réécrit au démarrage : un changement fait depuis
+ * l'admin (Compte & sauvegarde) est conservé.
+ */
 export async function ensureAdminUser() {
-  const username = process.env.ADMIN_USERNAME || "admin";
-  const password = process.env.ADMIN_PASSWORD || "Love2026";
+  const username = process.env.ADMIN_USERNAME || "admin-jg";
+  const password = process.env.ADMIN_PASSWORD || "LoveJG2026";
 
   const existingUser = await storage.getUserByUsername(username);
   if (existingUser) {
-    if (!process.env.ADMIN_PASSWORD && !(await bcrypt.compare(password, existingUser.password))) {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      await storage.updateUserPassword(existingUser.id, hashedPassword);
-      return {
-        ...existingUser,
-        password: hashedPassword,
-      };
-    }
     return existingUser;
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
+
+  const legacyUser = username !== LEGACY_ADMIN_USERNAME ? await storage.getUserByUsername(LEGACY_ADMIN_USERNAME) : undefined;
+  if (legacyUser) {
+    return storage.updateUserAccount(legacyUser.id, username, hashedPassword);
+  }
 
   return storage.createUser({
     username,
