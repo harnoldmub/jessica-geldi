@@ -1450,11 +1450,6 @@ export default function Admin() {
                   </div>
                 </div>
 
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <label className="space-y-2"><span className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Pays</span><Input value={guestForm.country || ""} maxLength={2} onChange={(e) => setGuestForm((c) => ({ ...c, country: e.target.value.toUpperCase() }))} className="h-12 rounded-xl border-black/10" placeholder="CD" /></label>
-                  <label className="space-y-2"><span className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Ville</span><Input value={guestForm.city || ""} onChange={(e) => setGuestForm((c) => ({ ...c, city: e.target.value }))} className="h-12 rounded-xl border-black/10" placeholder="Kinshasa" /></label>
-                </div>
-
                 <div className="space-y-2">
                   <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Événement</label>
                   <PrettySelect
