@@ -54,6 +54,9 @@ export default {
         tpaper: "rgb(var(--paper) / <alpha-value>)",
         tink: "rgb(var(--ink) / <alpha-value>)",
         taccent: "rgb(var(--accent) / <alpha-value>)",
+        // Admin : couleur de l'événement géré et couleur de la liste (Jessica / Geldy)
+        admin: "rgb(var(--admin-accent) / <alpha-value>)",
+        adminlist: "rgb(var(--list-accent) / <alpha-value>)",
         lace: "#d9a3a6",
       },
       fontFamily: {

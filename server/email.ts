@@ -61,9 +61,9 @@ export async function sendRsvpConfirmationEmail(rsvp: RsvpResponse) {
   `;
 
   await resend.emails.send({
-    from: process.env.EMAIL_FROM || "Jessica & Geldi <onboarding@resend.dev>",
+    from: process.env.EMAIL_FROM || "Jessica & Geldy <onboarding@resend.dev>",
     to: [rsvp.email],
-    subject: "Confirmation de votre RSVP - Jessica & Geldi",
+    subject: "Confirmation de votre RSVP - Jessica & Geldy",
     html,
   });
 }

@@ -402,7 +402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .status(200)
       .set({
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="jessica-geldi-${event}${sort ? `-${sort}` : ""}.csv"`,
+        "Content-Disposition": `attachment; filename="jessica-geldy-${event}${sort ? `-${sort}` : ""}.csv"`,
       })
       .send([header.join(","), ...rows].join("\n"));
   }));
@@ -428,7 +428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const event = Array.isArray(payload) ? undefined : payload.ceremonyChoice;
       const party = Array.isArray(payload) ? undefined : payload.party;
       if (party !== "jessica" && party !== "geldi") {
-        return res.status(400).json({ message: "Choisissez la liste (Jessica ou Geldi) de ces invités." });
+        return res.status(400).json({ message: "Choisissez la liste (Jessica ou Geldy) de ces invités." });
       }
       if (!isWeddingEventKey(event)) {
         return res.status(400).json({ message: "Choisissez l'événement auquel rattacher ces invités." });
@@ -476,7 +476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const data = adminGuestSchema.parse(req.body);
       if (data.party !== "jessica" && data.party !== "geldi") {
-        return res.status(400).json({ message: "Choisissez la liste de l'invité : Jessica ou Geldi." });
+        return res.status(400).json({ message: "Choisissez la liste de l'invité : Jessica ou Geldy." });
       }
       const event = getGuestEvent({ invitedCeremonyChoice: data.invitedCeremonyChoice });
       if (!event) {
@@ -505,7 +505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = updateGuestSchema.parse(req.body);
       const { revision, ...changes } = data;
       if (changes.party !== undefined && changes.party !== "jessica" && changes.party !== "geldi") {
-        return res.status(400).json({ message: "Choisissez la liste de l'invité : Jessica ou Geldi." });
+        return res.status(400).json({ message: "Choisissez la liste de l'invité : Jessica ou Geldy." });
       }
       if (changes.invitedCeremonyChoice !== undefined) {
         const event = getGuestEvent({ invitedCeremonyChoice: changes.invitedCeremonyChoice });
@@ -612,7 +612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .status(200)
       .set({
         "Content-Type": "application/json; charset=utf-8",
-        "Content-Disposition": `attachment; filename="jessica-geldi-sauvegarde-${new Date().toISOString().slice(0, 10)}.json"`,
+        "Content-Disposition": `attachment; filename="jessica-geldy-sauvegarde-${new Date().toISOString().slice(0, 10)}.json"`,
       })
       .send(JSON.stringify({ exportedAt: new Date().toISOString(), guests, site: settings }, null, 2));
   }));

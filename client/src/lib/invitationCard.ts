@@ -150,7 +150,7 @@ function drawEventCard(ctx: CanvasRenderingContext2D, kind: WeddingEventKey, opt
 
   ctx.fillStyle = event.ink;
   ctx.font = '78px "Great Vibes", cursive';
-  ctx.fillText("Jessica & Geldi", CARD_WIDTH / 2, 1470);
+  ctx.fillText("Jessica & Geldy", CARD_WIDTH / 2, 1470);
 }
 
 function drawAllCard(ctx: CanvasRenderingContext2D, options: CardOptions) {
@@ -165,7 +165,7 @@ function drawAllCard(ctx: CanvasRenderingContext2D, options: CardOptions) {
   ctx.font = '24px "Lato", sans-serif';
   ctx.fillText("LE MARIAGE DE", CARD_WIDTH / 2, 410);
   ctx.font = '92px "Great Vibes", cursive';
-  ctx.fillText("Jessica & Geldi", CARD_WIDTH / 2, 530);
+  ctx.fillText("Jessica & Geldy", CARD_WIDTH / 2, 530);
   ctx.font = '46px "Bodoni Moda", Didot, serif';
   ctx.fillText("Trois rendez-vous", CARD_WIDTH / 2, 612);
   drawGuestName(ctx, options, 760, "#3B261F");

@@ -12,7 +12,7 @@ export function MonogramLogo({ className = "" }: { className?: string }) {
   return (
     <div className={`flex flex-col items-center ${className}`}>
       <MonogramMark className="h-28 w-auto" />
-      <p className="mt-3 font-script text-4xl leading-none">Jessica &amp; Geldi</p>
+      <p className="mt-3 font-script text-4xl leading-none">Jessica &amp; Geldy</p>
     </div>
   );
 }

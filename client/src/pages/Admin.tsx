@@ -44,6 +44,7 @@ import { Textarea } from "@/components/ui/textarea";
 import PrettySelect from "@/components/PrettySelect";
 import AdminSettingsPanel from "@/components/AdminSettingsPanel";
 import AdminAccountPanel from "@/components/AdminAccountPanel";
+import ConfirmModal, { type ConfirmRequest } from "@/components/ConfirmModal";
 import {
   Dialog,
   DialogContent,
@@ -96,18 +97,19 @@ const guestCountOptions = Array.from({ length: 10 }, (_, index) => ({
   value: String(index + 1),
   label: `${index + 1} personne${index ? "s" : ""}`,
 }));
-// Deux listes séparées : chaque invité est invité par Jessica ou par Geldi.
+// Deux listes séparées : chaque invité est invité par Jessica ou par Geldy.
 const partyOptions = [
   { value: "jessica", label: "Liste Jessica" },
-  { value: "geldi", label: "Liste Geldi" },
+  { value: "geldi", label: "Liste Geldy" },
 ];
 type Party = "jessica" | "geldi";
 const isParty = (value: unknown): value is Party => value === "jessica" || value === "geldi";
 const partyLabel = (value?: string | null) => partyOptions.find((o) => o.value === value)?.label || "Sans liste";
 
 const partyVisuals: Record<Party, { accent: string; deep: string; soft: string; border: string }> = {
-  jessica: { accent: "#9c4668", deep: "#672a42", soft: "#fff4f8", border: "#e7b8c9" },
-  geldi: { accent: "#2f6a64", deep: "#1e4b47", soft: "#f0f8f6", border: "#b9dad4" },
+  // Les deux listes partagent le même habillage neutre ; seul l'état actif passe en rouge.
+  jessica: { accent: "#6e1420", deep: "#1f1f22", soft: "#f3f3f4", border: "transparent" },
+  geldi: { accent: "#6e1420", deep: "#1f1f22", soft: "#f3f3f4", border: "transparent" },
 };
 
 function parseImportRows(text: string, defaults: { guestCount: number; ceremonyChoice: string; party: string }) {
@@ -169,6 +171,43 @@ function getOtherBeverageValue(value?: string | null) {
   return value.startsWith("Autre: ") ? value.slice(7) : value;
 }
 
+// Lien direct vers le faire-part de l'événement de l'invité (utilisé pour le PDF).
+function getEventInvitationUrl(guest: GuestRecord) {
+  const base = getTransitInvitationUrl(guest).replace(/\/$/, "");
+  const event = getGuestEvent(guest);
+  return event ? `${base}/${event}` : base;
+}
+
+// Couleur d'accent de l'admin selon l'événement géré, et couleur de chaque liste.
+const EVENT_ACCENTS: Record<WeddingEventKey, string> = {
+  customary: "#a0532f", // terracotta
+  civil: "#9a4f68", // rose poudré soutenu
+  evening: "#1f1d1b", // noir de la soirée
+};
+const DEFAULT_ACCENT = "#6e1420";
+const LIST_ACCENTS: Record<"jessica" | "geldi", string> = {
+  jessica: "#7d2e6b", // prune
+  geldi: "#2d4a72", // bleu nuit
+};
+
+function rgbTriplet(hex: string) {
+  const n = Number.parseInt(hex.slice(1), 16);
+  return `${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255}`;
+}
+
+function hslTriplet(hex: string) {
+  const n = Number.parseInt(hex.slice(1), 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => v / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  const sat = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  let h = 0;
+  if (d) h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return `${Math.round(((h * 60) + 360) % 360)} ${Math.round(sat * 100)}% ${Math.round(l * 100)}%`;
+}
+
 function getTransitInvitationUrl(guest: GuestRecord) {
   const url = guest.invitationUrl || `${window.location.origin}/invitation/${guest.token}`;
   return url.replace(/\/(samedi|dimanche)\/?$/, "");
@@ -193,15 +232,15 @@ const navigation: { id: AdminView; label: string; caption: string }[] = [
 
 const guestLists = [
   { id: "jessica", title: "Jessica", caption: "Les invités de Jessica", mark: "J", ...partyVisuals.jessica },
-  { id: "geldi", title: "Geldi", caption: "Les invités de Geldi", mark: "G", ...partyVisuals.geldi },
+  { id: "geldi", title: "Geldy", caption: "Les invités de Geldy", mark: "G", ...partyVisuals.geldi },
 ];
 
-const stages: { id: Stage; step: string; label: string; hint: string }[] = [
-  { id: "all", step: "Tout", label: "Toutes les invitations", hint: "L'ensemble des invités de cette célébration." },
-  { id: "todo", step: "01", label: "À envoyer", hint: "Invitations prêtes, pas encore partagées : envoyez-les par WhatsApp, e-mail ou lien." },
-  { id: "waiting", step: "02", label: "En attente", hint: "Invitations envoyées, sans réponse pour l'instant. Une relance peut aider." },
-  { id: "confirmed", step: "03", label: "Confirmés", hint: "Ils seront là. Pensez à leur attribuer une table." },
-  { id: "declined", step: "04", label: "Absents", hint: "Ils ne pourront pas venir." },
+const stages: { id: Stage; label: string; hint: string }[] = [
+  { id: "all", label: "Toutes", hint: "L'ensemble des invités de cette célébration." },
+  { id: "todo", label: "À envoyer", hint: "Invitations prêtes, pas encore partagées : envoyez-les par WhatsApp, e-mail ou lien." },
+  { id: "waiting", label: "En attente", hint: "Invitations envoyées, sans réponse pour l'instant. Une relance peut aider." },
+  { id: "confirmed", label: "Confirmés", hint: "Ils seront là. Pensez à leur attribuer une table." },
+  { id: "declined", label: "Absents", hint: "Ils ne pourront pas venir." },
 ];
 
 function stageMatches(stage: Stage, guest: GuestRecord) {
@@ -249,8 +288,8 @@ function Empty({ title, text, action }: { title: string; text: string; action?: 
   );
 }
 
-const panel = "rounded-3xl border border-black/[0.05] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03),0_16px_40px_-24px_rgba(0,0,0,0.18)]";
-const eyebrow = "text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--admin-event-deep)]";
+const panel = "rounded-3xl bg-[#f8f8f9]";
+const eyebrow = "text-[13px] font-medium text-foreground/50";
 const PAGE_SIZE = 15;
 
 /* Pagination compacte (pilules) pour les longues listes */
@@ -272,7 +311,7 @@ function Pager({ page, total, onChange }: { page: number; total: number; onChang
             type="button"
             aria-current={i === page ? "page" : undefined}
             onClick={() => onChange(i)}
-            className={`h-9 min-w-9 rounded-full px-3 text-[13px] font-medium ${i === page ? "bg-[#6e1420] text-white" : "border border-black/10 bg-white hover:bg-[#f5f5f6]"}`}
+            className={`h-9 min-w-9 rounded-full px-3 text-[13px] font-medium ${i === page ? "bg-admin text-white" : "border border-black/10 bg-white hover:bg-[#f5f5f6]"}`}
           >
             {i + 1}
           </button>
@@ -342,6 +381,7 @@ export default function Admin() {
   });
   const [listChosen, setListChosen] = useState(() => isParty(sessionStorage.getItem(LIST_KEY)));
   const [toAssign, setToAssign] = useState<number[]>([]);
+  const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null);
   const [legacyPage, setLegacyPage] = useState(0);
   const [assignPage, setAssignPage] = useState(0);
 
@@ -350,6 +390,19 @@ export default function Admin() {
     document.body.classList.add("admin-ui");
     return () => document.body.classList.remove("admin-ui");
   }, []);
+
+  // Les couleurs suivent l'événement géré, pour savoir d'un coup d'œil où l'on est.
+  useEffect(() => {
+    const accent = currentEvent ? EVENT_ACCENTS[currentEvent] : DEFAULT_ACCENT;
+    const body = document.body.style;
+    body.setProperty("--admin-accent", rgbTriplet(accent));
+    body.setProperty("--primary", hslTriplet(accent));
+    body.setProperty("--ring", hslTriplet(accent));
+    body.setProperty("--accent-foreground", hslTriplet(accent));
+    return () => {
+      ["--admin-accent", "--primary", "--ring", "--accent-foreground"].forEach((name) => body.removeProperty(name));
+    };
+  }, [currentEvent]);
   const [stage, setStage] = useState<Stage>("all");
   const [tableSearch, setTableSearch] = useState("");
   const [checkinSearch, setCheckinSearch] = useState("");
@@ -749,7 +802,7 @@ export default function Admin() {
     const linkIntro = "Ouvrez votre invitation personnalisée ici :";
     const message =
       `Bonjour ${guest.firstName},\n\n` +
-      `Nous avons la joie de vous inviter au mariage de *Jessica & Geldi*.\n\n` +
+      `Nous avons la joie de vous inviter au mariage de *Jessica & Geldy*.\n\n` +
       `${dateLines}\n\n` +
       `${linkIntro}\n${url}\n\n` +
       `Avec joie de vous avoir parmi nous.`;
@@ -766,9 +819,9 @@ export default function Admin() {
       .join("\n");
     const body =
       `Bonjour ${guest.firstName},\n\n` +
-      `Nous avons la joie de vous inviter au mariage de Jessica & Geldi.\n\n${dateLines}\n\n` +
-      `Votre invitation personnalisée vous attend ici :\n${url}\n\nAvec toute notre affection,\nJessica & Geldi`;
-    window.location.href = `mailto:${encodeURIComponent(guest.email || "")}?subject=${encodeURIComponent("Invitation au mariage de Jessica & Geldi")}&body=${encodeURIComponent(body)}`;
+      `Nous avons la joie de vous inviter au mariage de Jessica & Geldy.\n\n${dateLines}\n\n` +
+      `Votre invitation personnalisée vous attend ici :\n${url}\n\nAvec toute notre affection,\nJessica & Geldy`;
+    window.location.href = `mailto:${encodeURIComponent(guest.email || "")}?subject=${encodeURIComponent("Invitation au mariage de Jessica & Geldy")}&body=${encodeURIComponent(body)}`;
     apiRequest("POST", `/api/admin/guests/${guest.id}/mark-sent`).then(() => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
     });
@@ -817,7 +870,7 @@ export default function Admin() {
               Espace admin
             </p>
             <h1 className="mt-6 font-serif text-4xl leading-tight md:text-6xl">
-              Gérez les invités de Jessica & Geldi avec précision.
+              Gérez les invités de Jessica & Geldy avec précision.
             </h1>
             <p className="mt-6 max-w-lg text-sm leading-8 text-white/72">
               Créez les invités, générez leurs liens d'invitation individuels,
@@ -826,7 +879,7 @@ export default function Admin() {
             </p>
           </section>
 
-          <section className="border border-primary/10 bg-white p-8 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-18px_rgba(0,0,0,0.14)] md:p-12">
+          <section className="border border-black/[0.05] bg-white p-8 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-18px_rgba(0,0,0,0.14)] md:p-12">
             <div className="mb-10">
               <div className="mb-4 flex items-center gap-3 text-primary">
                 <LockKeyhole className="h-5 w-5" strokeWidth={1.6} />
@@ -860,7 +913,7 @@ export default function Admin() {
                       username: event.target.value,
                     }))
                   }
-                  className="h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                  className="h-12 rounded-xl border-black/10 bg-transparent focus-visible:ring-primary/20"
                   placeholder="Nom d'utilisateur"
                 />
               </div>
@@ -881,7 +934,7 @@ export default function Admin() {
                         password: event.target.value,
                       }))
                     }
-                    className="h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20 pr-12"
+                    className="h-12 rounded-xl border-black/10 bg-transparent focus-visible:ring-primary/20 pr-12"
                     placeholder="Entrez le code d'accès"
                   />
                   <button
@@ -905,7 +958,7 @@ export default function Admin() {
               </Button>
             </form>
 
-            <div className="mt-10 border-t border-primary/10 pt-6">
+            <div className="mt-10 border-t border-black/[0.05] pt-6">
               <Button
                 asChild
                 variant="ghost"
@@ -926,8 +979,8 @@ export default function Admin() {
     return (
       <main className="min-h-screen bg-[#f5f5f6] text-foreground">
         <header className="mx-3 mt-3 rounded-3xl border border-black/[0.05] bg-white px-6 py-10 text-center md:mx-5 md:py-12">
-          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[#6e1420] text-[15px] font-semibold text-white">JG</span>
-          <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-[#6e1420]">L'espace des mariés</p>
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-admin text-[15px] font-semibold text-white">JG</span>
+          <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-admin">L'espace des mariés</p>
           <h1 className="mt-4 text-3xl md:text-4xl">Quel événement souhaitez-vous gérer&nbsp;?</h1>
           <p className="mx-auto mt-3 max-w-xl text-sm text-foreground/60">Chaque célébration a ses propres invités, son plan de table et son accueil. Vous pourrez changer d'événement à tout moment.</p>
         </header>
@@ -943,8 +996,8 @@ export default function Admin() {
                   key={key}
                   type="button"
                   onClick={() => chooseEvent(key)}
-                  className="group flex flex-col rounded-3xl border p-7 text-left transition-transform duration-300 hover:-translate-y-1"
-                  style={{ background: event.background, borderColor: `${event.accent}55`, color: event.ink }}
+                  className="group flex flex-col rounded-3xl p-7 text-left transition-transform duration-300 hover:-translate-y-1"
+                  style={{ background: event.background, color: event.ink }}
                 >
                   <span className="text-[11px] uppercase tracking-[0.06em]" style={{ color: event.accent }}>{event.date.replace(" 2027", "")} · {event.time}</span>
                   <span className="mt-4 text-3xl font-semibold" style={{ color: event.accent }}>{event.shortLabel}</span>
@@ -953,7 +1006,7 @@ export default function Admin() {
                   <span className="mt-4 flex gap-1.5" aria-hidden>
                     {event.palette.map((color) => <span key={color} className="h-4 w-4 rounded-full border border-black/10" style={{ background: color }} />)}
                   </span>
-                  <span className="mt-6 grid grid-cols-2 gap-4 border-t pt-4 text-sm" style={{ borderColor: `${event.accent}30` }}>
+                  <span className="mt-6 grid grid-cols-2 gap-4 border-t border-black/[0.06] pt-4 text-sm">
                     <span><strong className="block font-serif text-2xl tabular-nums">{list.length}</strong>invitation{list.length > 1 ? "s" : ""}</span>
                     <span><strong className="block font-serif text-2xl tabular-nums">{people}<span className="text-sm opacity-50">/{event.capacity}</span></strong>présents</span>
                   </span>
@@ -978,12 +1031,13 @@ export default function Admin() {
                 <Button
                   type="button"
                   disabled={!readyLegacy.length || splitMutation.isPending}
-                  onClick={() => {
-                    if (confirm(`Répartir ${readyLegacy.length} invitation(s) selon les cases cochées ?`)) {
-                      splitMutation.mutate(readyLegacy.map((g) => ({ id: g.id, events: legacyEventsOf(g) })));
-                    }
-                  }}
-                  className="shrink-0 rounded-full bg-[#6e1420] px-6 py-6 text-[13px] font-medium normal-case tracking-normal text-white hover:bg-[#4a0d15]"
+                  onClick={() => setConfirmRequest({
+                    title: `Répartir ${readyLegacy.length} invitation${readyLegacy.length > 1 ? "s" : ""} ?`,
+                    description: "Chaque invité sera rattaché aux événements cochés. Une nouvelle invitation, avec son propre lien, est créée pour chaque événement en plus du premier.",
+                    confirmLabel: "Répartir",
+                    onConfirm: () => splitMutation.mutate(readyLegacy.map((g) => ({ id: g.id, events: legacyEventsOf(g) }))),
+                  })}
+                  className="shrink-0 rounded-full bg-admin px-6 py-6 text-[13px] font-medium normal-case tracking-normal text-white hover:bg-admin/90"
                 >
                   {splitMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Répartir {readyLegacy.length} invitation{readyLegacy.length > 1 ? "s" : ""}
@@ -1019,14 +1073,14 @@ export default function Admin() {
                       {eventKeys.map((key) => <th key={key} className="py-3 pr-2 text-center font-normal">{weddingEvents[key].shortLabel}</th>)}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#6e1420]/8">
+                  <tbody className="divide-y divide-black/[0.05]">
                     {legacyGuests.slice(legacyPage * PAGE_SIZE, (legacyPage + 1) * PAGE_SIZE).map((g) => {
                       const selected = legacyEventsOf(g);
                       return (
                         <tr key={g.id}>
                           <td className="py-2.5 pr-4">
                             <span className="block font-serif text-base">{g.firstName} {g.lastName}</span>
-                            <span className="text-[11px] text-foreground/45">{g.invitedCount || g.guestCount || 1} place(s) · {partyLabel(g.party)}</span>
+                            <span className="text-[11px] text-foreground/45">{partyLabel(g.party)}</span>
                           </td>
                           <td className="py-2.5 pr-4"><StatusBadge status={g.status} /></td>
                           {eventKeys.map((key) => (
@@ -1036,7 +1090,7 @@ export default function Admin() {
                                 aria-label={`${g.firstName} ${g.lastName} : ${weddingEvents[key].label}`}
                                 checked={selected.includes(key)}
                                 onChange={() => setLegacyChoices((c) => ({ ...c, [g.id]: selected.includes(key) ? selected.filter((k) => k !== key) : [...selected, key] }))}
-                                className="h-4 w-4 accent-[#6e1420]"
+                                className="h-4 w-4 accent-admin"
                               />
                             </td>
                           ))}
@@ -1051,10 +1105,11 @@ export default function Admin() {
           )}
 
           <div className="flex flex-wrap justify-center gap-6 text-sm text-foreground/60">
-            <a href="/" target="_blank" rel="noreferrer" className="hover:text-[#6e1420]">Voir le site du mariage ↗</a>
-            <button type="button" onClick={() => logoutMutation.mutate()} className="hover:text-[#6e1420]">Se déconnecter</button>
+            <a href="/" target="_blank" rel="noreferrer" className="hover:text-admin">Voir le site du mariage</a>
+            <button type="button" onClick={() => logoutMutation.mutate()} className="hover:text-admin">Se déconnecter</button>
           </div>
         </div>
+        <ConfirmModal request={confirmRequest} onClose={() => setConfirmRequest(null)} />
       </main>
     );
   }
@@ -1075,6 +1130,7 @@ export default function Admin() {
     "--party-deep": activeParty?.deep ?? activeEventTheme.ink,
     "--party-soft": activeParty?.soft ?? activeEventTheme.paper,
     "--party-border": activeParty?.border ?? activeEventTheme.lace,
+    "--list-accent": rgbTriplet(isParty(partyFilter) ? LIST_ACCENTS[partyFilter] : EVENT_ACCENTS[currentEvent]),
   } as CSSProperties;
   const current = navigation.find((item) => item.id === view)!;
   const pending = guests.filter((g) => g.status === "pending");
@@ -1093,7 +1149,7 @@ export default function Admin() {
     { label: "Présences confirmées", value: stats.confirmedInvites, detail: `${confirmed.length} réponses positives`, tone: "text-emerald-700" },
     { label: "Réponses en attente", value: pending.length, detail: `${stats.pendingInvites} personnes concernées`, tone: "text-amber-600" },
     { label: "Absents", value: stats.declinedInvites, detail: "ne pourront pas venir", tone: "text-rose-700" },
-    { label: "Invitations envoyées", value: stats.sentInvitations, detail: `sur ${guests.length}`, tone: "text-[#6e1420]" },
+    { label: "Invitations envoyées", value: stats.sentInvitations, detail: `sur ${guests.length}`, tone: "text-admin" },
     { label: "Personnes arrivées", value: sumPeople(arrived), detail: `sur ${stats.confirmedInvites} confirmées`, tone: "text-foreground" },
   ];
   const tableNumbers = Array.from({ length: tableCount }, (_, i) => i + 1);
@@ -1113,14 +1169,14 @@ export default function Admin() {
       </a>
 
       {/* ── Barre latérale ── */}
-      <aside className="admin-sidebar flex flex-col bg-white lg:sticky lg:top-3 lg:m-3 lg:h-[calc(100vh-1.5rem)] lg:rounded-3xl lg:border">
+      <aside className="admin-sidebar flex flex-col bg-white lg:sticky lg:top-3 lg:m-3 lg:h-[calc(100vh-1.5rem)] lg:rounded-3xl">
         <div className="flex items-center justify-between gap-4 px-6 py-5 lg:block lg:pt-7">
           <a href="/" className="flex items-center gap-2">
             <span className="admin-brand-mark grid h-9 w-9 place-items-center rounded-full text-[13px] font-semibold text-white">JG</span>
-            <span className="text-[15px] font-semibold tracking-tight">Jessica &amp; Geldi</span>
+            <span className="text-[15px] font-semibold tracking-tight">Jessica &amp; Geldy</span>
           </a>
         </div>
-        <div className="admin-event-context mx-3 mb-4 rounded-2xl border px-4 py-3">
+        <div className="admin-event-context mx-3 mb-4 rounded-2xl px-4 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground/45">Événement</p>
           <p className="mt-1 flex items-center gap-2 text-[14px] font-semibold text-[var(--admin-event-ink)]">
             <span className="admin-event-dot h-2.5 w-2.5 shrink-0 rounded-full" />
@@ -1152,8 +1208,8 @@ export default function Admin() {
         </nav>
         <div className="hidden px-3 pb-3 lg:block">
           <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground/40">Général</p>
-          <a href={`/${activeEvent.slug}`} target="_blank" rel="noreferrer" className="block rounded-xl px-3 py-2 text-[14px] text-foreground/60 hover:bg-white/70 hover:text-foreground">Voir la page {activeEvent.shortLabel.toLowerCase()} ↗</a>
-          <a href="/checkin" target="_blank" rel="noreferrer" className="block rounded-xl px-3 py-2 text-[14px] text-foreground/60 hover:bg-white/70 hover:text-foreground">Page check-in ↗</a>
+          <a href={`/${activeEvent.slug}`} target="_blank" rel="noreferrer" className="block rounded-xl px-3 py-2 text-[14px] text-foreground/60 hover:bg-white/70 hover:text-foreground">Voir la page {activeEvent.shortLabel.toLowerCase()}</a>
+          <a href="/checkin" target="_blank" rel="noreferrer" className="block rounded-xl px-3 py-2 text-[14px] text-foreground/60 hover:bg-white/70 hover:text-foreground">Page check-in</a>
           <button type="button" onClick={() => logoutMutation.mutate()} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-[14px] text-foreground/60 hover:bg-white/70 hover:text-foreground">
             <LogOut className="h-4 w-4" strokeWidth={1.6} /> Se déconnecter
           </button>
@@ -1168,15 +1224,9 @@ export default function Admin() {
       </aside>
 
       <div className="min-w-0">
-        <header className="admin-topbar mx-3 mt-3 flex items-center justify-between gap-3 rounded-3xl border bg-white px-5 py-3 text-[13px] text-foreground/55 md:mx-5">
-          <span className="min-w-0 truncate"><strong className="text-[var(--admin-event-deep)]">{activeEvent.shortLabel}</strong> <span className="mx-1 text-foreground/25">/</span> <span className="font-medium text-foreground">{current.label}</span></span>
+        <header className="admin-topbar mx-3 mt-3 flex items-center justify-between gap-3 rounded-3xl bg-white px-5 py-3 text-[13px] text-foreground/55 md:mx-5">
+          <span className="min-w-0 truncate"><span>{activeEvent.shortLabel}</span> <span className="mx-1 text-foreground/25">/</span> <span className="font-medium text-foreground">{current.label}</span></span>
           <span className="flex items-center gap-3">
-            {(view === "guests" || view === "tables") && activeList && (
-              <span className="admin-party-chip hidden items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold sm:flex">
-                <span className="admin-party-chip-mark grid h-5 w-5 place-items-center rounded-full text-[10px] text-white">{activeList.mark}</span>
-                Liste {activeList.title}
-              </span>
-            )}
             <span className="hidden items-center gap-2 sm:flex">
               <span className="admin-user-mark grid h-8 w-8 place-items-center rounded-full text-[12px] font-semibold">{user.username.slice(0, 2).toUpperCase()}</span>
               <span className="font-medium text-foreground">{user.username}</span>
@@ -1187,16 +1237,15 @@ export default function Admin() {
           </span>
         </header>
 
-        <main id="admin-main" className="admin-workspace mx-3 my-3 space-y-6 rounded-3xl border bg-white px-5 py-7 md:mx-5 md:px-8 md:py-8">
+        <main id="admin-main" className="admin-workspace mx-3 my-3 space-y-6 rounded-3xl bg-white px-5 py-7 md:mx-5 md:px-8 md:py-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className={eyebrow}>Espace privé</p>
-              <h1 className="mt-2 text-3xl md:text-4xl">{current.label}</h1>
+              <h1 className="text-3xl md:text-4xl">{current.label}</h1>
               <p className="mt-2 text-sm text-foreground/60">{current.caption}</p>
             </div>
             {(view === "overview" || view === "guests") && (
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsImportOpen(true)} className={`${buttonBase} border-[var(--admin-event-accent)]/30 text-[var(--admin-event-deep)]`}>
+                <Button type="button" variant="outline" onClick={() => setIsImportOpen(true)} className={`${buttonBase} border-black/10 text-foreground hover:bg-[#f5f5f6] hover:text-foreground`}>
                   <UserPlus className="mr-2 h-4 w-4" strokeWidth={1.6} /> Importer
                 </Button>
                 <Button
@@ -1206,7 +1255,7 @@ export default function Admin() {
                     setEditingGuestId(null);
                     setIsFormOpen(true);
                   }}
-                  className={`${buttonBase} bg-[var(--admin-event-deep)] text-white hover:bg-[var(--admin-event-band)]`}
+                  className={`${buttonBase} text-white ${view === "guests" && listChosen ? "bg-adminlist hover:bg-adminlist/90" : "bg-admin hover:bg-admin/90"}`}
                 >
                   <Plus className="mr-2 h-4 w-4" strokeWidth={1.6} /> Ajouter un invité
                 </Button>
@@ -1217,7 +1266,7 @@ export default function Admin() {
         {/* ── Modale import en masse ─────────────────────────────────────── */}
         <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
           <DialogContent className="max-w-lg p-0 flex flex-col max-h-[88vh]">
-            <DialogHeader className="px-6 pt-6 pb-4 border-b border-primary/8 shrink-0">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b border-black/[0.05] shrink-0">
               <p className="text-[11px] uppercase tracking-[0.06em] text-primary/55">Import rapide</p>
               <DialogTitle>Importer une liste d'invités</DialogTitle>
               <p className="text-xs text-muted-foreground mt-1">
@@ -1230,7 +1279,7 @@ export default function Admin() {
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
                 placeholder={"Prénom;Nom;Contact;Personnes\nJean;Dupont;jean@email.com;2\nMarie;Martin;+243000000000;1"}
-                className="min-h-[180px] rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20 font-mono text-sm"
+                className="min-h-[180px] rounded-xl border-black/10 bg-transparent focus-visible:ring-primary/20 font-mono text-sm"
               />
 
               {importText.trim() && (() => {
@@ -1244,7 +1293,7 @@ export default function Admin() {
 
               <label className="block space-y-2">
                 <span className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Fichier CSV</span>
-                <Input type="file" accept=".csv,text/csv,text/plain" className="h-12 rounded-xl border-primary/15" onChange={async (event) => {
+                <Input type="file" accept=".csv,text/csv,text/plain" className="h-12 rounded-xl border-black/10" onChange={async (event) => {
                   const file = event.target.files?.[0];
                   if (!file) return;
                   if (file.size > 512000) {
@@ -1271,13 +1320,13 @@ export default function Admin() {
                 </div>
               </div>
               {currentEvent && (
-                <p className="border-l-2 pl-3 text-sm text-foreground/70" style={{ borderColor: weddingEvents[currentEvent].accent }}>
+                <p className="rounded-xl bg-[#f5f5f6] px-3 py-2 text-sm text-foreground/70">
                   Ces invités seront ajoutés à la liste du <strong>{weddingEvents[currentEvent].label.toLowerCase()}</strong> uniquement.
                 </p>
               )}
             </div>
 
-            <DialogFooter className="px-6 py-4 border-t border-primary/8 shrink-0">
+            <DialogFooter className="px-6 py-4 border-t border-black/[0.05] shrink-0">
               <Button
                 type="button"
                 onClick={() => importGuestsMutation.mutate()}
@@ -1290,7 +1339,7 @@ export default function Admin() {
                 type="button"
                 variant="outline"
                 onClick={() => { setIsImportOpen(false); setImportText(""); }}
-                className="rounded-full border-primary/15 px-7 py-6 text-[13px] font-medium normal-case tracking-normal text-primary"
+                className="rounded-full border-black/10 px-7 py-6 text-[13px] font-medium normal-case tracking-normal text-primary"
               >
                 Annuler
               </Button>
@@ -1333,7 +1382,7 @@ export default function Admin() {
                     <Input
                       value={guestForm.firstName}
                       onChange={(e) => setGuestForm((c) => ({ ...c, firstName: e.target.value }))}
-                      className="h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                      className="h-12 rounded-xl border-black/10 bg-transparent focus-visible:ring-primary/20"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1341,7 +1390,7 @@ export default function Admin() {
                     <Input
                       value={guestForm.lastName}
                       onChange={(e) => setGuestForm((c) => ({ ...c, lastName: e.target.value }))}
-                      className="h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                      className="h-12 rounded-xl border-black/10 bg-transparent focus-visible:ring-primary/20"
                     />
                   </div>
                 </div>
@@ -1353,7 +1402,7 @@ export default function Admin() {
                       type="email"
                       value={guestForm.email || ""}
                       onChange={(e) => setGuestForm((c) => ({ ...c, email: e.target.value }))}
-                      className="h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                      className="h-12 rounded-xl border-black/10 bg-transparent focus-visible:ring-primary/20"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1361,7 +1410,7 @@ export default function Admin() {
                     <Input
                       value={guestForm.phone || ""}
                       onChange={(e) => setGuestForm((c) => ({ ...c, phone: e.target.value }))}
-                      className="h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                      className="h-12 rounded-xl border-black/10 bg-transparent focus-visible:ring-primary/20"
                     />
                   </div>
                 </div>
@@ -1402,8 +1451,8 @@ export default function Admin() {
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2">
-                  <label className="space-y-2"><span className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Pays</span><Input value={guestForm.country || ""} maxLength={2} onChange={(e) => setGuestForm((c) => ({ ...c, country: e.target.value.toUpperCase() }))} className="h-12 rounded-xl border-primary/15" placeholder="CD" /></label>
-                  <label className="space-y-2"><span className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Ville</span><Input value={guestForm.city || ""} onChange={(e) => setGuestForm((c) => ({ ...c, city: e.target.value }))} className="h-12 rounded-xl border-primary/15" placeholder="Kinshasa" /></label>
+                  <label className="space-y-2"><span className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Pays</span><Input value={guestForm.country || ""} maxLength={2} onChange={(e) => setGuestForm((c) => ({ ...c, country: e.target.value.toUpperCase() }))} className="h-12 rounded-xl border-black/10" placeholder="CD" /></label>
+                  <label className="space-y-2"><span className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Ville</span><Input value={guestForm.city || ""} onChange={(e) => setGuestForm((c) => ({ ...c, city: e.target.value }))} className="h-12 rounded-xl border-black/10" placeholder="Kinshasa" /></label>
                 </div>
 
                 <div className="space-y-2">
@@ -1431,7 +1480,7 @@ export default function Admin() {
                     <Input
                       value={getOtherBeverageValue(guestForm.beverageChoice)}
                       onChange={(e) => setGuestForm((c) => ({ ...c, beverageChoice: e.target.value ? `Autre: ${e.target.value}` : "Autre: " }))}
-                      className="h-12 rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                      className="h-12 rounded-xl border-black/10 bg-transparent focus-visible:ring-primary/20"
                       placeholder="Préciser la boisson"
                     />
                   )}
@@ -1454,12 +1503,12 @@ export default function Admin() {
                   <Textarea
                     value={guestForm.message || ""}
                     onChange={(e) => setGuestForm((c) => ({ ...c, message: e.target.value }))}
-                    className="min-h-[110px] rounded-xl border-primary/15 bg-transparent focus-visible:ring-primary/20"
+                    className="min-h-[110px] rounded-xl border-black/10 bg-transparent focus-visible:ring-primary/20"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] uppercase tracking-[0.06em] text-foreground/60">Notes privées</label>
-                  <Textarea value={guestForm.notes || ""} onChange={(e) => setGuestForm((c) => ({ ...c, notes: e.target.value }))} className="min-h-[90px] rounded-xl border-primary/15" placeholder="Visible uniquement dans l’administration" />
+                  <Textarea value={guestForm.notes || ""} onChange={(e) => setGuestForm((c) => ({ ...c, notes: e.target.value }))} className="min-h-[90px] rounded-xl border-black/10" placeholder="Visible uniquement dans l’administration" />
                 </div>
               </div>
 
@@ -1479,7 +1528,7 @@ export default function Admin() {
                   type="button"
                   variant="outline"
                   onClick={() => setIsFormOpen(false)}
-                  className="rounded-full border-primary/15 px-7 py-6 text-[13px] font-medium normal-case tracking-normal text-primary"
+                  className="rounded-full border-black/10 px-7 py-6 text-[13px] font-medium normal-case tracking-normal text-primary"
                 >
                   Annuler
                 </Button>
@@ -1512,7 +1561,7 @@ export default function Admin() {
                 const count = stats.confirmedInvites;
                 const ratio = Math.min(1, count / event.capacity);
                 return (
-                  <section className="rounded-3xl border p-6" style={{ background: event.background, borderColor: `${event.accent}40`, color: event.ink }}>
+                  <section className="rounded-3xl p-6" style={{ background: event.background, color: event.ink }}>
                     <div className="flex flex-wrap items-end justify-between gap-4">
                       <div>
                         <p className="text-[11px] uppercase tracking-[0.06em]" style={{ color: event.accent }}>Capacité · {event.theme}</p>
@@ -1529,16 +1578,16 @@ export default function Admin() {
                 <section className={`${panel} p-6`}>
                   <div className="flex items-end justify-between gap-4">
                     <div><p className={eyebrow}>On garde le lien</p><h2 className="mt-2 font-serif text-2xl">Les dernières réponses</h2></div>
-                    <button type="button" onClick={() => navigate("guests")} className="text-xs text-[#6e1420] underline-offset-4 hover:underline">Tout voir ↗</button>
+                    <button type="button" onClick={() => navigate("guests")} className="text-xs text-admin underline-offset-4 hover:underline">Tout voir</button>
                   </div>
-                  <div className="mt-4 divide-y divide-[#6e1420]/8">
+                  <div className="mt-4 divide-y divide-black/[0.05]">
                     {guests
                       .filter((g) => g.status !== "pending")
                       .sort((a, b) => String(b.respondedAt || b.createdAt || "").localeCompare(String(a.respondedAt || a.createdAt || "")))
                       .slice(0, 6)
                       .map((g) => (
                         <button key={g.id} type="button" onClick={() => startEditingGuest(g)} className="flex w-full items-center gap-4 py-3 text-left hover:bg-[#f5f5f6]">
-                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#6e1420]/8 text-[11px] text-[#6e1420]">{g.firstName[0]}{g.lastName[0]}</span>
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-admin/8 text-[11px] text-admin">{g.firstName[0]}{g.lastName[0]}</span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate font-serif text-lg">{g.firstName} {g.lastName}</span>
                             <span className="block text-xs text-foreground/50">
@@ -1558,7 +1607,7 @@ export default function Admin() {
                   <section className={`${panel} p-6`}>
                     <p className={eyebrow}>Un pas après l'autre</p>
                     <h2 className="mt-2 font-serif text-2xl">À préparer</h2>
-                    <div className="mt-4 divide-y divide-[#6e1420]/8">
+                    <div className="mt-4 divide-y divide-black/[0.05]">
                       {[
                         { n: "01", title: "Envoyer les invitations", detail: `${guests.filter((g) => stageMatches("todo", g)).length} invitation(s) à partager`, go: () => { setStage("todo"); navigate("guests"); } },
                         { n: "02", title: "Recueillir les réponses", detail: `${guests.filter((g) => stageMatches("waiting", g)).length} en attente de réponse`, go: () => { setStage("waiting"); navigate("guests"); } },
@@ -1566,9 +1615,8 @@ export default function Admin() {
                         { n: "04", title: "Partager les détails", detail: "Lieux, programme, textes du site", go: () => navigate("settings") },
                       ].map((item) => (
                         <button key={item.n} type="button" onClick={item.go} className="flex w-full items-center gap-4 py-3 text-left hover:bg-[#f5f5f6]">
-                          <span className="font-serif text-xl text-[#6e1420]/50">{item.n}</span>
+                          <span className="font-serif text-xl text-admin/50">{item.n}</span>
                           <span className="flex-1"><span className="block text-sm">{item.title}</span><span className="block text-xs text-foreground/50">{item.detail}</span></span>
-                          <span className="text-[#6e1420]">↗</span>
                         </button>
                       ))}
                     </div>
@@ -1584,7 +1632,7 @@ export default function Admin() {
                         {drinkStats.map(([drink, count]) => (
                           <li key={drink} className="flex items-center gap-3 text-sm">
                             <span className="w-32 truncate">{drink}</span>
-                            <span className="h-1.5 flex-1 bg-[#6e1420]/8"><span className="block h-full bg-[#6e1420]/70" style={{ width: `${(count / drinkStats[0][1]) * 100}%` }} /></span>
+                            <span className="h-1.5 flex-1 bg-admin/8"><span className="block h-full bg-admin/70" style={{ width: `${(count / drinkStats[0][1]) * 100}%` }} /></span>
                             <span className="w-8 text-right tabular-nums">{count}</span>
                           </li>
                         ))}
@@ -1612,18 +1660,17 @@ export default function Admin() {
                       key={item.id}
                       type="button"
                       onClick={() => chooseList(item.id as Party)}
-                      style={{ "--party-card-accent": item.accent, "--party-card-deep": item.deep, "--party-card-soft": item.soft, "--party-card-border": item.border } as CSSProperties}
-                      className="admin-list-choice group rounded-2xl border p-6 text-left transition hover:-translate-y-0.5"
+                      style={{ "--list-accent": rgbTriplet(LIST_ACCENTS[item.id as Party]) } as CSSProperties}
+                      className="admin-list-choice flex items-center gap-4 rounded-2xl p-5 text-left transition-colors"
                     >
-                      <span className="flex items-center justify-between gap-3">
-                        <span className="admin-list-mark grid h-12 w-12 place-items-center rounded-full text-xl font-semibold text-white">{item.mark}</span>
-                        <span className="admin-list-label rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em]">Liste {item.title}</span>
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-adminlist/10 text-[15px] font-semibold text-adminlist">{item.mark}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[16px] font-semibold text-adminlist">Invités de {item.title}</span>
+                        <span className="mt-0.5 block text-[13px] text-foreground/55">
+                          {list.length} invitation{list.length > 1 ? "s" : ""}
+                        </span>
                       </span>
-                      <span className="mt-5 block font-serif text-2xl text-[var(--party-card-deep)]">Invités de {item.title}</span>
-                      <span className="mt-1 block text-xs text-[var(--party-card-deep)]/65">Ouvrir et gérer cette liste</span>
-                      <span className="mt-5 block border-t border-[var(--party-card-border)] pt-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--party-card-deep)]/70">
-                        {list.length} invitation{list.length > 1 ? "s" : ""} · {list.filter((g) => g.status === "confirmed").length} présent(s)
-                      </span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-foreground/35" strokeWidth={1.8} aria-hidden />
                     </button>
                   );
                 })}
@@ -1637,7 +1684,7 @@ export default function Admin() {
                 <div>
                   <p className={eyebrow}>À attribuer</p>
                   <h2 className="mt-2 font-serif text-2xl">{unassigned.length} invité{unassigned.length > 1 ? "s" : ""} sans liste</h2>
-                  <p className="mt-2 max-w-xl text-sm leading-6 text-foreground/60">Ils n'apparaissent ni chez Jessica ni chez Geldi. Cochez-les puis rangez-les dans la bonne liste.</p>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-foreground/60">Ils n'apparaissent ni chez Jessica ni chez Geldy. Cochez-les puis rangez-les dans la bonne liste.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {guestLists.map((l) => (
@@ -1657,7 +1704,7 @@ export default function Admin() {
               <label className="mt-5 flex items-center gap-2 text-xs text-foreground/60">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 accent-[#6e1420]"
+                  className="h-4 w-4 accent-admin"
                   checked={toAssign.length === unassigned.length}
                   onChange={(e) => setToAssign(e.target.checked ? unassigned.map((g) => g.id) : [])}
                 />
@@ -1669,13 +1716,12 @@ export default function Admin() {
                     <input
                       type="checkbox"
                       aria-label={`Sélectionner ${g.firstName} ${g.lastName}`}
-                      className="h-4 w-4 accent-[#6e1420]"
+                      className="h-4 w-4 accent-admin"
                       checked={toAssign.includes(g.id)}
                       onChange={() => setToAssign((ids) => (ids.includes(g.id) ? ids.filter((id) => id !== g.id) : [...ids, g.id]))}
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-serif text-base">{g.firstName} {g.lastName}</span>
-                      <span className="text-[11px] text-foreground/45">{g.invitedCount || g.guestCount || 1} place(s)</span>
                     </span>
                     <StatusBadge status={g.status} />
                     {guestLists.map((l) => (
@@ -1684,10 +1730,9 @@ export default function Admin() {
                         type="button"
                         disabled={assignPartyMutation.isPending}
                         onClick={() => assignPartyMutation.mutate({ ids: [g.id], party: l.id as Party })}
-                        style={{ borderColor: l.border, color: l.deep, background: l.soft }}
-                        className="rounded-full border px-3 py-1.5 text-xs font-semibold hover:brightness-95"
+                        className="rounded-full bg-[#f3f3f4] px-3 py-1.5 text-xs font-medium hover:bg-admin hover:text-white"
                       >
-                        {l.mark} · {l.title}
+                        {l.title}
                       </button>
                     ))}
                   </div>
@@ -1699,18 +1744,14 @@ export default function Admin() {
 
           {view === "guests" && listChosen && (
             <>
-              <div className={`${panel} admin-party-context flex flex-wrap items-center justify-between gap-4 px-6 py-5`}>
-                <div className="flex items-center gap-4">
-                  <span className="admin-party-context-mark grid h-12 w-12 shrink-0 place-items-center rounded-full text-lg font-semibold text-white">{activeList?.mark}</span>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--party-deep)]/65">Vous gérez actuellement</p>
-                    <p className="mt-1 font-serif text-xl text-[var(--party-deep)]">La liste de {activeList?.title}</p>
-                    <p className="mt-1 text-xs font-medium text-[var(--party-deep)]/65">{inList.length} invitation{inList.length === 1 ? "" : "s"} pour {activeEvent.shortLabel.toLowerCase()}</p>
-                  </div>
-                </div>
-                <Button type="button" variant="outline" onClick={() => { setListChosen(false); sessionStorage.removeItem(LIST_KEY); }} className={`${buttonBase} border-[var(--party-border)] bg-white/70 text-[var(--party-deep)] hover:bg-white hover:text-[var(--party-deep)]`}>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-[15px]">
+                  <span className="font-semibold text-adminlist">Liste de {activeList?.title}</span>
+                  <span className="text-foreground/50"> · {inList.length} invitation{inList.length > 1 ? "s" : ""}</span>
+                </p>
+                <button type="button" onClick={() => { setListChosen(false); sessionStorage.removeItem(LIST_KEY); }} className="text-[13px] font-medium text-admin underline-offset-4 hover:underline">
                   Changer de liste
-                </Button>
+                </button>
               </div>
 
               {ceremonyFilter && (
@@ -1719,9 +1760,8 @@ export default function Admin() {
                     const list = inListForEvent.filter((g) => stageMatches(item.id, g));
                     const active = stage === item.id;
                     return (
-                      <button key={item.id} type="button" aria-pressed={active} onClick={() => setStage(item.id)} className={`rounded-2xl p-4 text-left transition ${active ? "admin-hero" : "border border-black/[0.06] bg-white hover:bg-[#f5f5f6]"}`}>
-                        <span className={`block text-[11px] uppercase tracking-[0.06em] ${active ? "text-white/60" : "text-foreground/40"}`}>{item.step}</span>
-                        <span className="mt-1 block font-serif text-3xl tabular-nums">{list.length}</span>
+                      <button key={item.id} type="button" aria-pressed={active} onClick={() => setStage(item.id)} className={`rounded-2xl p-4 text-left transition-colors ${active ? "bg-admin text-white" : "bg-[#f8f8f9] hover:bg-[#f1f1f2]"}`}>
+                        <span className="block font-serif text-3xl tabular-nums">{list.length}</span>
                         <span className="block text-xs">{item.label}</span>
                         {item.id === "confirmed" && <span className={`block text-[11px] ${active ? "text-white/60" : "text-foreground/45"}`}>{sumPeople(list)} personne(s)</span>}
                       </button>
@@ -1732,13 +1772,13 @@ export default function Admin() {
 
               <section className={`${panel} p-5 md:p-7`}>
                 <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <p className="text-sm text-foreground/60">{ceremonyFilter ? stages.find((s) => s.id === stage)!.hint : "Choisissez une célébration pour afficher ses invités."}</p>
+                  <h2 className="text-[17px]">{stages.find((s) => s.id === stage)!.label === "Toutes" ? "Tous les invités" : stages.find((s) => s.id === stage)!.label}</h2>
                   <div className="flex flex-wrap gap-2">
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e1420]/40" />
-                      <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Un nom, un e-mail, un téléphone…" aria-label="Rechercher un invité" className="h-11 w-full min-w-[240px] rounded-xl border-[#6e1420]/15 pl-10" />
+                      <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/35" />
+                      <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Un nom, un e-mail, un téléphone…" aria-label="Rechercher un invité" className="h-11 w-full min-w-[240px] rounded-full border-black/10 pl-10" />
                     </div>
-                    <Button type="button" variant="outline" disabled={!ceremonyFilter} onClick={() => ceremonyFilter && window.open(`/api/admin/guests/export?event=${ceremonyFilter}&sort=name`, "_blank")} className={`${buttonBase} h-11 border-[#6e1420]/20 text-[#6e1420] disabled:opacity-40`}>
+                    <Button type="button" variant="outline" disabled={!ceremonyFilter} onClick={() => ceremonyFilter && window.open(`/api/admin/guests/export?event=${ceremonyFilter}&sort=name`, "_blank")} className={`${buttonBase} h-11 border-black/10 text-foreground disabled:opacity-40`}>
                       <Download className="mr-2 h-4 w-4" strokeWidth={1.6} /> Export CSV
                     </Button>
                   </div>
@@ -1759,7 +1799,7 @@ export default function Admin() {
                     "--guest-party-deep": partyVisuals[guest.party].deep,
                     "--guest-party-border": partyVisuals[guest.party].border,
                   } as CSSProperties : undefined}
-                  className="admin-guest-card rounded-2xl border p-4 md:p-5"
+                  className="admin-guest-card rounded-2xl p-4 md:p-5"
                 >
                   {/* Nom + statut */}
                   <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -1770,8 +1810,15 @@ export default function Admin() {
                       <p className="text-sm text-foreground/55 truncate">
                         {guest.email || "—"} · {guest.phone || "—"}
                       </p>
-                      <p className="text-[11px] uppercase tracking-[0.06em] text-foreground/35">
-                        {guest.guestCount || 1} présent(s) sur {guest.invitedCount || guest.guestCount || 1} place(s) · {partyLabel(guest.party)} ·{" "}
+                      <a
+                        href={getTransitInvitationUrl(guest)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block max-w-full truncate text-[13px] text-admin underline-offset-4 hover:underline"
+                      >
+                        {getTransitInvitationUrl(guest)}
+                      </a>
+                      <p className="text-[12px] text-foreground/45">
                         {guest.tableNumber ? `Table ${guest.tableNumber} · ` : ""}
                         {guest.createdAt
                           ? format(new Date(guest.createdAt), "d MMM yyyy", { locale: fr })
@@ -1779,14 +1826,9 @@ export default function Admin() {
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      {isParty(guest.party) && (
-                        <span className="admin-guest-party-badge rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.06em]">
-                          {guest.party === "jessica" ? "J · Jessica" : "G · Geldi"}
-                        </span>
-                      )}
                       <Badge
                         variant="outline"
-                        className={`rounded-full border-0 px-3 py-1 text-[11px] uppercase tracking-[0.06em] ${
+                        className={`rounded-full border-0 px-3 py-1 text-[12px] font-medium normal-case tracking-normal ${
                           guest.status === "confirmed"
                             ? "bg-emerald-50 text-emerald-700"
                             : guest.status === "declined"
@@ -1803,7 +1845,7 @@ export default function Admin() {
                       {guest.checkedInAt && (
                         <Badge
                           variant="outline"
-                          className="rounded-full border-0 px-3 py-0.5 text-[11px] uppercase tracking-[0.06em] bg-primary/5 text-primary"
+                          className="rounded-full border-0 bg-primary/5 px-3 py-0.5 text-[12px] font-medium normal-case tracking-normal text-primary"
                         >
                           Check-in ✓
                         </Badge>
@@ -1811,52 +1853,26 @@ export default function Admin() {
                     </div>
                   </div>
 
-                  {/* Statut invitation */}
-                  <div className="mt-3 pt-3 border-t border-primary/8 flex items-center gap-3 flex-wrap">
-                    <Badge
-                      variant="outline"
-                      className={`rounded-full border-0 px-2 py-0.5 text-[11px] uppercase tracking-[0.06em] ${
-                        guest.invitationStatus === "sent"
-                          ? "bg-stone-100 text-stone-700"
-                          : "bg-[#ECEFF1] text-[#5F6870]"
-                      }`}
-                    >
-                      {guest.invitationStatus === "sent" ? "Envoyée" : "Brouillon"}
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className={`rounded-full border-0 px-2 py-0.5 text-[11px] uppercase tracking-[0.06em] ${
-                        getEventKeys(guest.invitedCeremonyChoice || guest.ceremonyChoice).length > 1
-                          ? "bg-purple-50 text-purple-700"
-                          : "bg-yellow-50 text-yellow-700"
-                      }`}
-                    >
-                      {getEventKeys(guest.invitedCeremonyChoice || guest.ceremonyChoice)
-                        .map((key) => weddingEvents[key].shortLabel)
-                        .join(", ")}
+                  {/* Statut invitation + lien copiable */}
+                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-black/[0.05] pt-3">
+                    <Badge variant="outline" className="rounded-full border-0 bg-[#f1f1f2] px-2.5 py-1 text-[12px] font-medium normal-case tracking-normal text-foreground/70">
+                      {guest.invitationStatus === "sent" ? "Envoyée" : "Pas encore envoyée"}
                     </Badge>
                     {guest.beverageChoice && (
-                      <Badge
-                        variant="outline"
-                        className="rounded-full border-0 px-2 py-0.5 text-[11px] uppercase tracking-[0.06em] bg-sky-50 text-sky-700"
-                      >
-                        {guest.beverageChoice}
+                      <Badge variant="outline" className="rounded-full border-0 bg-[#f1f1f2] px-2.5 py-1 text-[12px] font-medium normal-case tracking-normal text-foreground/70">
+                        {guest.beverageChoice.replace(/^Autre: /, "")}
                       </Badge>
                     )}
-
-                    {(guest.city || guest.country) && <span className="text-[11px] text-foreground/45">{[guest.city, guest.country].filter(Boolean).join(", ")}</span>}
                     {guest.invitationSentAt && (
-                      <span className="text-[11px] text-foreground/40">
-                        {format(new Date(guest.invitationSentAt), "d MMM, HH:mm", { locale: fr })}
+                      <span className="text-[12px] text-foreground/40">
+                        Envoyée le {format(new Date(guest.invitationSentAt), "d MMM à HH:mm", { locale: fr })}
                       </span>
                     )}
-                    <span className="ml-auto text-[11px] text-foreground/30 truncate max-w-[200px] hidden md:block">
-                      {getTransitInvitationUrl(guest)}
-                    </span>
                   </div>
 
+
                   {/* Actions */}
-                  <div className="mt-3 pt-3 border-t border-primary/8 flex flex-wrap items-center gap-2">
+                  <div className="mt-3 pt-3 border-t border-black/[0.05] flex flex-wrap items-center gap-2">
                     <PrettySelect
                       value={(guest as any).tableNumber ?? ""}
                       onChange={(value) =>
@@ -1869,16 +1885,14 @@ export default function Admin() {
                       placeholder="Table"
                       compact
                       className="min-w-[138px]"
-                      buttonClassName="bg-transparent text-primary"
+                      buttonClassName="h-9 rounded-full border-black/10 bg-white text-[13px] font-medium normal-case tracking-normal text-foreground shadow-none"
                     />
-
-                    <div className="w-px h-6 bg-primary/10 mx-1" />
 
                     {guest.status !== "declined" && (
                       <Button
                         type="button" size="sm" variant="outline"
                         onClick={() => shareViaWhatsApp(guest)}
-                        className="rounded-full border-primary/15 text-[13px] font-medium normal-case tracking-normal text-primary hover:bg-[#f5f5f6] hover:text-primary"
+                        className="rounded-full border-black/10 text-[13px] font-medium normal-case tracking-normal text-primary hover:bg-[#f5f5f6] hover:text-primary"
                       >
                         <MessageCircle className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
                         WhatsApp
@@ -1888,7 +1902,7 @@ export default function Admin() {
                       <Button
                         type="button" size="sm" variant="outline"
                         onClick={() => shareViaEmail(guest)}
-                        className="rounded-full border-primary/15 text-[13px] font-medium normal-case tracking-normal text-primary"
+                        className="rounded-full border-black/10 text-[13px] font-medium normal-case tracking-normal text-primary"
                       >
                         <Mail className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
                         E-mail
@@ -1898,7 +1912,7 @@ export default function Admin() {
                       <Button
                         type="button" size="sm" variant="outline"
                         onClick={() => copyInvitationLink(guest)}
-                        className="rounded-full border-primary/15 text-[13px] font-medium normal-case tracking-normal text-primary"
+                        className="rounded-full border-black/10 text-[13px] font-medium normal-case tracking-normal text-primary"
                       >
                         <Copy className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
                         Copier
@@ -1906,19 +1920,29 @@ export default function Admin() {
                     )}
                     <Button
                       type="button" size="sm" variant="outline"
+                      onClick={() => window.open(`${getEventInvitationUrl(guest)}?pdf=1`, "_blank")}
+                      className="rounded-full border-black/10 text-[13px] font-medium normal-case tracking-normal text-primary"
+                    >
+                      <Download className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
+                      PDF
+                    </Button>
+                    <Button
+                      type="button" size="sm" variant="outline"
                       onClick={() => startEditingGuest(guest)}
-                      className="rounded-full border-primary/15 text-[13px] font-medium normal-case tracking-normal text-primary"
+                      className="rounded-full border-black/10 text-[13px] font-medium normal-case tracking-normal text-primary"
                     >
                       <Pencil className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
                       Modifier
                     </Button>
                     <Button
                       type="button" size="sm" variant="outline"
-                      onClick={() => {
-                        if (confirm(`Supprimer définitivement ${guest.firstName} ${guest.lastName} ? Son lien d'invitation ne fonctionnera plus.`)) {
-                          deleteGuestMutation.mutate(guest.id);
-                        }
-                      }}
+                      onClick={() => setConfirmRequest({
+                        title: `Supprimer ${guest.firstName} ${guest.lastName} ?`,
+                        description: "L'invité sera retiré définitivement de la liste et son lien d'invitation ne fonctionnera plus.",
+                        confirmLabel: "Supprimer",
+                        danger: true,
+                        onConfirm: () => deleteGuestMutation.mutate(guest.id),
+                      })}
                       className="rounded-full border-rose-200 text-[13px] font-medium normal-case tracking-normal text-rose-700 hover:bg-rose-50"
                     >
                       <Trash2 className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.6} />
@@ -1929,7 +1953,7 @@ export default function Admin() {
               ))}
 
               {filteredGuests.length === 0 && (
-                <div className="py-20 text-center">
+                <div className="py-12 text-center">
                   {!ceremonyFilter ? (
                     <>
                       <p className="font-serif text-2xl text-foreground/70">Choisissez une célébration</p>
@@ -1938,7 +1962,7 @@ export default function Admin() {
                       </p>
                     </>
                   ) : (
-                    <p className="font-serif text-2xl text-foreground/55">Aucun invité ne correspond à cette recherche.</p>
+                    <p className="text-[15px] font-medium text-foreground/70">{searchTerm.trim() ? "Aucun invité ne correspond à cette recherche." : "Aucun invité dans cette liste pour l'instant."}</p>
                   )}
                 </div>
               )}
@@ -1947,7 +1971,7 @@ export default function Admin() {
 
           {/* Pagination */}
           {(totalPages > 1 || filteredGuests.length > 10) && (
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-primary/8 pt-5">
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-black/[0.05] pt-5">
               <div className="flex items-center gap-3">
                 <p className="text-[11px] uppercase tracking-[0.06em] text-foreground/40">
                   Page {currentPage + 1} / {totalPages} · {filteredGuests.length} invité{filteredGuests.length > 1 ? "s" : ""}
@@ -1969,7 +1993,7 @@ export default function Admin() {
                   size="sm"
                   onClick={() => setCurrentPage((p) => p - 1)}
                   disabled={currentPage === 0}
-                  className="rounded-full border-primary/15 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
+                  className="rounded-full border-black/10 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
                 >
                   <ChevronLeft className="h-4 w-4" strokeWidth={1.6} />
                 </Button>
@@ -1983,7 +2007,7 @@ export default function Admin() {
                     className={`rounded-full px-4 py-5 text-[13px] font-medium normal-case tracking-normal ${
                       i === currentPage
                         ? "bg-primary text-primary-foreground hover:bg-foreground"
-                        : "border-primary/15 text-primary hover:bg-primary/5"
+                        : "border-black/10 text-primary hover:bg-primary/5"
                     }`}
                   >
                     {i + 1}
@@ -1995,7 +2019,7 @@ export default function Admin() {
                   size="sm"
                   onClick={() => setCurrentPage((p) => p + 1)}
                   disabled={currentPage >= totalPages - 1}
-                  className="rounded-full border-primary/15 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
+                  className="rounded-full border-black/10 px-3 py-5 text-primary hover:bg-primary/5 disabled:opacity-30"
                 >
                   <ChevronRight className="h-4 w-4" strokeWidth={1.6} />
                 </Button>
@@ -2020,32 +2044,27 @@ export default function Admin() {
                       variant="outline"
                       aria-pressed={isActive}
                       onClick={() => setPartyFilter(l.id)}
-                      style={listTheme ? {
-                        borderColor: listTheme.border,
-                        background: isActive ? listTheme.accent : listTheme.soft,
-                        color: isActive ? "#ffffff" : listTheme.deep,
-                      } : undefined}
-                      className={`${buttonBase} ${listTheme ? "hover:brightness-95" : isActive ? "border-[var(--admin-event-accent)] bg-[var(--admin-event-accent)] text-white hover:text-white" : "border-[var(--admin-event-accent)]/30 text-[var(--admin-event-deep)]"}`}
+                      className={`${buttonBase} border-0 ${isActive ? "bg-admin text-white hover:bg-admin/90 hover:text-white" : "bg-[#f3f3f4] text-foreground hover:bg-[#ebebec]"}`}
                     >
-                      {l.mark && `${l.mark} · `}{l.title} · {guests.filter((g) => l.id === "all" || g.party === l.id).length}
+                      {l.title} · {guests.filter((g) => l.id === "all" || g.party === l.id).length}
                     </Button>
                   );
                 })}
-                <Button type="button" variant="outline" onClick={addTable} className={`${buttonBase} ml-auto border-[#6e1420]/20 text-[#6e1420]`}>
+                <Button type="button" variant="outline" onClick={addTable} className={`${buttonBase} ml-auto border-black/10 text-foreground`}>
                   <Plus className="mr-2 h-4 w-4" strokeWidth={1.6} /> Ajouter une table ({tableCount})
                 </Button>
               </div>
               <div className={`${panel} flex flex-wrap items-center gap-x-8 gap-y-2 px-6 py-4 text-sm`}>
                 <strong className="font-serif text-lg">{tableCount} tables</strong>
                 <span>{sumPeople(confirmed.filter((g) => g.tableNumber))} personnes confirmées placées</span>
-                <span className="text-[#6e1420]">{sumPeople(confirmed.filter((g) => !g.tableNumber))} à placer</span>
-                <Button type="button" variant="outline" disabled={!ceremonyFilter} onClick={() => ceremonyFilter && window.open(`/api/admin/guests/export?event=${ceremonyFilter}&sort=table`, "_blank")} className={`${buttonBase} ml-auto h-10 border-[#6e1420]/20 text-[#6e1420] disabled:opacity-40`}>
+                <span className="text-admin">{sumPeople(confirmed.filter((g) => !g.tableNumber))} à placer</span>
+                <Button type="button" variant="outline" disabled={!ceremonyFilter} onClick={() => ceremonyFilter && window.open(`/api/admin/guests/export?event=${ceremonyFilter}&sort=table`, "_blank")} className={`${buttonBase} ml-auto h-10 border-black/10 text-foreground disabled:opacity-40`}>
                   <Download className="mr-2 h-4 w-4" strokeWidth={1.6} /> Export par table
                 </Button>
               </div>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e1420]/40" />
-                <Input value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} placeholder="Rechercher un invité à placer…" aria-label="Rechercher un invité à placer" className="h-11 rounded-xl border-[#6e1420]/15 bg-white pl-10" />
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/35" />
+                <Input value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} placeholder="Rechercher un invité à placer…" aria-label="Rechercher un invité à placer" className="h-11 rounded-xl border-black/10 bg-white pl-10" />
               </div>
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {[null, ...tableNumbers].map((number) => {
@@ -2053,7 +2072,7 @@ export default function Admin() {
                   if (number !== null && !list.length && tableQuery) return null;
                   return (
                     <section key={number ?? "none"} className={`${panel} p-5 ${number === null ? "md:col-span-2 xl:col-span-3" : ""}`}>
-                      <div className="flex items-end justify-between gap-4 border-b border-[#6e1420]/8 pb-3">
+                      <div className="flex items-end justify-between gap-4 border-b border-black/[0.05] pb-3">
                         <div>
                           <p className={eyebrow}>{number ? "Une belle tablée" : "À organiser"}</p>
                           <h2 className="mt-1 font-serif text-2xl">{number ? `Table ${number}` : "Sans table"}</h2>
@@ -2062,7 +2081,7 @@ export default function Admin() {
                       </div>
                       <div className={`mt-2 ${number === null ? "grid gap-x-6 md:grid-cols-2 xl:grid-cols-3" : ""}`}>
                         {list.map((g) => (
-                          <div key={g.id} className="flex items-center justify-between gap-3 border-b border-[#6e1420]/5 py-2 text-sm">
+                          <div key={g.id} className="flex items-center justify-between gap-3 border-b border-admin/5 py-2 text-sm">
                             <span className="min-w-0">
                               <span className="block truncate">{g.firstName} {g.lastName}</span>
                               <span className="block text-[11px] text-foreground/45">{g.guestCount} pers. · {g.status === "confirmed" ? "Confirmé" : "En attente"}</span>
@@ -2072,7 +2091,7 @@ export default function Admin() {
                               value={g.tableNumber ?? ""}
                               disabled={updateTableMutation.isPending}
                               onChange={(e) => updateTableMutation.mutate({ id: g.id, tableNumber: e.target.value ? Number(e.target.value) : null })}
-                              className="h-9 shrink-0 border border-[#6e1420]/15 bg-white px-2 text-xs"
+                              className="h-9 shrink-0 border border-black/10 bg-white px-2 text-xs"
                             >
                               <option value="">Sans table</option>
                               {tableNumbers.map((n) => <option key={n} value={n}>Table {n}</option>)}
@@ -2100,7 +2119,13 @@ export default function Admin() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => confirm("Réinitialiser tous les check-ins ? Cette action efface toutes les arrivées enregistrées.") && resetCheckInsMutation.mutate()}
+                  onClick={() => setConfirmRequest({
+                    title: "Réinitialiser l'accueil ?",
+                    description: "Toutes les arrivées enregistrées seront effacées.",
+                    confirmLabel: "Réinitialiser",
+                    danger: true,
+                    onConfirm: () => resetCheckInsMutation.mutate(),
+                  })}
                   disabled={resetCheckInsMutation.isPending}
                   className={`${buttonBase} ml-auto border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white`}
                 >
@@ -2108,13 +2133,13 @@ export default function Admin() {
                 </Button>
               </section>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e1420]/40" />
-                <Input value={checkinSearch} onChange={(e) => setCheckinSearch(e.target.value)} placeholder="Rechercher le nom d'un invité…" aria-label="Rechercher à l'accueil" className="h-12 rounded-xl border-[#6e1420]/15 bg-white pl-10" />
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/35" />
+                <Input value={checkinSearch} onChange={(e) => setCheckinSearch(e.target.value)} placeholder="Rechercher le nom d'un invité…" aria-label="Rechercher à l'accueil" className="h-12 rounded-xl border-black/10 bg-white pl-10" />
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {checkinList.map((g) => (
                   <article key={g.id} className={`${panel} flex items-center gap-4 p-4 ${g.checkedInAt ? "opacity-70" : ""}`}>
-                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-[11px] ${g.checkedInAt ? "bg-emerald-600 text-white" : "bg-[#6e1420]/8 text-[#6e1420]"}`}>{g.firstName[0]}{g.lastName[0]}</span>
+                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-[11px] ${g.checkedInAt ? "bg-emerald-600 text-white" : "bg-admin/8 text-admin"}`}>{g.firstName[0]}{g.lastName[0]}</span>
                     <div className="min-w-0 flex-1">
                       <h3 className="truncate font-serif text-lg">{g.firstName} {g.lastName}</h3>
                       <p className="text-xs text-foreground/55">{g.guestCount} personne(s) · {g.tableNumber ? `Table ${g.tableNumber}` : "Table à attribuer"}</p>
@@ -2125,7 +2150,7 @@ export default function Admin() {
                       variant="outline"
                       disabled={checkInMutation.isPending}
                       onClick={() => checkInMutation.mutate({ id: g.id, arrived: !g.checkedInAt })}
-                      className={`${buttonBase} px-4 ${g.checkedInAt ? "border-[#6e1420]/20 text-[#6e1420]" : "border-[#6e1420] bg-[#6e1420] text-white hover:bg-[#4a0d15] hover:text-white"}`}
+                      className={`${buttonBase} px-4 ${g.checkedInAt ? "border-black/10 text-foreground" : "border-admin bg-admin text-white hover:bg-admin/90 hover:text-white"}`}
                     >
                       {g.checkedInAt ? "Annuler ↶" : "Valider ✓"}
                     </Button>
@@ -2147,7 +2172,7 @@ export default function Admin() {
                     <blockquote key={g.id} className="rounded-2xl bg-[#f5f5f6] px-5 py-4">
                       <p className="font-serif text-lg italic leading-7">« {g.message} »</p>
                       <footer className="mt-3 flex items-center justify-between gap-3">
-                        <button type="button" onClick={() => startEditingGuest(g)} className="text-[11px] uppercase tracking-[0.06em] text-[#6e1420] hover:underline">{g.firstName} {g.lastName} ↗</button>
+                        <button type="button" onClick={() => startEditingGuest(g)} className="text-[11px] uppercase tracking-[0.06em] text-admin hover:underline">{g.firstName} {g.lastName}</button>
                         <StatusBadge status={g.status} />
                       </footer>
                     </blockquote>
@@ -2163,6 +2188,7 @@ export default function Admin() {
           {view === "account" && <AdminAccountPanel user={user} />}
         </main>
       </div>
+      <ConfirmModal request={confirmRequest} pending={deleteGuestMutation.isPending} onClose={() => setConfirmRequest(null)} />
     </div>
   );
 }

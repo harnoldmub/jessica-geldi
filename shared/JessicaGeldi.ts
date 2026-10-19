@@ -108,8 +108,8 @@ export function joinEventKeys(keys: WeddingEventKey[]) {
 }
 
 export const JessicaGeldi = {
-  brand: "Jessica & Geldi",
-  title: "Jessica & Geldi",
+  brand: "Jessica & Geldy",
+  title: "Jessica & Geldy",
   tagline: "Trois rendez-vous, trois ambiances, une même promesse d'amour.",
   weddingDate: new Date(weddingEvents.customary.iso),
   date: {
@@ -126,7 +126,7 @@ export const JessicaGeldi = {
   location: "Kinshasa",
   couple: {
     bride: "Jessica",
-    groom: "Geldi",
+    groom: "Geldy",
     statement:
       "Nous serons heureux de vous compter parmi nous pour célébrer notre union, entourés de nos familles et de ceux que nous aimons.",
     narrative:
