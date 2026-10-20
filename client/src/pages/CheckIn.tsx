@@ -92,7 +92,7 @@ export default function CheckIn() {
   if (!event) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#F7F7F5] px-6 text-center">
-        <p className="font-script text-4xl text-foreground/70">Jessica &amp; Geldy</p>
+        <p className="font-script text-4xl text-foreground/70">Geldy &amp; Jessica</p>
         <h1 className="font-serif text-2xl">Quel accueil tenez-vous&nbsp;?</h1>
         <div className="grid w-full max-w-md gap-3">
           {(Object.keys(weddingEvents) as WeddingEventKey[]).map((key) => (
@@ -126,7 +126,7 @@ export default function CheckIn() {
           </button>
         </div>
         <p className="font-script text-2xl text-foreground/70 leading-none">
-          Jessica & Geldy
+          Geldy & Jessica
         </p>
         <div className="mt-4 flex justify-center gap-8">
           <div>

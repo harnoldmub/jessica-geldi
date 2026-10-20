@@ -527,8 +527,8 @@ export default function RsvpForm({
                 <FormControl>
                   <div className="grid grid-cols-2 gap-2">
                     {([
-                      ["jessica", "Jessica"],
                       ["geldi", "Geldy"],
+                      ["jessica", "Jessica"],
                     ] as const).map(([value, label]) => (
                       <button
                         key={value}

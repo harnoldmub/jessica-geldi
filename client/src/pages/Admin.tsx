@@ -99,8 +99,8 @@ const guestCountOptions = Array.from({ length: 10 }, (_, index) => ({
 }));
 // Deux listes séparées : chaque invité est invité par Jessica ou par Geldy.
 const partyOptions = [
-  { value: "jessica", label: "Liste Jessica" },
   { value: "geldi", label: "Liste Geldy" },
+  { value: "jessica", label: "Liste Jessica" },
 ];
 type Party = "jessica" | "geldi";
 const isParty = (value: unknown): value is Party => value === "jessica" || value === "geldi";
@@ -231,8 +231,8 @@ const navigation: { id: AdminView; label: string; caption: string }[] = [
 ];
 
 const guestLists = [
-  { id: "jessica", title: "Jessica", caption: "Les invités de Jessica", mark: "J", ...partyVisuals.jessica },
   { id: "geldi", title: "Geldy", caption: "Les invités de Geldy", mark: "G", ...partyVisuals.geldi },
+  { id: "jessica", title: "Jessica", caption: "Les invités de Jessica", mark: "J", ...partyVisuals.jessica },
 ];
 
 const stages: { id: Stage; label: string; hint: string }[] = [
@@ -810,7 +810,7 @@ export default function Admin() {
     const linkIntro = "Ouvrez votre invitation personnalisée ici :";
     const message =
       `Bonjour ${guest.firstName},\n\n` +
-      `Nous avons la joie de vous inviter au mariage de *Jessica & Geldy*.\n\n` +
+      `Nous avons la joie de vous inviter au mariage de *Geldy & Jessica*.\n\n` +
       `${dateLines}\n\n` +
       `${linkIntro}\n${url}\n\n` +
       `Avec joie de vous avoir parmi nous.`;
@@ -827,9 +827,9 @@ export default function Admin() {
       .join("\n");
     const body =
       `Bonjour ${guest.firstName},\n\n` +
-      `Nous avons la joie de vous inviter au mariage de Jessica & Geldy.\n\n${dateLines}\n\n` +
-      `Votre invitation personnalisée vous attend ici :\n${url}\n\nAvec toute notre affection,\nJessica & Geldy`;
-    window.location.href = `mailto:${encodeURIComponent(guest.email || "")}?subject=${encodeURIComponent("Invitation au mariage de Jessica & Geldy")}&body=${encodeURIComponent(body)}`;
+      `Nous avons la joie de vous inviter au mariage de Geldy & Jessica.\n\n${dateLines}\n\n` +
+      `Votre invitation personnalisée vous attend ici :\n${url}\n\nAvec toute notre affection,\nGeldy & Jessica`;
+    window.location.href = `mailto:${encodeURIComponent(guest.email || "")}?subject=${encodeURIComponent("Invitation au mariage de Geldy & Jessica")}&body=${encodeURIComponent(body)}`;
     apiRequest("POST", `/api/admin/guests/${guest.id}/mark-sent`).then(() => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/guests"] });
     });
@@ -878,7 +878,7 @@ export default function Admin() {
               Espace admin
             </p>
             <h1 className="mt-6 font-serif text-4xl leading-tight md:text-6xl">
-              Gérez les invités de Jessica & Geldy avec précision.
+              Gérez les invités de Geldy & Jessica avec précision.
             </h1>
             <p className="mt-6 max-w-lg text-sm leading-8 text-white/72">
               Créez les invités, générez leurs liens d'invitation individuels,
@@ -987,7 +987,7 @@ export default function Admin() {
     return (
       <main className="min-h-screen bg-[#f5f5f6] text-foreground">
         <header className="mx-3 mt-3 rounded-3xl border border-black/[0.05] bg-white px-6 py-10 text-center md:mx-5 md:py-12">
-          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-admin text-[15px] font-semibold text-white">JG</span>
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-admin text-[15px] font-semibold text-white">GJ</span>
           <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-admin">L'espace des mariés</p>
           <h1 className="mt-4 text-3xl md:text-4xl">Quel événement souhaitez-vous gérer&nbsp;?</h1>
           <p className="mx-auto mt-3 max-w-xl text-sm text-foreground/60">Chaque célébration a ses propres invités, son plan de table et son accueil. Vous pourrez changer d'événement à tout moment.</p>
@@ -1180,8 +1180,8 @@ export default function Admin() {
       <aside className="admin-sidebar flex flex-col bg-white lg:sticky lg:top-3 lg:m-3 lg:h-[calc(100vh-1.5rem)] lg:rounded-3xl">
         <div className="flex items-center justify-between gap-4 px-6 py-5 lg:block lg:pt-7">
           <a href="/" className="flex items-center gap-2">
-            <span className="admin-brand-mark grid h-9 w-9 place-items-center rounded-full text-[13px] font-semibold text-white">JG</span>
-            <span className="text-[15px] font-semibold tracking-tight">Jessica &amp; Geldy</span>
+            <span className="admin-brand-mark grid h-9 w-9 place-items-center rounded-full text-[13px] font-semibold text-white">GJ</span>
+            <span className="text-[15px] font-semibold tracking-tight">Geldy &amp; Jessica</span>
           </a>
         </div>
         <div className="admin-event-context mx-3 mb-4 rounded-2xl px-4 py-3">
@@ -1687,7 +1687,7 @@ export default function Admin() {
                 <div>
                   <p className={eyebrow}>À attribuer</p>
                   <h2 className="mt-2 font-serif text-2xl">{unassigned.length} invité{unassigned.length > 1 ? "s" : ""} sans liste</h2>
-                  <p className="mt-2 max-w-xl text-sm leading-6 text-foreground/60">Ils n'apparaissent ni chez Jessica ni chez Geldy. Cochez-les puis rangez-les dans la bonne liste.</p>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-foreground/60">Ils n'apparaissent ni chez Geldy ni chez Jessica. Cochez-les puis rangez-les dans la bonne liste.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {guestLists.map((l) => (

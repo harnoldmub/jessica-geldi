@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -8,13 +8,18 @@ import type { RsvpResponse } from "@shared/schema";
 import { getEventKeys, JessicaGeldi, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 import type { SiteSettings } from "@shared/siteSettings";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArchFrame, DecoFrame, DrumIcon, GlassesIcon, LaceFrame, RingsIcon } from "@/components/Stationery";
+import DressRestrictions from "@/components/DressRestrictions";
+import { ArchFrame, DecoFrame, DrumIcon, GlassesIcon, LaceFrame, RingsIcon, WaxSeal } from "@/components/Stationery";
+import { pageThemes } from "@/lib/eventThemes";
 
 import heroMain from "../../images/hero-main.jpeg";
 // Versions légères dédiées à l'invitation (vignettes N&B 360 px, fond du programme 720 px)
 import gallery1 from "../../images/gallery-1-sm.jpeg";
 import gallery2 from "../../images/gallery-2-sm.jpeg";
-import gallery3 from "../../images/gallery-3-bg.jpeg";
+// Photos des lieux, en fond de la section qui donne l'adresse
+import venueCustomary from "../../images/venue-customary.jpeg";
+import venueCivil from "../../images/venue-civil.jpeg";
+import venueEvening from "../../images/venue-evening.jpeg";
 import gallery4 from "../../images/gallery-4-sm.jpeg";
 import flowerStem from "../../images/pattern/flower-stem.png";
 import peony from "../../images/pattern/peony.png";
@@ -96,7 +101,7 @@ const PDF_MODE = typeof window !== "undefined" && new URLSearchParams(window.loc
 
 /* Apparition douce au défilement, en CSS (sans bibliothèque d'animation : page plus légère sur mobile).
    Seul le contenu s'anime ; le fond de la section reste en place. */
-function Panel({ children, className = "", style, id, divider = false }: { children: ReactNode; className?: string; style?: CSSProperties; id?: string; divider?: boolean }) {
+function Panel({ children, className = "", style, id, divider = false, background }: { children: ReactNode; className?: string; style?: CSSProperties; id?: string; divider?: boolean; background?: ReactNode }) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(PDF_MODE);
   useEffect(() => {
@@ -120,6 +125,7 @@ function Panel({ children, className = "", style, id, divider = false }: { child
   }, [shown]);
   return (
     <section id={id} className={`relative overflow-hidden px-8 py-10 text-center sm:px-12 ${className}`} style={style}>
+      {background}
       <div
         ref={contentRef}
         className={`transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
@@ -154,30 +160,6 @@ function kubaPattern(color: string, opacity: number) {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}") center top / 56px 56px repeat`;
 }
 
-/* Mélange deux couleurs hexadécimales (pour obtenir la teinte claire pleine, utile à la dentelle). */
-function mixHex(a: string, b: string, amount: number) {
-  const pa = Number.parseInt(a.slice(1), 16);
-  const pb = Number.parseInt(b.slice(1), 16);
-  const ch = (shift: number) => Math.round(((pa >> shift) & 255) * (1 - amount) + ((pb >> shift) & 255) * amount);
-  return `#${[16, 8, 0].map((shift) => ch(shift).toString(16).padStart(2, "0")).join("")}`;
-}
-
-/* Bordure dentelle : festons de la couleur claire qui mordent sur le bloc fort, avec leurs jours (petits trous) */
-function LaceEdge({ light, strong }: { light: string; strong: string }) {
-  return (
-    <div
-      aria-hidden
-      className="absolute inset-x-0 bottom-0 h-[22px]"
-      style={{
-        background: [
-          `radial-gradient(circle, ${strong} 1.4px, transparent 1.9px) 10px 13px / 20px 22px repeat-x`,
-          `radial-gradient(circle at 50% 100%, ${light} 10px, transparent 10.5px) 0 0 / 20px 22px repeat-x`,
-        ].join(", "),
-      }}
-    />
-  );
-}
-
 /* Bande de cinq jours autour de la date, le jour J mis en avant */
 function DayStrip({ date, accent, ink }: { date: Date; accent: string; ink: string }) {
   const day = Number(fmt(date, { day: "numeric" }));
@@ -206,7 +188,7 @@ function OvalMonogram({ color }: { color: string }) {
     <svg viewBox="0 0 160 200" className="mx-auto h-40 w-auto" aria-hidden>
       <ellipse cx="80" cy="100" rx="74" ry="94" fill="none" stroke={color} strokeWidth="0.8" />
       <ellipse cx="80" cy="100" rx="68" ry="88" fill="none" stroke={color} strokeWidth="0.5" opacity="0.6" />
-      <text x="80" y="118" textAnchor="middle" fontFamily="'Cormorant Garamond', Georgia, serif" fontStyle="italic" fontSize="58" fill={color}>J&amp;G</text>
+      <text x="80" y="118" textAnchor="middle" fontFamily="'Cormorant Garamond', Georgia, serif" fontStyle="italic" fontSize="58" fill={color}>G&amp;J</text>
     </svg>
   );
 }
@@ -321,7 +303,7 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
       <div className="mx-auto max-w-md">
         <div className="cream-band animate-fade-in px-7 py-12 text-center">
           <Caps className="opacity-60">Vos invitations</Caps>
-          <p className="signature mt-5 text-6xl">Jessica &amp; Geldy</p>
+          <p className="signature mt-5 text-6xl">Geldy &amp; Jessica</p>
           <p className="mt-8 font-body text-base italic opacity-70">À l'attention de</p>
           <p className="mt-1 font-body text-2xl">{guest.firstName} {guest.lastName}</p>
           <p className="mx-auto mt-5 max-w-sm text-base leading-7 opacity-75">
@@ -350,6 +332,8 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
   const seats = guest.invitedCount || 1;
   const Icon = theme.Icon;
   const MedallionFrame = eventKey === "customary" ? ArchFrame : eventKey === "evening" ? DecoFrame : LaceFrame;
+  const venuePhoto = { customary: venueCustomary, civil: venueCivil, evening: venueEvening }[eventKey];
+  const seal = pageThemes[eventKey].seal;
 
   const band: CSSProperties = { background: theme.band, color: theme.bandInk };
   const paper: CSSProperties = { background: theme.paper, color: theme.ink };
@@ -408,14 +392,13 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
   type Tone = { style: CSSProperties; ink: string; accent: string; onAccent: string };
   const strong: Tone = { style: band, ink: theme.bandInk, accent: theme.bandAccent, onAccent: theme.band };
   const light: Tone = { style: tint, ink: theme.ink, accent: theme.accent, onAccent: "#fff" };
-  const lightSolid = mixHex(theme.paper, theme.wash[0], 0.4);
   const programItems = program.length ? program : [{ time: event.time, title: event.label, text: "" }];
 
   /*
    * Rythme du faire-part (inspiré des invitations « billet ») : un billet fort en ouverture,
    * une longue zone claire, le programme en bloc fort, une zone claire, puis une carte forte pour signer.
    */
-  const sections: { key: string; tone: "strong" | "light"; render: (t: Tone) => ReactNode }[] = [
+  const sections: { key: string; tone: "strong" | "light"; render: (t: Tone) => ReactNode; background?: ReactNode }[] = [
     {
       key: "opening",
       tone: "strong",
@@ -425,18 +408,16 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
             <div className="mx-auto w-[72%]" style={{ color: t.accent }}>
               {/* Un dessin de cadre par célébration : arche (coutumier), dentelle (civil), Art déco (soirée) */}
               <MedallionFrame className="aspect-[320/380]">
-                <img src={heroMain} alt="Jessica et Geldy" width={900} height={1350} {...{ fetchpriority: "high" }} decoding="async" className="h-full w-full object-cover object-[50%_32%]" />
+                <img src={heroMain} alt="Geldy et Jessica" width={900} height={1350} {...{ fetchpriority: "high" }} decoding="async" className="h-full w-full object-cover object-[50%_32%]" />
               </MedallionFrame>
             </div>
             <p className="pointer-events-none absolute inset-0" style={{ color: t.ink }}>
-              <span className="signature absolute left-0 top-[12%] block text-[3.6rem] leading-none drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)]">Jessica</span>
-              <span className="absolute left-1/2 top-[44%] block -translate-x-1/2 font-body text-[2.4rem] italic leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]">&amp;</span>
-              <span className="signature absolute bottom-[8%] right-0 block text-[3.6rem] leading-none drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)]">Geldy</span>
+              <span className="signature absolute left-0 top-[12%] block text-[3.6rem] leading-none drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)]">Geldy</span>
+              <span className="signature absolute bottom-[8%] right-0 block text-[3.6rem] leading-none drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)]">Jessica</span>
             </p>
           </div>
           <Caps className="mt-6" style={{ color: t.accent }}>{event.label}</Caps>
           <Caps className="mt-1 opacity-90">Kinshasa, Congo</Caps>
-          <LaceEdge light={lightSolid} strong={theme.band} />
         </div>
       ),
     },
@@ -474,10 +455,15 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
     {
       key: "program",
       tone: "strong",
+      // Photo du lieu en fond, sous la couleur de la célébration
+      background: (
+        <>
+          <img src={venuePhoto} alt="" aria-hidden loading={PDF_MODE ? "eager" : "lazy"} decoding="async" className="absolute inset-0 h-full w-full object-cover grayscale" />
+          <span aria-hidden className="absolute inset-0" style={{ background: theme.band, opacity: 0.7 }} />
+        </>
+      ),
       render: (t) => (
         <>
-          <img src={gallery3} alt="" aria-hidden loading={PDF_MODE ? "eager" : "lazy"} decoding="async" className="absolute inset-0 h-full w-full object-cover object-[50%_40%] grayscale" />
-          <span aria-hidden className="absolute inset-0" style={{ background: theme.band, opacity: 0.72 }} />
           <div className="relative">
           <Title style={{ color: t.accent }}>Programme</Title>
           {details.venue && !/à confirmer/i.test(details.venue) && (
@@ -517,6 +503,7 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
             ))}
           </div>
           <p className="mx-auto mt-6 max-w-xs font-body text-base italic leading-7 opacity-90">{details.note || event.themeNote}</p>
+          <DressRestrictions eventKey={eventKey} className="mt-7" />
         </>
       ),
     },
@@ -560,7 +547,7 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
       render: () => (
         <div className="rounded-[22px] px-6 py-10" style={{ background: theme.band, color: theme.bandInk }}>
           <p className="font-body text-[1.6rem] italic leading-snug">Avec impatience de vous retrouver</p>
-          <p className="signature mt-5 text-[2.8rem] leading-none" style={{ color: theme.bandAccent }}>Jessica &amp; Geldy</p>
+          <p className="signature mt-5 text-[2.8rem] leading-none" style={{ color: theme.bandAccent }}>Geldy &amp; Jessica</p>
           <Caps className="mt-3 opacity-85">{dd} / {mm} / 20{yy} · Kinshasa</Caps>
         </div>
       ),
@@ -600,18 +587,31 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
             const tone = section.tone === "strong" ? strong : light;
             // Coutumier : motif Kuba en filigrane, par-dessus le fond de la section
             const sectionStyle: CSSProperties =
-              eventKey === "customary"
+              eventKey === "customary" && section.key === "opening"
                 ? { ...tone.style, background: `${kubaPattern(section.tone === "strong" ? theme.bandInk : theme.accent, section.tone === "strong" ? 0.1 : 0.09)}, ${tone.style.background}` }
                 : tone.style;
             const previous = sections[index - 1];
             // Dans une même zone claire, les sections s'enchaînent sans rupture, juste un peu d'air.
             const continues = previous && previous.tone === section.tone;
-            const spacing = index === 0 ? "!pb-0 pt-12" : continues ? "pt-2" : "pt-12";
+            const spacing = index === 0 ? "pb-14 pt-12" : continues ? "pt-2" : "pt-12";
             const closing = section.key === "closing" ? "!px-5 !pb-5 !pt-4" : "";
+            const cover = index === 0 ? (PDF_MODE ? "flex min-h-[853px] flex-col justify-center" : "flex min-h-[100svh] flex-col justify-center") : "";
             return (
-              <Panel key={section.key} id={section.key === "confirm" ? "confirmer" : undefined} style={sectionStyle} className={`${spacing} ${closing}`}>
+              <Fragment key={section.key}>
+              <Panel id={section.key === "confirm" ? "confirmer" : undefined} style={sectionStyle} className={`${spacing} ${closing} ${cover}`} background={section.background}>
                 {section.render(tone)}
               </Panel>
+              {index === 0 && (
+                // Premier séparateur : le sceau de cire GJ, à cheval entre la page de garde et la suite
+                <div
+                  aria-hidden
+                  className="relative z-20 flex h-0 justify-center"
+                  style={{ "--seal-light": seal[0], "--seal-mid": seal[1], "--seal-dark": seal[2] } as CSSProperties}
+                >
+                  <WaxSeal className="h-16 w-16 -translate-y-1/2" />
+                </div>
+              )}
+              </Fragment>
             );
           })}
         </article>

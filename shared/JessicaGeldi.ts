@@ -19,6 +19,10 @@ export const weddingEvents: Record<WeddingEventKey, {
   capacity: number;
   palette: string[];
   colorNames: string[];
+  /** Couleurs à ne pas porter (affichées barrées dans le dress code) */
+  forbiddenColors?: { name: string; hex: string }[];
+  /** Consignes vestimentaires supplémentaires */
+  dressRules?: string[];
   accent: string;
   background: string;
   ink: string;
@@ -35,8 +39,8 @@ export const weddingEvents: Record<WeddingEventKey, {
     theme: "Bohème chic",
     themeNote: "Matières naturelles, touches terracotta, ivoire et esprit floral libre.",
     capacity: 400,
-    palette: ["#F4E7D5", "#B66E4B", "#D8A677", "#7E8A63", "#FFFFFF"],
-    colorNames: ["Ivoire", "Terracotta", "Argile", "Sauge", "Blanc"],
+    palette: ["#F4E7D5", "#B66E4B", "#D8A677", "#7E8A63"],
+    colorNames: ["Ivoire", "Terracotta", "Argile", "Sauge"],
     accent: "#B66E4B",
     background: "#FBF4EA",
     ink: "#3B261F",
@@ -53,8 +57,8 @@ export const weddingEvents: Record<WeddingEventKey, {
     theme: "Pastel",
     themeNote: "Une palette douce et lumineuse, rose poudré, bleu ciel, lilas et crème.",
     capacity: 200,
-    palette: ["#F8D7DA", "#CDE7F0", "#DCC6E8", "#FFF4C7", "#FFFFFF"],
-    colorNames: ["Rose", "Bleu ciel", "Lilas", "Crème", "Blanc"],
+    palette: ["#F8D7DA", "#CDE7F0", "#DCC6E8", "#FFF4C7"],
+    colorNames: ["Rose", "Bleu ciel", "Lilas", "Crème"],
     accent: "#C88FA0",
     background: "#FFF8FA",
     ink: "#3A2A33",
@@ -69,10 +73,16 @@ export const weddingEvents: Record<WeddingEventKey, {
     time: "Heure à confirmer",
     venue: "Fleuve Congo Hotel",
     theme: "Chic et Élégant",
-    themeNote: "Noir profond, ivoire et touches dorées pour une soirée raffinée.",
+    themeNote: "Noir profond et touches dorées pour une soirée raffinée.",
     capacity: 200,
-    palette: ["#111111", "#F7F0E6", "#C9A45C", "#6F7277", "#FFFFFF"],
-    colorNames: ["Noir", "Ivoire", "Or", "Gris chic", "Blanc"],
+    palette: ["#111111", "#C9A45C", "#6F7277"],
+    colorNames: ["Noir", "Or", "Gris chic"],
+    forbiddenColors: [
+      { name: "Blond", hex: "#E6CB8B" },
+      { name: "Blanc cassé", hex: "#F2EDE3" },
+      { name: "Argenté", hex: "#BFC2C8" },
+    ],
+    dressRules: ["La perruque blonde est interdite."],
     accent: "#C9A45C",
     background: "#F8F5EF",
     ink: "#171717",
@@ -108,8 +118,8 @@ export function joinEventKeys(keys: WeddingEventKey[]) {
 }
 
 export const JessicaGeldi = {
-  brand: "Jessica & Geldy",
-  title: "Jessica & Geldy",
+  brand: "Geldy & Jessica",
+  title: "Geldy & Jessica",
   tagline: "Trois rendez-vous, trois ambiances, une même promesse d'amour.",
   weddingDate: new Date(weddingEvents.customary.iso),
   date: {

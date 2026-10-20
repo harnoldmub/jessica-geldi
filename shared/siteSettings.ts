@@ -57,7 +57,7 @@ export const defaultSiteSettings: SiteSettings = {
     event: key,
     time: weddingEvents[key].time,
     title: weddingEvents[key].label,
-    text: `${weddingEvents[key].theme} · Kinshasa, Congo.`,
+    text: weddingEvents[key].theme,
   })),
   contribution: {
     enabled: true,
@@ -97,7 +97,7 @@ export function normalizeStoredSiteSettings(raw: unknown): unknown {
       if (!current.venue || /à confirmer/i.test(current.venue)) {
         value.events[key] = { ...current, venue: defaults.events[key].venue, mapsUrl: defaults.events[key].mapsUrl };
       }
-      if (key === "evening" && /religieu|bénédiction|solennelle/i.test(current.note || "")) {
+      if (key === "evening" && /religieu|bénédiction|solennelle|ivoire/i.test(current.note || "")) {
         value.events[key] = { ...value.events[key], note: defaults.events[key].note };
       }
     }
@@ -114,7 +114,8 @@ export function normalizeStoredSiteSettings(raw: unknown): unknown {
         event,
         title: isOldDefault("title", /^Mariage (religieux|civil)$/) ? fallback.title : item.title,
         time: item.event === "religious" && item.time === "11H" ? fallback.time : item.time,
-        text: isOldDefault("text", /lieu à confirmer/i) ? fallback.text : item.text,
+        // Anciens textes par défaut (« lieu à confirmer », « Thème · Kinshasa, Congo. ») → le thème seul
+        text: isOldDefault("text", /lieu à confirmer|· Kinshasa, Congo\.?$/i) ? fallback.text : item.text,
       };
     });
   }

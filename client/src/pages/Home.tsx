@@ -7,6 +7,7 @@ import { Link } from "wouter";
 import { JessicaGeldi, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
 import { defaultSiteSettings, type SiteSettings } from "@shared/siteSettings";
 import RsvpForm from "@/components/RsvpForm";
+import DressRestrictions from "@/components/DressRestrictions";
 import Countdown from "@/components/Countdown";
 import GalleryLightbox from "@/components/GalleryLightbox";
 import { DrumIcon, GlassesIcon, LaceFrame, RingsIcon, SealDivider } from "@/components/Stationery";
@@ -23,10 +24,10 @@ const ease = [0.22, 1, 0.36, 1] as const;
 /* Les vraies photos du couple (N&B) viendront remplir ces cadres : renseigner `src`. */
 /* Bande « Save the date » : trois photos en noir et blanc ; la troisième image sert de fond aux détails. */
 const photos: { src?: string; alt: string; caption: string }[] = [
-  { src: gallery1, alt: "Jessica et Geldy sous l'arche de verdure", caption: "Sous l'arche" },
-  { src: gallery2, alt: "Jessica et Geldy main dans la main dans le jardin", caption: "Main dans la main" },
-  { src: gallery3, alt: "Jessica et Geldy dans l'allée du jardin", caption: "Côte à côte" },
-  { src: gallery4, alt: "Jessica et Geldy se regardant en souriant", caption: "Nous deux" },
+  { src: gallery1, alt: "Geldy et Jessica sous l'arche de verdure", caption: "Sous l'arche" },
+  { src: gallery2, alt: "Geldy et Jessica main dans la main dans le jardin", caption: "Main dans la main" },
+  { src: gallery3, alt: "Geldy et Jessica dans l'allée du jardin", caption: "Côte à côte" },
+  { src: gallery4, alt: "Geldy et Jessica se regardant en souriant", caption: "Nous deux" },
 ];
 const stripPhotos = [photos[0], photos[1], photos[3]];
 
@@ -117,13 +118,20 @@ export default function EventHome({ eventKey }: { eventKey: WeddingEventKey }) {
   const program = siteSettings.program.filter((item) => item.event === eventKey);
   const programItems = program.length ? program : [{ event: eventKey, time: event.time, title: event.label, text: "" }];
   const faq = [
-    { q: "Quel est le thème ?", a: `${event.theme}. ${event.themeNote}` },
+    {
+      q: "Quel est le thème ?",
+      a: [
+        `${event.theme}. ${event.themeNote}`,
+        event.forbiddenColors?.length ? `Couleurs interdites : ${event.forbiddenColors.map((c) => c.name.toLowerCase()).join(", ")}.` : "",
+        ...(event.dressRules ?? []),
+      ].filter(Boolean).join(" "),
+    },
     { q: "Quand a lieu la célébration ?", a: `${event.label} : ${event.date}${/confirmer/i.test(event.time) ? "" : ` à ${event.time}`}, à Kinshasa, Congo.` },
     ...JessicaGeldi.faq.filter((item) => /accompagn/i.test(item.q)),
   ];
 
   useEffect(() => {
-    document.title = `${event.label} · Jessica & Geldy`;
+    document.title = `${event.label} · Geldy & Jessica`;
   }, [event.label]);
 
   useEffect(() => {
@@ -160,19 +168,16 @@ export default function EventHome({ eventKey }: { eventKey: WeddingEventKey }) {
           <div className="relative">
           <motion.div initial={reduce ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.6, ease }} className="mx-auto w-[66%] max-w-[360px]">
             <LaceFrame className="aspect-[320/380] text-tlace">
-              <img src={heroMain} alt="Jessica et Geldy" className="h-full w-full object-cover object-[50%_32%]" {...{ fetchpriority: "high" }} />
+              <img src={heroMain} alt="Geldy et Jessica" className="h-full w-full object-cover object-[50%_32%]" {...{ fetchpriority: "high" }} />
             </LaceFrame>
           </motion.div>
 
           <h1 className="pointer-events-none absolute inset-0 text-tbandink">
             <motion.span {...write(0.5)} className="signature absolute left-0 top-[14%] block text-[clamp(4.5rem,19vw,9.5rem)] drop-shadow-[0_2px_14px_rgba(20,0,4,0.55)]">
-              Jessica
-            </motion.span>
-            <motion.span {...write(1)} className="absolute left-1/2 top-[42%] block -translate-x-1/2 font-serif text-[clamp(2.6rem,8vw,4.5rem)] italic drop-shadow-[0_2px_10px_rgba(20,0,4,0.55)]">
-              &amp;
-            </motion.span>
-            <motion.span {...write(1.3)} className="signature absolute bottom-[8%] right-0 block text-[clamp(4.5rem,19vw,9.5rem)] drop-shadow-[0_2px_14px_rgba(20,0,4,0.55)]">
               Geldy
+            </motion.span>
+            <motion.span {...write(1.1)} className="signature absolute bottom-[8%] right-0 block text-[clamp(4.5rem,19vw,9.5rem)] drop-shadow-[0_2px_14px_rgba(20,0,4,0.55)]">
+              Jessica
             </motion.span>
           </h1>
           </div>
@@ -257,6 +262,7 @@ export default function EventHome({ eventKey }: { eventKey: WeddingEventKey }) {
                     ))}
                   </div>
                   <p className="mx-auto mt-3 max-w-xs font-body text-base italic leading-7 text-tbandink/70">{event.themeNote}</p>
+                  <DressRestrictions eventKey={eventKey} className="mt-6 text-tbandink" />
                 </article>
               </div>
             </div>
@@ -328,7 +334,7 @@ export default function EventHome({ eventKey }: { eventKey: WeddingEventKey }) {
               })}
             </ol>
           </div>
-          <Photo src={programmePhoto} alt="Jessica et Geldy dans le jardin" bw className="hidden min-h-full md:block" />
+          <Photo src={programmePhoto} alt="Geldy et Jessica dans le jardin" bw className="hidden min-h-full md:block" />
         </div>
       </section>
 
@@ -339,12 +345,12 @@ export default function EventHome({ eventKey }: { eventKey: WeddingEventKey }) {
         <div className="mx-auto grid max-w-6xl items-start gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
           <Reveal className="text-center lg:sticky lg:top-24 lg:text-left">
             <p className="font-serif leading-[0.82] text-tdeep" aria-hidden>
-              <span className="block text-[clamp(7rem,22vw,13rem)]">J</span>
+              <span className="block text-[clamp(7rem,22vw,13rem)]">G</span>
               <span className="-mt-4 block pl-[0.6em] text-[clamp(4rem,12vw,7rem)] italic lg:pl-[0.9em]">&amp;</span>
-              <span className="-mt-4 block pl-[0.5em] text-[clamp(7rem,22vw,13rem)] lg:pl-[0.8em]">G</span>
+              <span className="-mt-4 block pl-[0.5em] text-[clamp(7rem,22vw,13rem)] lg:pl-[0.8em]">J</span>
             </p>
             <h2 className="signature mt-6 text-7xl text-tbandink">Rsvp</h2>
-            <p className="display-caps mt-3 text-2xl uppercase tracking-[0.14em]">Jessica &amp; Geldy</p>
+            <p className="display-caps mt-3 text-2xl uppercase tracking-[0.14em]">Geldy &amp; Jessica</p>
             <SmallCaps className="mx-auto mt-5 max-w-sm text-tbandink/75 lg:mx-0">
               Merci de nous répondre au plus tôt pour le {event.label.toLowerCase()} du {event.date.replace(/^\S+ /, "").replace(" 2027", "")}.
             </SmallCaps>
@@ -399,7 +405,7 @@ export default function EventHome({ eventKey }: { eventKey: WeddingEventKey }) {
             <SmallCaps className="mx-auto mt-5 max-w-xl text-tbandink/75">{siteSettings.contribution.message}</SmallCaps>
           </Reveal>
         )}
-        <p className="signature mt-16 text-7xl text-tbandink md:text-8xl">Jessica &amp; Geldy</p>
+        <p className="signature mt-16 text-7xl text-tbandink md:text-8xl">Geldy &amp; Jessica</p>
         <SmallCaps className="mt-4 text-tbandink/60">{event.label} · {event.date} · Kinshasa, Congo</SmallCaps>
         <p className="mx-auto mt-6 max-w-md whitespace-pre-line font-body text-lg italic leading-8 text-tbandink/70">{siteSettings.footerText}</p>
         <p className="mt-10 font-body text-xs tracking-[0.08em] text-tbandink/75">
@@ -427,7 +433,7 @@ export function EventChooser() {
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
-    document.title = "Jessica & Geldy";
+    document.title = "Geldy & Jessica";
     let active = true;
     fetch("/api/site-access")
       .then((response) => response.json())
@@ -476,7 +482,7 @@ export function EventChooser() {
   if (!granted) {
     return (
       <main className="wine-band flex min-h-[100svh] flex-col items-center justify-center px-5 py-16 text-center">
-        <p className="signature text-[clamp(3.6rem,14vw,7rem)] text-tbandink">Jessica &amp; Geldy</p>
+        <p className="signature text-[clamp(3.6rem,14vw,7rem)] text-tbandink">Geldy &amp; Jessica</p>
         <p className="mt-2 font-body text-xs uppercase tracking-[0.36em] text-tbandink/60">Espace privé</p>
         <form onSubmit={submit} className="mt-12 w-full max-w-xs">
           <label htmlFor="site-code" className="block font-body text-[11px] uppercase tracking-[0.3em] text-tbandink/75">
@@ -508,7 +514,7 @@ export function EventChooser() {
 
   return (
     <main className="wine-band flex min-h-[100svh] flex-col items-center justify-center px-5 py-16 text-center">
-      <p className="signature text-[clamp(4rem,16vw,8rem)] text-tbandink">Jessica &amp; Geldy</p>
+      <p className="signature text-[clamp(4rem,16vw,8rem)] text-tbandink">Geldy &amp; Jessica</p>
       <p className="display-caps mt-4 text-xl uppercase tracking-[0.16em] text-tbandink/90">se marient</p>
       <p className="mt-2 font-body text-xs uppercase tracking-[0.36em] text-tbandink/60">Kinshasa, Congo</p>
       <div className="mt-14 grid w-full max-w-4xl gap-4 sm:grid-cols-3">

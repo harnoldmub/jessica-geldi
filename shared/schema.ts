@@ -150,8 +150,8 @@ export const insertRsvpSchema = createInsertSchema(rsvpResponses, {
 // Réponse publique (page d'un événement) : l'invité indique de qui il est l'invité.
 export const publicRsvpSchema = insertRsvpSchema.extend({
   party: z.enum(["jessica", "geldi"], {
-    required_error: "Indiquez si vous êtes invité(e) de Jessica ou de Geldy",
-    invalid_type_error: "Indiquez si vous êtes invité(e) de Jessica ou de Geldy",
+    required_error: "Indiquez si vous êtes invité(e) de Geldy ou de Jessica",
+    invalid_type_error: "Indiquez si vous êtes invité(e) de Geldy ou de Jessica",
   }),
 });
 

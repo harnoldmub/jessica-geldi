@@ -428,7 +428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const event = Array.isArray(payload) ? undefined : payload.ceremonyChoice;
       const party = Array.isArray(payload) ? undefined : payload.party;
       if (party !== "jessica" && party !== "geldi") {
-        return res.status(400).json({ message: "Choisissez la liste (Jessica ou Geldy) de ces invités." });
+        return res.status(400).json({ message: "Choisissez la liste (Geldy ou Jessica) de ces invités." });
       }
       if (!isWeddingEventKey(event)) {
         return res.status(400).json({ message: "Choisissez l'événement auquel rattacher ces invités." });
@@ -476,7 +476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const data = adminGuestSchema.parse(req.body);
       if (data.party !== "jessica" && data.party !== "geldi") {
-        return res.status(400).json({ message: "Choisissez la liste de l'invité : Jessica ou Geldy." });
+        return res.status(400).json({ message: "Choisissez la liste de l'invité : Geldy ou Jessica." });
       }
       const event = getGuestEvent({ invitedCeremonyChoice: data.invitedCeremonyChoice });
       if (!event) {
@@ -505,7 +505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = updateGuestSchema.parse(req.body);
       const { revision, ...changes } = data;
       if (changes.party !== undefined && changes.party !== "jessica" && changes.party !== "geldi") {
-        return res.status(400).json({ message: "Choisissez la liste de l'invité : Jessica ou Geldy." });
+        return res.status(400).json({ message: "Choisissez la liste de l'invité : Geldy ou Jessica." });
       }
       if (changes.invitedCeremonyChoice !== undefined) {
         const event = getGuestEvent({ invitedCeremonyChoice: changes.invitedCeremonyChoice });

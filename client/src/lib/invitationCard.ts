@@ -45,7 +45,7 @@ function drawMonogram(ctx: CanvasRenderingContext2D, color: string) {
   ctx.fillStyle = color;
   ctx.textAlign = "center";
   ctx.font = '76px "Great Vibes", cursive';
-  ctx.fillText("J&G", CARD_WIDTH / 2, 266);
+  ctx.fillText("G&J", CARD_WIDTH / 2, 266);
   ctx.font = '18px "Lato", sans-serif';
   ctx.fillText("2027", CARD_WIDTH / 2, 303);
   ctx.restore();
@@ -150,7 +150,7 @@ function drawEventCard(ctx: CanvasRenderingContext2D, kind: WeddingEventKey, opt
 
   ctx.fillStyle = event.ink;
   ctx.font = '78px "Great Vibes", cursive';
-  ctx.fillText("Jessica & Geldy", CARD_WIDTH / 2, 1470);
+  ctx.fillText("Geldy & Jessica", CARD_WIDTH / 2, 1470);
 }
 
 function drawAllCard(ctx: CanvasRenderingContext2D, options: CardOptions) {
@@ -165,7 +165,7 @@ function drawAllCard(ctx: CanvasRenderingContext2D, options: CardOptions) {
   ctx.font = '24px "Lato", sans-serif';
   ctx.fillText("LE MARIAGE DE", CARD_WIDTH / 2, 410);
   ctx.font = '92px "Great Vibes", cursive';
-  ctx.fillText("Jessica & Geldy", CARD_WIDTH / 2, 530);
+  ctx.fillText("Geldy & Jessica", CARD_WIDTH / 2, 530);
   ctx.font = '46px "Bodoni Moda", Didot, serif';
   ctx.fillText("Trois rendez-vous", CARD_WIDTH / 2, 612);
   drawGuestName(ctx, options, 760, "#3B261F");

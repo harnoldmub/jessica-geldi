@@ -36,8 +36,8 @@ export function WaxSeal({ className = "" }: { className?: string }) {
       <circle cx="50" cy="50" r="31" fill="none" stroke="#3d0610" strokeOpacity="0.55" strokeWidth="1.4" />
       <circle cx="50.6" cy="50.8" r="31" fill="none" stroke="#e46a74" strokeOpacity="0.35" strokeWidth="0.7" />
       <circle cx="50" cy="50" r="26.5" fill="none" stroke="#3d0610" strokeOpacity="0.35" strokeWidth="0.6" strokeDasharray="0.6 2.2" strokeLinecap="round" />
-      <text x="50.7" y="58.6" textAnchor="middle" fontFamily="'Bodoni Moda', Didot, serif" fontStyle="italic" fontSize="24" fill="#e46a74" fillOpacity="0.35">JG</text>
-      <text x="50" y="58" textAnchor="middle" fontFamily="'Bodoni Moda', Didot, serif" fontStyle="italic" fontSize="24" fill="#3d0610" fillOpacity="0.7">JG</text>
+      <text x="50.7" y="58.6" textAnchor="middle" fontFamily="'Bodoni Moda', Didot, serif" fontStyle="italic" fontSize="24" fill="#e46a74" fillOpacity="0.35">GJ</text>
+      <text x="50" y="58" textAnchor="middle" fontFamily="'Bodoni Moda', Didot, serif" fontStyle="italic" fontSize="24" fill="#3d0610" fillOpacity="0.7">GJ</text>
     </svg>
   );
 }
