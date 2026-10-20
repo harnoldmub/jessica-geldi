@@ -55,7 +55,7 @@ export const weddingEvents: Record<WeddingEventKey, {
     time: "13H",
     venue: "Hilton Hotel",
     theme: "Pastel",
-    themeNote: "Une palette douce et lumineuse, rose poudré, bleu ciel, lilas et crème.",
+    themeNote: "",
     capacity: 200,
     palette: ["#F8D7DA", "#CDE7F0", "#DCC6E8", "#FFF4C7"],
     colorNames: ["Rose", "Bleu ciel", "Lilas", "Crème"],

@@ -27,9 +27,17 @@ export default function DressRestrictions({ eventKey, className = "" }: { eventK
         </>
       ) : null}
       {event.dressRules?.map((rule) => (
-        <p key={rule} className="mt-4 font-body text-[1.05rem] font-medium">
-          <span aria-hidden>🚫 </span>
-          {rule}
+        // Consigne mise en évidence : encart avec pictogramme d'interdiction
+        <p
+          key={rule}
+          role="note"
+          className="mx-auto mt-6 flex w-fit max-w-full items-center gap-3 rounded-full border border-[#b42318]/50 bg-[#b42318]/10 py-2.5 pl-3 pr-5 text-left font-sans text-[12px] font-semibold uppercase leading-5 tracking-[0.1em]"
+        >
+          <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0" aria-hidden>
+            <circle cx="12" cy="12" r="9.5" fill="none" stroke="#b42318" strokeWidth="2.2" />
+            <path d="M5.5 5.5l13 13" stroke="#b42318" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+          <span>{rule.replace(/\.$/, "")}</span>
         </p>
       ))}
     </div>

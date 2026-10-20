@@ -504,7 +504,9 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
                   </div>
                 ))}
               </div>
-              <p className="mx-auto mt-6 max-w-xs font-body text-base italic leading-7 opacity-90">{details.note || event.themeNote}</p>
+              {(details.note || event.themeNote) && (
+                <p className="mx-auto mt-6 max-w-xs font-body text-base italic leading-7 opacity-90">{details.note || event.themeNote}</p>
+              )}
             </>
           ) : (
             // Pas de couleur imposée (soirée) : une seule phrase, puis les interdits

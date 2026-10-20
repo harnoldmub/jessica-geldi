@@ -121,7 +121,7 @@ export default function EventHome({ eventKey }: { eventKey: WeddingEventKey }) {
     {
       q: "Quel est le thème ?",
       a: [
-        `${event.theme}. ${event.themeNote}`,
+        [event.theme, event.themeNote.replace(/\.$/, "")].filter(Boolean).join(". ") + ".",
         event.forbiddenColors?.length ? `Couleurs interdites : ${event.forbiddenColors.map((c) => c.name.toLowerCase()).join(", ")}.` : "",
         ...(event.dressRules ?? []),
       ].filter(Boolean).join(" "),
@@ -261,7 +261,7 @@ export default function EventHome({ eventKey }: { eventKey: WeddingEventKey }) {
                       <span key={color} title={event.colorNames[i]} className="h-5 w-5 rounded-full border border-white/40" style={{ background: color }} />
                     ))}
                   </div>
-                  <p className="mx-auto mt-3 max-w-xs font-body text-base italic leading-7 text-tbandink/70">{event.themeNote}</p>
+                  {event.themeNote && <p className="mx-auto mt-3 max-w-xs font-body text-base italic leading-7 text-tbandink/70">{event.themeNote}</p>}
                   <DressRestrictions eventKey={eventKey} className="mt-6 text-tbandink" />
                 </article>
               </div>
