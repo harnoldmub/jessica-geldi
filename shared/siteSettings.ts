@@ -53,12 +53,14 @@ export const defaultSiteSettings: SiteSettings = {
     };
     return result;
   }, {} as SiteSettings["events"]),
-  program: eventKeys.map((key) => ({
-    event: key,
-    time: weddingEvents[key].time,
-    title: weddingEvents[key].label,
-    text: weddingEvents[key].theme,
-  })),
+  program: eventKeys.flatMap((key): SiteSettings["program"] =>
+    key === "civil"
+      ? [
+          { event: key, time: "13H", title: "Mariage civil", text: weddingEvents[key].theme },
+          { event: key, time: "15H", title: "Bénédiction", text: "" },
+        ]
+      : [{ event: key, time: weddingEvents[key].time, title: weddingEvents[key].label, text: weddingEvents[key].theme }],
+  ),
   contribution: {
     enabled: true,
     title: "Votre présence est notre plus beau cadeau.",
@@ -97,7 +99,7 @@ export function normalizeStoredSiteSettings(raw: unknown): unknown {
       if (!current.venue || /à confirmer/i.test(current.venue)) {
         value.events[key] = { ...current, venue: defaults.events[key].venue, mapsUrl: defaults.events[key].mapsUrl };
       }
-      if (key === "evening" && /religieu|bénédiction|solennelle|ivoire/i.test(current.note || "")) {
+      if (key === "evening" && /religieu|bénédiction|solennelle|ivoire|noir profond/i.test(current.note || "")) {
         value.events[key] = { ...value.events[key], note: defaults.events[key].note };
       }
     }
@@ -118,6 +120,12 @@ export function normalizeStoredSiteSettings(raw: unknown): unknown {
         text: isOldDefault("text", /lieu à confirmer|· Kinshasa, Congo\.?$/i) ? fallback.text : item.text,
       };
     });
+    // Ancien programme du civil (une seule ligne à 11H) → civil à 13H puis bénédiction à 15H
+    const civil = value.program.filter((item: Record<string, any>) => item.event === "civil");
+    if (civil.length === 1 && civil[0].time === "11H") {
+      const at = value.program.indexOf(civil[0]);
+      value.program.splice(at, 1, ...defaults.program.filter((p) => p.event === "civil"));
+    }
   }
 
   if (typeof value.heroSubtitle === "string" && value.heroSubtitle.includes("14 février")) {

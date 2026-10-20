@@ -493,16 +493,23 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
       render: (t) => (
         <>
           <Title style={{ color: t.accent }}>Dress code</Title>
-          <p className="mx-auto mt-3 max-w-xs font-body text-[1.15rem] leading-7">Nous serons ravis si vos tenues accompagnent notre palette&nbsp;: {event.theme.toLowerCase()}.</p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            {event.palette.map((color, index) => (
-              <div key={color} className="flex w-14 flex-col items-center gap-2">
-                <span className="h-10 w-10 rounded-full ring-1 ring-black/10" style={{ background: color }} />
-                <span className="font-sans text-[10px] uppercase leading-3 tracking-[0.1em] opacity-85">{event.colorNames[index]}</span>
+          {event.palette.length > 0 ? (
+            <>
+              <p className="mx-auto mt-3 max-w-xs font-body text-[1.15rem] leading-7">Nous serons ravis si vos tenues accompagnent notre palette&nbsp;: {event.theme.toLowerCase()}.</p>
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
+                {event.palette.map((color, index) => (
+                  <div key={color} className="flex w-14 flex-col items-center gap-2">
+                    <span className="h-10 w-10 rounded-full ring-1 ring-black/10" style={{ background: color }} />
+                    <span className="font-sans text-[10px] uppercase leading-3 tracking-[0.1em] opacity-85">{event.colorNames[index]}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <p className="mx-auto mt-6 max-w-xs font-body text-base italic leading-7 opacity-90">{details.note || event.themeNote}</p>
+              <p className="mx-auto mt-6 max-w-xs font-body text-base italic leading-7 opacity-90">{details.note || event.themeNote}</p>
+            </>
+          ) : (
+            // Pas de couleur imposée (soirée) : une seule phrase, puis les interdits
+            <p className="mx-auto mt-3 max-w-xs font-body text-[1.15rem] leading-7">{details.note || event.themeNote}</p>
+          )}
           <DressRestrictions eventKey={eventKey} className="mt-7" />
         </>
       ),
