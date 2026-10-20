@@ -388,6 +388,14 @@ export default function Admin() {
   // Habillage de l'admin (police, fond) appliqué au <body> pour couvrir aussi les fenêtres modales.
   useEffect(() => {
     document.body.classList.add("admin-ui");
+    // Police de l'admin chargée seulement ici (inutile aux invités)
+    if (!document.getElementById("admin-font")) {
+      const link = document.createElement("link");
+      link.id = "admin-font";
+      link.rel = "stylesheet";
+      link.href = "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap";
+      document.head.appendChild(link);
+    }
     return () => document.body.classList.remove("admin-ui");
   }, []);
 

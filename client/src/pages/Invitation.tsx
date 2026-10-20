@@ -3,19 +3,19 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useRoute } from "wouter";
-import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
-import { type RsvpResponse } from "@shared/schema";
+import type { RsvpResponse } from "@shared/schema";
 import { getEventKeys, JessicaGeldi, weddingEvents, type WeddingEventKey } from "@shared/JessicaGeldi";
-import { defaultSiteSettings, type SiteSettings } from "@shared/siteSettings";
+import type { SiteSettings } from "@shared/siteSettings";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DrumIcon, GlassesIcon, LaceFrame, RingsIcon } from "@/components/Stationery";
+import { ArchFrame, DecoFrame, DrumIcon, GlassesIcon, LaceFrame, RingsIcon } from "@/components/Stationery";
 
 import heroMain from "../../images/hero-main.jpeg";
-import gallery1 from "../../images/gallery-1.jpeg";
-import gallery2 from "../../images/gallery-2.jpeg";
-import gallery3 from "../../images/gallery-3.jpeg";
-import gallery4 from "../../images/gallery-4.jpeg";
+// Versions légères dédiées à l'invitation (vignettes N&B 360 px, fond du programme 720 px)
+import gallery1 from "../../images/gallery-1-sm.jpeg";
+import gallery2 from "../../images/gallery-2-sm.jpeg";
+import gallery3 from "../../images/gallery-3-bg.jpeg";
+import gallery4 from "../../images/gallery-4-sm.jpeg";
 import flowerStem from "../../images/pattern/flower-stem.png";
 import peony from "../../images/pattern/peony.png";
 import roseBud from "../../images/pattern/rose-bud.png";
@@ -23,7 +23,6 @@ import roseBud from "../../images/pattern/rose-bud.png";
 type InvitationGuest = RsvpResponse & { invitationUrl: string };
 
 const eventKeys = Object.keys(weddingEvents) as WeddingEventKey[];
-const reveal = { duration: 0.9, ease: [0.22, 1, 0.36, 1] as const };
 
 /*
  * Une invitation par célébration : même faire-part, déclinée dans les couleurs du thème.
@@ -95,20 +94,40 @@ function Botanical({ src, color, className = "", style }: { src: string; color: 
 /* Mode PDF (?pdf=1, ouvert depuis l'admin) : rendu figé, sans animation, capturé en PDF. */
 const PDF_MODE = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("pdf");
 
+/* Apparition douce au défilement, en CSS (sans bibliothèque d'animation : page plus légère sur mobile).
+   Seul le contenu s'anime ; le fond de la section reste en place. */
 function Panel({ children, className = "", style, id, divider = false }: { children: ReactNode; className?: string; style?: CSSProperties; id?: string; divider?: boolean }) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(PDF_MODE);
+  useEffect(() => {
+    if (shown) return;
+    const node = contentRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setShown(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShown(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.12 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [shown]);
   return (
-    <motion.section
-      id={id}
-      initial={PDF_MODE ? false : { opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={reveal}
-      className={`relative overflow-hidden px-8 py-10 text-center sm:px-12 ${className}`}
-      style={style}
-    >
-      {divider && <span aria-hidden className="mx-auto -mt-2 mb-8 block h-px w-12 bg-current opacity-20" />}
-      {children}
-    </motion.section>
+    <section id={id} className={`relative overflow-hidden px-8 py-10 text-center sm:px-12 ${className}`} style={style}>
+      <div
+        ref={contentRef}
+        className={`transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none ${shown ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
+      >
+        {divider && <span aria-hidden className="mx-auto -mt-2 mb-8 block h-px w-12 bg-current opacity-20" />}
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -124,6 +143,15 @@ function Title({ children, className = "", style }: { children: ReactNode; class
 
 function Rule({ color, className = "" }: { color: string; className?: string }) {
   return <span aria-hidden className={`mx-auto block h-px w-16 ${className}`} style={{ background: color }} />;
+}
+
+/*
+ * Motif Kuba (velours de raphia, Kasaï) : losanges imbriqués, chevrons d'angle et point central.
+ * Posé en fond très transparent sur les pages de l'invitation du coutumier.
+ */
+function kubaPattern(color: string, opacity: number) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56"><g fill="none" stroke="${color}" stroke-opacity="${opacity}" stroke-width="1.2"><path d="M28 3 53 28 28 53 3 28Z"/><path d="M28 14 42 28 28 42 14 28Z"/><path d="M0 0 9 9M56 0 47 9M0 56 9 47M56 56 47 47"/><path d="M28 3v6M28 47v6M3 28h6M47 28h6"/></g><rect x="25.5" y="25.5" width="5" height="5" transform="rotate(45 28 28)" fill="${color}" fill-opacity="${opacity}"/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") center top / 56px 56px repeat`;
 }
 
 /* Mélange deux couleurs hexadécimales (pour obtenir la teinte claire pleine, utile à la dentelle). */
@@ -291,7 +319,7 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
   return (
     <main className="min-h-dvh bg-[#2b2522] px-4 py-8 sm:py-12">
       <div className="mx-auto max-w-md">
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={reveal} className="cream-band px-7 py-12 text-center">
+        <div className="cream-band animate-fade-in px-7 py-12 text-center">
           <Caps className="opacity-60">Vos invitations</Caps>
           <p className="signature mt-5 text-6xl">Jessica &amp; Geldy</p>
           <p className="mt-8 font-body text-base italic opacity-70">À l'attention de</p>
@@ -299,7 +327,7 @@ function TransitPage({ guest, token, dates }: { guest: InvitationGuest; token: s
           <p className="mx-auto mt-5 max-w-sm text-base leading-7 opacity-75">
             Nous avons la joie de vous convier à {dates.length > 1 ? "plusieurs temps" : "un temps"} de notre mariage. Chaque célébration a son faire-part : ouvrez-les un à un.
           </p>
-        </motion.div>
+        </div>
         <div className="mt-4 space-y-4">
           {dates.map((key) => <DateCard key={key} token={token} eventKey={key} />)}
         </div>
@@ -321,6 +349,7 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
   const monthName = fmt(date, { month: "long" });
   const seats = guest.invitedCount || 1;
   const Icon = theme.Icon;
+  const MedallionFrame = eventKey === "customary" ? ArchFrame : eventKey === "evening" ? DecoFrame : LaceFrame;
 
   const band: CSSProperties = { background: theme.band, color: theme.bandInk };
   const paper: CSSProperties = { background: theme.paper, color: theme.ink };
@@ -394,9 +423,10 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
         <div className="pb-6">
           <div className="relative mx-auto max-w-[360px]">
             <div className="mx-auto w-[72%]" style={{ color: t.accent }}>
-              <LaceFrame className="aspect-[320/380]">
-                <img src={heroMain} alt="Jessica et Geldy" className="h-full w-full object-cover object-[50%_32%]" />
-              </LaceFrame>
+              {/* Un dessin de cadre par célébration : arche (coutumier), dentelle (civil), Art déco (soirée) */}
+              <MedallionFrame className="aspect-[320/380]">
+                <img src={heroMain} alt="Jessica et Geldy" width={900} height={1350} {...{ fetchpriority: "high" }} decoding="async" className="h-full w-full object-cover object-[50%_32%]" />
+              </MedallionFrame>
             </div>
             <p className="pointer-events-none absolute inset-0" style={{ color: t.ink }}>
               <span className="signature absolute left-0 top-[12%] block text-[3.6rem] leading-none drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)]">Jessica</span>
@@ -430,7 +460,7 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
         <>
           <div className="mb-8 grid grid-cols-3 gap-2" aria-hidden>
             {[gallery1, gallery2, gallery4].map((src) => (
-              <img key={src} src={src} alt="" className="aspect-[4/5] w-full object-cover grayscale" />
+              <img key={src} src={src} alt="" width={360} height={540} loading={PDF_MODE ? "eager" : "lazy"} decoding="async" className="aspect-[4/5] w-full object-cover grayscale" />
             ))}
           </div>
           <Caps style={{ color: t.accent }}>Ce jour-là</Caps>
@@ -446,7 +476,7 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
       tone: "strong",
       render: (t) => (
         <>
-          <img src={gallery3} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-[50%_40%] grayscale" />
+          <img src={gallery3} alt="" aria-hidden loading={PDF_MODE ? "eager" : "lazy"} decoding="async" className="absolute inset-0 h-full w-full object-cover object-[50%_40%] grayscale" />
           <span aria-hidden className="absolute inset-0" style={{ background: theme.band, opacity: 0.72 }} />
           <div className="relative">
           <Title style={{ color: t.accent }}>Programme</Title>
@@ -568,13 +598,18 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
 
           {sections.map((section, index) => {
             const tone = section.tone === "strong" ? strong : light;
+            // Coutumier : motif Kuba en filigrane, par-dessus le fond de la section
+            const sectionStyle: CSSProperties =
+              eventKey === "customary"
+                ? { ...tone.style, background: `${kubaPattern(section.tone === "strong" ? theme.bandInk : theme.accent, section.tone === "strong" ? 0.1 : 0.09)}, ${tone.style.background}` }
+                : tone.style;
             const previous = sections[index - 1];
             // Dans une même zone claire, les sections s'enchaînent sans rupture, juste un peu d'air.
             const continues = previous && previous.tone === section.tone;
             const spacing = index === 0 ? "!pb-0 pt-12" : continues ? "pt-2" : "pt-12";
             const closing = section.key === "closing" ? "!px-5 !pb-5 !pt-4" : "";
             return (
-              <Panel key={section.key} id={section.key === "confirm" ? "confirmer" : undefined} style={tone.style} className={`${spacing} ${closing}`}>
+              <Panel key={section.key} id={section.key === "confirm" ? "confirmer" : undefined} style={sectionStyle} className={`${spacing} ${closing}`}>
                 {section.render(tone)}
               </Panel>
             );
@@ -595,9 +630,9 @@ export default function Invitation() {
     queryKey: [`/api/invitation/${token}`],
     enabled: !!token,
   });
-  const { data: settings = defaultSiteSettings } = useQuery<SiteSettings>({ queryKey: ["/api/site-settings"] });
+  const { data: settings, isLoading: settingsLoading } = useQuery<SiteSettings>({ queryKey: ["/api/site-settings"] });
 
-  if (isLoading) {
+  if (isLoading || settingsLoading) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-[#2b2522] p-6">
         <Skeleton className="h-10 w-64 rounded-none" />
@@ -606,7 +641,7 @@ export default function Invitation() {
     );
   }
 
-  if (error || !guest || !token) {
+  if (error || !guest || !token || !settings) {
     return (
       <div className="cream-band flex min-h-dvh flex-col items-center justify-center gap-6 p-6 text-center">
         <p className="signature text-6xl">{JessicaGeldi.brand}</p>

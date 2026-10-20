@@ -59,9 +59,16 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  // Fichiers générés par Vite (nom avec empreinte) : gardés un an par le navigateur.
+  // index.html n'est jamais mis en cache, pour que les nouvelles versions arrivent tout de suite.
+  app.use(
+    "/assets",
+    express.static(path.join(distPath, "assets"), { immutable: true, maxAge: "1y", fallthrough: false }),
+  );
+  app.use(express.static(distPath, { index: false, maxAge: "1h" }));
 
   app.use("*", (_req, res) => {
+    res.setHeader("Cache-Control", "no-cache");
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }

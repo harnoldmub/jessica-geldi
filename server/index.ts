@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import compression from "compression";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -12,6 +13,8 @@ const app = express();
 // Derrière le proxy Railway : nécessaire pour req.protocol (liens https),
 // x-forwarded-for (rate limit) et les cookies secure.
 app.set("trust proxy", 1);
+// Réponses compressées (gzip) : le JavaScript et les données pèsent ~4× moins sur les réseaux mobiles.
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

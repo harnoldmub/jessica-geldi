@@ -160,7 +160,7 @@ export default function EventHome({ eventKey }: { eventKey: WeddingEventKey }) {
           <div className="relative">
           <motion.div initial={reduce ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.6, ease }} className="mx-auto w-[66%] max-w-[360px]">
             <LaceFrame className="aspect-[320/380] text-tlace">
-              <img src={heroMain} alt="Jessica et Geldy" className="h-full w-full object-cover object-[50%_32%]" fetchPriority="high" />
+              <img src={heroMain} alt="Jessica et Geldy" className="h-full w-full object-cover object-[50%_32%]" {...{ fetchpriority: "high" }} />
             </LaceFrame>
           </motion.div>
 

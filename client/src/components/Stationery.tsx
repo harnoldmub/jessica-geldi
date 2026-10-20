@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 /* Ornements du faire-part bordeaux & crème : sceau de cire, cadre dentelle, pictos trait. */
 
@@ -92,6 +92,141 @@ export function LaceFrame({ className = "", children }: { className?: string; ch
       <div
         className="absolute overflow-hidden rounded-[50%]"
         style={{ left: `${((CX - RX) / 320) * 100}%`, right: `${((CX - RX) / 320) * 100}%`, top: `${((CY - RY) / 380) * 100}%`, bottom: `${((CY - RY) / 380) * 100}%` }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Arche bohème (coutumier) : double filet, rang de perles, frise de triangles ─── */
+// Même fenêtre que le médaillon : x 42 → 278, y 40 → 340 (236 × 300), sommet en demi-cercle.
+const ARCH = { x0: 42, x1: 278, top: 40, bottom: 340, r: 118, cx: 160 };
+
+function archPoint(t: number, grow: number) {
+  // t de 0 à 1 parcourt : côté gauche (bas → départ de l'arc), l'arc, puis côté droit (arc → bas).
+  const { x0, x1, bottom, r, cx, top } = ARCH;
+  const springY = top + r;
+  const side = bottom - springY;
+  const arc = Math.PI * (r + grow);
+  const total = side * 2 + arc;
+  const d = t * total;
+  if (d < side) return { x: x0 - grow, y: bottom - d, a: 180 };
+  if (d < side + arc) {
+    const angle = Math.PI + ((d - side) / arc) * Math.PI;
+    return { x: cx + Math.cos(angle) * (r + grow), y: springY + Math.sin(angle) * (r + grow), a: (angle * 180) / Math.PI };
+  }
+  return { x: x1 + grow, y: springY + (d - side - arc), a: 0 };
+}
+
+const archBeads = Array.from({ length: 70 }, (_, i) => archPoint(i / 69, 14));
+const archTeeth = Array.from({ length: 46 }, (_, i) => archPoint(0.18 + (i / 45) * 0.64, 24));
+
+function archPath(grow: number) {
+  const { x0, x1, bottom, r, cx, top } = ARCH;
+  const springY = top + r;
+  return `M${x0 - grow} ${bottom + grow}V${springY}A${r + grow} ${r + grow} 0 0 1 ${x1 + grow} ${springY}V${bottom + grow}`;
+}
+
+export function ArchFrame({ className = "", children }: { className?: string; children?: ReactNode }) {
+  const clipId = `arch-${useId().replace(/:/g, "")}`;
+  return (
+    <div className={`relative ${className}`}>
+      <svg viewBox="0 0 320 380" className="absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+        <defs>
+          <clipPath id={clipId} clipPathUnits="objectBoundingBox">
+            <path d="M0 1V0.3933A0.5 0.3933 0 0 1 1 0.3933V1Z" />
+          </clipPath>
+        </defs>
+        <g fill="none" stroke="currentColor" strokeLinejoin="round">
+          <path d={archPath(4)} strokeWidth="1.3" />
+          <path d={archPath(9)} strokeWidth="0.6" opacity="0.7" />
+          {archTeeth.map((p, i) => {
+            const rad = (p.a * Math.PI) / 180;
+            const ox = Math.cos(rad);
+            const oy = Math.sin(rad);
+            const tx = -oy;
+            const ty = ox;
+            return (
+              <path
+                key={i}
+                d={`M${p.x + tx * 4} ${p.y + ty * 4}L${p.x + ox * 7} ${p.y + oy * 7}L${p.x - tx * 4} ${p.y - ty * 4}`}
+                strokeWidth="0.8"
+                opacity="0.75"
+              />
+            );
+          })}
+          {/* Frise de base : losanges et triangles */}
+          <path d={`M${ARCH.x0 - 14} ${ARCH.bottom + 16}H${ARCH.x1 + 14}`} strokeWidth="0.8" />
+          {Array.from({ length: 14 }, (_, i) => {
+            const x = ARCH.x0 - 6 + i * 19;
+            return <path key={`z${i}`} d={`M${x} ${ARCH.bottom + 22}l6 7l6 -7l6 7`} strokeWidth="0.8" opacity="0.8" />;
+          })}
+        </g>
+        <g fill="currentColor">
+          {archBeads.map((p, i) => (
+            <circle key={i} cx={p.x} cy={p.y} r={i % 3 === 0 ? 2 : 1.1} opacity="0.85" />
+          ))}
+        </g>
+      </svg>
+      <div className="absolute" style={{ left: `${(42 / 320) * 100}%`, right: `${(42 / 320) * 100}%`, top: `${(40 / 380) * 100}%`, bottom: `${(40 / 380) * 100}%`, clipPath: `url(#${clipId})` }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Cadre Art déco (soirée) : pans coupés, double filet, éventail de rayons ─── */
+function decoPolygon(grow: number, cut: number) {
+  const x0 = 42 - grow;
+  const x1 = 278 + grow;
+  const y0 = 40 - grow;
+  const y1 = 340 + grow;
+  const c = cut + grow * 0.4;
+  return `${x0 + c},${y0} ${x1 - c},${y0} ${x1},${y0 + c} ${x1},${y1 - c} ${x1 - c},${y1} ${x0 + c},${y1} ${x0},${y1 - c} ${x0},${y0 + c}`;
+}
+
+export function DecoFrame({ className = "", children }: { className?: string; children?: ReactNode }) {
+  const rays = Array.from({ length: 9 }, (_, i) => -160 + i * 17.5);
+  return (
+    <div className={`relative ${className}`}>
+      <svg viewBox="0 0 320 380" className="absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+        <g fill="none" stroke="currentColor">
+          <polygon points={decoPolygon(4, 30)} strokeWidth="1.3" />
+          <polygon points={decoPolygon(11, 30)} strokeWidth="0.6" opacity="0.75" />
+          {/* Marches aux quatre coins */}
+          {[
+            [42 - 11, 40 - 11, 1, 1],
+            [278 + 11, 40 - 11, -1, 1],
+            [42 - 11, 340 + 11, 1, -1],
+            [278 + 11, 340 + 11, -1, -1],
+          ].map(([x, y, sx, sy], i) => (
+            <path key={i} d={`M${x} ${y + sy * 22}h${sx * 8}v${-sy * 8}h${sx * 8}v${-sy * 8}h${sx * 6}`} strokeWidth="0.8" opacity="0.8" />
+          ))}
+          {/* Éventail en haut et en bas */}
+          {rays.map((deg) => {
+            const rad = (deg * Math.PI) / 180;
+            return <line key={`t${deg}`} x1={160 + Math.cos(rad) * 12} y1={22 + Math.sin(rad) * 12} x2={160 + Math.cos(rad) * 30} y2={22 + Math.sin(rad) * 30} strokeWidth="0.8" opacity="0.85" />;
+          })}
+          {rays.map((deg) => {
+            const rad = (-deg * Math.PI) / 180;
+            return <line key={`b${deg}`} x1={160 + Math.cos(rad) * 12} y1={358 + Math.sin(rad) * 12} x2={160 + Math.cos(rad) * 24} y2={358 + Math.sin(rad) * 24} strokeWidth="0.8" opacity="0.7" />;
+          })}
+        </g>
+        <g fill="currentColor">
+          <path d="M160 14l5 8l-5 8l-5 -8z" />
+          <path d="M160 352l4 6l-4 6l-4 -6z" opacity="0.8" />
+        </g>
+      </svg>
+      <div
+        className="absolute"
+        style={{
+          left: `${(42 / 320) * 100}%`,
+          right: `${(42 / 320) * 100}%`,
+          top: `${(40 / 380) * 100}%`,
+          bottom: `${(40 / 380) * 100}%`,
+          clipPath: "polygon(12.7% 0, 87.3% 0, 100% 10%, 100% 90%, 87.3% 100%, 12.7% 100%, 0 90%, 0 10%)",
+        }}
       >
         {children}
       </div>
