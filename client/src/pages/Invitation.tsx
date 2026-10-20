@@ -69,15 +69,16 @@ const inviteThemes: Record<WeddingEventKey, {
     botanical: peony,
     Icon: RingsIcon,
   },
+  // Soirée : le rouge bordeaux domine, rehaussé d'or
   evening: {
-    band: "#161514",
-    bandInk: "#f7f0e6",
-    bandAccent: "#c9a45c",
-    paper: "#f8f5ef",
-    ink: "#171717",
-    accent: "#a8843f",
-    soft: "#c9a45c",
-    wash: ["#ece5d8", "#ddd2bd"],
+    band: "#661c24",
+    bandInk: "#f6ece8",
+    bandAccent: "#d8b56e",
+    paper: "#faf4f2",
+    ink: "#2b1013",
+    accent: "#7a1f2a",
+    soft: "#d8b56e",
+    wash: ["#f1dedd", "#e8cfcd"],
     botanical: roseBud,
     Icon: GlassesIcon,
   },
@@ -333,7 +334,7 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
   const Icon = theme.Icon;
   const MedallionFrame = eventKey === "customary" ? ArchFrame : eventKey === "evening" ? DecoFrame : LaceFrame;
   const venuePhoto = { customary: venueCustomary, civil: venueCivil, evening: venueEvening }[eventKey];
-  const seal = pageThemes[eventKey].seal;
+  const seal: [string, string, string] = eventKey === "evening" ? ["#c23a46", "#8e1a26", "#4d0811"] : pageThemes[eventKey].seal;
 
   const band: CSSProperties = { background: theme.band, color: theme.bandInk };
   const paper: CSSProperties = { background: theme.paper, color: theme.ink };
@@ -404,6 +405,14 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
       tone: "strong",
       render: (t) => (
         <div className="pb-6">
+          {/* Monogramme G & J en escalier, uniquement sur l'invitation de la soirée */}
+          {eventKey === "evening" && (
+            <p className="mx-auto -mb-3 w-fit font-serif leading-[0.8] text-left" style={{ color: "rgb(0 0 0 / 0.5)" }} aria-label="G et J">
+              <span aria-hidden className="block text-[4.2rem]">G</span>
+              <span aria-hidden className="-mt-1 block pl-[1.9rem] text-[2.2rem]">&amp;</span>
+              <span aria-hidden className="-mt-2 block pl-[3.3rem] text-[4.2rem]">J</span>
+            </p>
+          )}
           <div className="relative mx-auto max-w-[360px]">
             <div className="mx-auto w-[72%]" style={{ color: t.accent }}>
               {/* Un dessin de cadre par célébration : arche (coutumier), dentelle (civil), Art déco (soirée) */}
@@ -416,8 +425,10 @@ function InvitationPage({ guest, token, eventKey, settings, showBack }: { guest:
               <span className="signature absolute bottom-[8%] right-0 block text-[3.6rem] leading-none drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)]">Jessica</span>
             </p>
           </div>
-          <Caps className="mt-6" style={{ color: t.accent }}>{event.label}</Caps>
-          <Caps className="mt-1 opacity-90">Kinshasa, Congo</Caps>
+          {/* Sous la photo : la date, la célébration, puis le lieu */}
+          <p className="mt-7 font-body text-[1.45rem] leading-tight">{event.date}</p>
+          <Caps className="mt-2" style={{ color: t.accent }}>{event.label}</Caps>
+          <Caps className="mt-5 opacity-90">Kinshasa, Congo</Caps>
         </div>
       ),
     },

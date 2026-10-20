@@ -176,7 +176,7 @@ export function ArchFrame({ className = "", children }: { className?: string; ch
   );
 }
 
-/* ─── Cadre Art déco (soirée) : pans coupés, double filet, éventail de rayons ─── */
+/* ─── Cadre Art déco (soirée) : pans coupés et double filet, sans ornement ─── */
 function decoPolygon(grow: number, cut: number) {
   const x0 = 42 - grow;
   const x1 = 278 + grow;
@@ -187,36 +187,14 @@ function decoPolygon(grow: number, cut: number) {
 }
 
 export function DecoFrame({ className = "", children }: { className?: string; children?: ReactNode }) {
-  const rays = Array.from({ length: 9 }, (_, i) => -160 + i * 17.5);
   return (
     <div className={`relative ${className}`}>
       <svg viewBox="0 0 320 380" className="absolute inset-0 h-full w-full overflow-visible" aria-hidden>
         <g fill="none" stroke="currentColor">
           <polygon points={decoPolygon(4, 30)} strokeWidth="1.3" />
           <polygon points={decoPolygon(11, 30)} strokeWidth="0.6" opacity="0.75" />
-          {/* Marches aux quatre coins */}
-          {[
-            [42 - 11, 40 - 11, 1, 1],
-            [278 + 11, 40 - 11, -1, 1],
-            [42 - 11, 340 + 11, 1, -1],
-            [278 + 11, 340 + 11, -1, -1],
-          ].map(([x, y, sx, sy], i) => (
-            <path key={i} d={`M${x} ${y + sy * 22}h${sx * 8}v${-sy * 8}h${sx * 8}v${-sy * 8}h${sx * 6}`} strokeWidth="0.8" opacity="0.8" />
-          ))}
-          {/* Éventail en haut et en bas */}
-          {rays.map((deg) => {
-            const rad = (deg * Math.PI) / 180;
-            return <line key={`t${deg}`} x1={160 + Math.cos(rad) * 12} y1={22 + Math.sin(rad) * 12} x2={160 + Math.cos(rad) * 30} y2={22 + Math.sin(rad) * 30} strokeWidth="0.8" opacity="0.85" />;
-          })}
-          {rays.map((deg) => {
-            const rad = (-deg * Math.PI) / 180;
-            return <line key={`b${deg}`} x1={160 + Math.cos(rad) * 12} y1={358 + Math.sin(rad) * 12} x2={160 + Math.cos(rad) * 24} y2={358 + Math.sin(rad) * 24} strokeWidth="0.8" opacity="0.7" />;
-          })}
         </g>
-        <g fill="currentColor">
-          <path d="M160 14l5 8l-5 8l-5 -8z" />
-          <path d="M160 352l4 6l-4 6l-4 -6z" opacity="0.8" />
-        </g>
+
       </svg>
       <div
         className="absolute"
