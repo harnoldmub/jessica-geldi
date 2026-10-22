@@ -102,7 +102,7 @@ export function normalizeStoredSiteSettings(raw: unknown): unknown {
       if (key === "civil" && current.note === "Une palette douce et lumineuse, rose poudré, bleu ciel, lilas et crème.") {
         value.events[key] = { ...value.events[key], note: "" };
       }
-      if (key === "evening" && /religieu|bénédiction|solennelle|ivoire|noir profond/i.test(current.note || "")) {
+      if (key === "evening" && /religieu|bénédiction|solennelle|ivoire|noir profond|aucune couleur imposée/i.test(current.note || "")) {
         value.events[key] = { ...value.events[key], note: defaults.events[key].note };
       }
     }

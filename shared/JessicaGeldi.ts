@@ -73,7 +73,7 @@ export const weddingEvents: Record<WeddingEventKey, {
     time: "Heure à confirmer",
     venue: "Fleuve Congo Hotel",
     theme: "Chic et Élégant",
-    themeNote: "Aucune couleur imposée : venez chics et élégants.",
+    themeNote: "Venez chics et élégants.",
     capacity: 200,
     palette: [],
     colorNames: [],
